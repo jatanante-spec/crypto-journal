@@ -625,11 +625,23 @@
   function showSignedInBadge() {
     var badge = document.createElement('div');
     badge.id = 'cj-supabase-dev-badge';
-    badge.style.cssText = 'position:fixed;right:10px;bottom:10px;z-index:99998;padding:7px 10px;border:1px solid #327b5d;border-radius:999px;background:#173529;color:#bdf4d9;font:12px system-ui,sans-serif;cursor:pointer';
+    /* Keep the account indicator important but in document flow. A fixed bottom
+       toast covered Scout rows on small screens; this status now sits after the
+       app content and remains available for sign-out. */
+    badge.style.cssText = 'display:block;width:max-content;max-width:calc(100% - 20px);margin:12px auto 28px;padding:7px 10px;border:1px solid #327b5d;border-radius:999px;background:#173529;color:#bdf4d9;font:12px system-ui,sans-serif;cursor:pointer;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    badge.setAttribute('role', 'button');
+    badge.setAttribute('tabindex', '0');
     badge.textContent = 'Supabase dev · ' + ((session && session.user && session.user.email) || 'signed in');
-    badge.title = 'Click to sign out of this development build';
+    badge.title = 'Signed-in development account. Click to sign out.';
     badge.addEventListener('click', signOut);
-    document.body.appendChild(badge);
+    badge.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        signOut();
+      }
+    });
+    var mount = document.querySelector('.stage') || document.body;
+    mount.appendChild(badge);
   }
 
   if (session && session.access_token && session.user) {
