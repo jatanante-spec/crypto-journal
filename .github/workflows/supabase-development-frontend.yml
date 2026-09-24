@@ -73,7 +73,7 @@ jobs:
             .replace(stylesMarker, styles)
             .replace(javascriptMarker, `${runtimeScript}\n${javascript}`);
 
-          const functionDir = path.join(root, 'supabase', 'functions', 'journal-dev');
+          const functionDir = path.join(root, 'supabase', 'functions', 'journal-online');
           await mkdir(functionDir, { recursive: true });
           const functionSource = [
             `const html = ${JSON.stringify(output)};`,
@@ -98,13 +98,13 @@ jobs:
       - name: Configure development frontend function
         shell: bash
         run: |
-          if ! grep -q '^\[functions\.journal-dev\]' supabase/config.toml; then
-            printf '\n[functions.journal-dev]\nverify_jwt = false\n' >> supabase/config.toml
+          if ! grep -q '^\[functions\.journal-online\]' supabase/config.toml; then
+            printf '\n[functions.journal-online]\nverify_jwt = false\n' >> supabase/config.toml
           fi
 
       - name: Deploy online development Journal frontend
-        run: supabase functions deploy journal-dev --project-ref cvwdegezormxxhskojmf
+        run: supabase functions deploy journal-online --project-ref cvwdegezormxxhskojmf
 
       - name: Print development Journal URL
         run: |
-          echo "Development Journal URL: https://cvwdegezormxxhskojmf.supabase.co/functions/v1/journal-dev"
+          echo "Development Journal URL: https://cvwdegezormxxhskojmf.supabase.co/functions/v1/journal-online"
