@@ -9756,6 +9756,7 @@
   }
 
   function renderSettings() {
+    var planCount=normalisePlans(state.plans).length;
     return (
       '<div class="page-head"><div><h2>More</h2><p class="status ' + (syncOk ? "live" : "sample") + '">' +
         esc(syncMsg) + " · trades live in your Google Sheet.</p></div>" +
@@ -9765,6 +9766,19 @@
       '<section class="card updates-entry"><h3>Updates</h3>' +
         "<p>What changed in this journal. Newest first. Not a buy signal.</p>" +
         '<button class="btn" type="button" data-page="updates">Open updates</button></section>' +
+      '<div class="grid two more-utility-grid" style="margin-top:16px">' +
+        '<section class="card more-utility-card"><h3>Quick access</h3>' +
+          '<p class="muted">Less-frequent destinations stay here so the main strip stays focused on the working screens.</p>' +
+          '<div class="row more-utility-actions">' +
+            '<button class="btn secondary" type="button" data-action="open-watchlist">Coins</button>' +
+            '<button class="btn secondary" type="button" data-action="plans-jump">Plans <b>'+planCount+'</b></button>' +
+          '</div>' +
+        '</section>' +
+        '<section class="card more-utility-card"><h3>Display palette</h3>' +
+          '<p class="muted">Choose the device-only colour palette. This does not change signals, safeguards, cloud data or another device.</p>' +
+          '<label class="theme-setting" for="settings-theme"><span>Colour palette</span><select id="settings-theme" aria-label="Colour palette">'+colorThemeOptionsHtml()+'</select></label>' +
+        '</section>' +
+      '</div>' +
       '<div class="grid two" style="margin-top:16px"><section class="card"><h3>Account & pair</h3>' +
         '<div class="cluster"><div class="cluster-row cols-2">' +
           field("Capital £", "settings.capitalGbp", state.settings.capitalGbp) +
@@ -10536,24 +10550,22 @@
   }
 
   function commandStripHtml() {
-    var coin=String(state.settings.coinTicker||'SOL')+'/'+String(state.settings.vsCurrency||'gbp').toUpperCase(),planCount=normalisePlans(state.plans).length;
-    return '<div class="cmd-strip" role="toolbar" aria-label="Compact command strip">'+
-      '<span class="cmd-pair">'+esc(coin)+'</span>'+
-      '<select class="cmd-theme" id="cmd-theme" aria-label="Colour palette">'+colorThemeOptionsHtml()+'</select>'+
+    var coin=String(state.settings.coinTicker||'SOL')+'/'+String(state.settings.vsCurrency||'gbp').toUpperCase();
+    return '<div class="cmd-context" aria-label="Active workspace context">'+
+      '<span class="cmd-pair" aria-label="Active pair">'+esc(coin)+'</span>'+
+      '<span class="cmd-context-note">active pair · controls stay in their screens</span>'+
+      '<span class="cmd-state"><i></i>'+esc(syncOk?'SYNCED':syncMsg||'LOCAL')+'</span>'+
+    '</div>'+
+    +'<div class="cmd-strip" role="toolbar" aria-label="Main navigation">'+
       '<button type="button" class="cmd-btn '+(page==='scout'?'on':'')+'" data-page="scout">SCOUT</button>'+
       '<button type="button" class="cmd-btn '+(page==='sizer'?'on':'')+'" data-page="sizer">SIZER</button>'+
       '<button type="button" class="cmd-btn '+(page==='journal'?'on':'')+'" data-page="journal">JOURNAL</button>'+
       '<button type="button" class="cmd-btn '+(page==='market'?'on':'')+'" data-page="market">MARKET</button>'+
-      '<button type="button" class="cmd-btn" data-action="plans-jump">PLANS <b>'+planCount+'</b></button>'+
-      '<button type="button" class="cmd-btn" data-action="open-watchlist">COINS</button>'+
-      '<button type="button" class="cmd-btn cmd-fetch" data-action="fetch-market"'+(busy?' disabled':'')+'>'+(busy?'…':'FETCH')+'</button>'+
       '<button type="button" class="cmd-btn '+((page==='settings'||page==='manual'||page==='trend'||page==='updates')?'on':'')+'" data-page="settings">MORE</button>'+
-      '<button type="button" class="cmd-btn '+(trainingOn()?'on':'')+'" data-action="toggle-training">'+(trainingOn()?'EXIT TRAIN':'TRAIN')+'</button>'+
-      '<span class="cmd-state"><i></i>'+esc(syncOk?'SYNCED':syncMsg||'LOCAL')+'</span>'+
     '</div>';
   }
   document.addEventListener("change", function (e) {
-    if (e.target && e.target.id === "cmd-theme") setColorTheme(e.target.value);
+    if (e.target && e.target.id === "settings-theme") setColorTheme(e.target.value);
   });
 
   function render() {
@@ -11426,4 +11438,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a403ab6a3cf4ada5',t:'MTc5MDI3MjYyNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a403c7848f810ab7',t:'MTc5MDI3Mzc3Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
