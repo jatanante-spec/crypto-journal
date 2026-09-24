@@ -10550,18 +10550,12 @@
   }
 
   function commandStripHtml() {
-    var coin=String(state.settings.coinTicker||'SOL')+'/'+String(state.settings.vsCurrency||'gbp').toUpperCase();
-    return '<div class="cmd-context" aria-label="Active workspace context">'+
-      '<span class="cmd-pair" aria-label="Active pair">'+esc(coin)+'</span>'+
-      '<span class="cmd-context-note">active pair · controls stay in their screens</span>'+
-      '<span class="cmd-state"><i></i>'+esc(syncOk?'SYNCED':syncMsg||'LOCAL')+'</span>'+
-    '</div>'+
-    +'<div class="cmd-strip" role="toolbar" aria-label="Main navigation">'+
-      '<button type="button" class="cmd-btn '+(page==='scout'?'on':'')+'" data-page="scout">SCOUT</button>'+
-      '<button type="button" class="cmd-btn '+(page==='sizer'?'on':'')+'" data-page="sizer">SIZER</button>'+
-      '<button type="button" class="cmd-btn '+(page==='journal'?'on':'')+'" data-page="journal">JOURNAL</button>'+
-      '<button type="button" class="cmd-btn '+(page==='market'?'on':'')+'" data-page="market">MARKET</button>'+
-      '<button type="button" class="cmd-btn '+((page==='settings'||page==='manual'||page==='trend'||page==='updates')?'on':'')+'" data-page="settings">MORE</button>'+
+    return '<div class="cmd-strip" role="toolbar" aria-label="Main navigation">'+
+      '<button type="button" class="cmd-btn '+(page==='scout'?'on':'')+'" data-page="scout">SCOUT</button>'+ 
+      '<button type="button" class="cmd-btn '+(page==='sizer'?'on':'')+'" data-page="sizer">SIZER</button>'+ 
+      '<button type="button" class="cmd-btn '+(page==='journal'?'on':'')+'" data-page="journal">JOURNAL</button>'+ 
+      '<button type="button" class="cmd-btn '+(page==='market'?'on':'')+'" data-page="market">MARKET</button>'+ 
+      '<button type="button" class="cmd-btn '+((page==='settings'||page==='manual'||page==='trend'||page==='updates')?'on':'')+'" data-page="settings">MORE</button>'+ 
     '</div>';
   }
   document.addEventListener("change", function (e) {
@@ -11438,4 +11432,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a403c7848f810ab7',t:'MTc5MDI3Mzc3Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a403e325ec66d4ce',t:'MTc5MDI3NDkwOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
