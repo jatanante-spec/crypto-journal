@@ -897,6 +897,8 @@
     }
     next.books = books;
     next.deleted = mergeDeleted(parsed.deleted, next.deleted);
+    next.deletedPlans = mergeDeletedPlans(parsed.deletedPlans, next.deletedPlans);
+    next.plans = dropDeletedPlans(next.plans, next.deletedPlans);
     var book = books[pair.ticker];
     next.market = Object.assign({}, book.market);
     next.closes = book.closes.slice();
@@ -978,7 +980,8 @@
       hourlyVolumes: [],
       hourlyAts: [],
       books: books,
-      deleted: {}
+      deleted: {},
+      deletedPlans: {}
     };
   }
 
@@ -1007,6 +1010,7 @@
         hourlyVolumes: parsed.hourlyVolumes && parsed.hourlyVolumes.length ? parsed.hourlyVolumes.slice() : [],
         hourlyAts: parsed.hourlyAts && parsed.hourlyAts.length ? parsed.hourlyAts.slice() : [],
         deleted: mergeDeleted(null, parsed.deleted),
+        deletedPlans: mergeDeletedPlans(null, parsed.deletedPlans),
         updatedAt: parsed.updatedAt || null
       });
     } catch (e) {
@@ -1084,6 +1088,40 @@
     }
     put(remotePlans); put(localPlans);
     return order.map(function (id) { return map[id]; }).filter(Boolean);
+  }
+
+  var PLAN_DELETED_KEEP = 500;
+  function planDeletedMap(raw) {
+    var out = {};
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+    Object.keys(raw).slice(-PLAN_DELETED_KEEP).forEach(function (id) {
+      var key = String(id).slice(0, 120);
+      if (!key || key === "__n") return;
+      var value = raw[id];
+      out[key] = { at: value && value.at ? String(value.at).slice(0, 40) : "" };
+    });
+    return out;
+  }
+  function mergeDeletedPlans(a, b) {
+    var out = planDeletedMap(a), right = planDeletedMap(b);
+    Object.keys(right).forEach(function (id) { out[id] = right[id]; });
+    var ids = Object.keys(out);
+    if (ids.length > PLAN_DELETED_KEEP) {
+      ids.sort(function (x, y) { return String(out[y].at || "").localeCompare(String(out[x].at || "")); });
+      var keep = {};
+      ids.slice(0, PLAN_DELETED_KEEP).forEach(function (id) { keep[id] = out[id]; });
+      out = keep;
+    }
+    return out;
+  }
+  function markPlanDeleted(existing, id) {
+    var out = planDeletedMap(existing);
+    out[String(id)] = { at: new Date().toISOString() };
+    return mergeDeletedPlans(out, out);
+  }
+  function dropDeletedPlans(plans, deleted) {
+    var map = planDeletedMap(deleted);
+    return normalisePlans(plans).filter(function (p) { return !Object.prototype.hasOwnProperty.call(map, String(p.id)); });
   }
 
   function realTradeCount(s) {
@@ -1173,6 +1211,9 @@
   function deletedCount() {
     return Object.keys(deletedMap(state.deleted)).length;
   }
+  function hasPendingPlanDeletes() {
+    return Object.keys(planDeletedMap(state.deletedPlans)).length > 0;
+  }
 
   function cloudPayload() {
     return {
@@ -1187,7 +1228,8 @@
       hourlyVolumes: state.hourlyVolumes || [],
       hourlyAts: state.hourlyAts || [],
       books: payloadBooks(),
-      deleted: deletedMap(state.deleted)
+      deleted: deletedMap(state.deleted),
+      deletedPlans: planDeletedMap(state.deletedPlans)
     };
   }
 
@@ -1311,7 +1353,11 @@
     var mergedTrades = dropDeleted(
       mergeRemoteTrades(state.trades, remote.trades && remote.trades.length ? remote.trades : base.trades),
       mergedDeleted);
-    var mergedPlans = mergeRemotePlans(state.plans, remote.plans);
+    var mergedDeletedPlans = mergeDeletedPlans(state.deletedPlans, remote.deletedPlans),deletedPlanMap=planDeletedMap(mergedDeletedPlans);
+    var mergedPlans = dropDeletedPlans(mergeRemotePlans(state.plans, remote.plans), mergedDeletedPlans);
+    var remotePlanIdsToPurge = normalisePlans(remote.plans).filter(function (p) {
+      return Object.prototype.hasOwnProperty.call(deletedPlanMap, String(p.id));
+    }).map(function (p) { return String(p.id); });
     var next = hydrateBooks(remote, {
       settings: Object.assign({}, base.settings, remoteSettings),
       sizer: Object.assign({}, base.sizer, remote.sizer || {}),
@@ -1319,6 +1365,7 @@
       trades: mergedTrades,
       plans: mergedPlans,
       deleted: mergedDeleted,
+      deletedPlans: mergedDeletedPlans,
       closes: closesOk(remote.closes) ? normalizeCloses(remote.closes) : base.closes,
       hourly: remote.hourly && remote.hourly.length ? remote.hourly.slice() : [],
       hourlyVolumes: remote.hourlyVolumes && remote.hourlyVolumes.length ? remote.hourlyVolumes.slice() : [],
@@ -1361,6 +1408,7 @@
     draft = blankTrade(state.settings.coinTicker);
     applyingRemote = false;
     render();
+    if (remotePlanIdsToPurge.length) purgeDeletedPlansOnCloud(remotePlanIdsToPurge);
     if (keptLocalClose) queueCloudSave();
   }
 
@@ -1376,7 +1424,7 @@
 
   function queueCloudSave() {
     if (!canCloud()) return;
-    if (isThinState(state)) {
+    if (isThinState(state) && !hasPendingPlanDeletes()) {
       syncMsg = "No real trades to upload · coin preferences sync separately";
       return;
     }
@@ -1388,7 +1436,7 @@
 
   function flushCloudSave() {
     if (!canCloud()) return;
-    if (isThinState(state)) {
+    if (isThinState(state) && !hasPendingPlanDeletes()) {
       syncMsg = "No real trades to upload · coin preferences sync separately";
       return;
     }
@@ -1401,7 +1449,7 @@
 
   function pushCloud() {
     clearTimeout(syncTimer);syncTimer=null;
-    if (!canCloud() || applyingRemote || isThinState(state)) return;
+    if (!canCloud() || applyingRemote || (isThinState(state) && !hasPendingPlanDeletes())) return;
     pullEpoch += 1;
     google.script.run
       .withSuccessHandler(function () {
@@ -9530,20 +9578,33 @@
     var p=planById(id);if(!p)return;
     p.status=p.status==='ARCHIVED'?'WATCHING':'ARCHIVED';p.updatedAt=new Date().toISOString();state.plans=normalisePlans(state.plans).map(function(x){return x.id===p.id?p:x;});save();render();
   }
+  function purgeDeletedPlansOnCloud(ids) {
+    if (!canCloud() || !Array.isArray(ids) || !ids.length) return;
+    var seen = {};
+    ids.forEach(function (rawId) {
+      var id = String(rawId || '');
+      if (!id || seen[id]) return;
+      seen[id] = true;
+      google.script.run
+        .withSuccessHandler(function () {})
+        .withFailureHandler(function (err) {
+          syncOk = false;
+          syncMsg = 'Saved Plan delete will retry: ' + (err && err.message ? err.message : String(err || 'sync error'));
+          if (page === 'sizer' || page === 'journal' || page === 'settings') render();
+        })
+        .deleteSavedPlan(id);
+    });
+  }
   function deleteSavedPlan(id) {
     var p=planById(id);if(!p)return;
     if(!window.confirm('Delete this Saved Plan permanently? It will not delete any Journal trade already linked to it.'))return;
     state.plans=normalisePlans(state.plans).filter(function(x){return String(x.id)!==String(id);});
+    state.deletedPlans=markPlanDeleted(state.deletedPlans,id);
     if(String(planSelectedId)===String(id))planSelectedId='';
     errorMsg='';
     save();
     render();
-    if(canCloud()){
-      google.script.run
-        .withSuccessHandler(function(){syncOk=true;syncMsg='Saved Plan deleted';render();})
-        .withFailureHandler(function(err){syncOk=false;syncMsg=err&&err.message?err.message:String(err);render();})
-        .deleteSavedPlan(id);
-    }
+    purgeDeletedPlansOnCloud([id]);
   }
   function logSavedPlan(id) {
     var p=planById(id);if(!p)return;
@@ -11432,4 +11493,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a403e325ec66d4ce',t:'MTc5MDI3NDkwOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40406521872f2b0',t:'MTc5MDI3NjM0OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
