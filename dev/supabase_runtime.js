@@ -100,8 +100,11 @@
 
   function apiError(body, fallback) {
     if (body && body.message) return body.message;
+    if (body && body.msg) return body.msg;
     if (body && body.error_description) return body.error_description;
     if (body && body.error) return body.error;
+    if (body && body.error_code) return body.error_code;
+    if (typeof body === 'string' && body.trim()) return body.trim();
     return fallback || 'Supabase request failed.';
   }
 
@@ -148,8 +151,11 @@
       body: JSON.stringify({ email: email, password: password })
     });
     var text = await response.text();
-    var body = text ? JSON.parse(text) : null;
-    if (!response.ok || !body || !body.access_token) throw new Error(apiError(body, response.statusText));
+    var body = null;
+    try { body = text ? JSON.parse(text) : null; } catch (_) { body = text; }
+    if (!response.ok || !body || !body.access_token) {
+      throw new Error(apiError(body, 'Supabase sign-in failed (HTTP ' + response.status + ').'));
+    }
     prepareUserLocalData(body.user && body.user.id);
     session = body;
     saveJson(SESSION_STORAGE, session);
@@ -164,8 +170,11 @@
       body: JSON.stringify({ email: email, password: password })
     });
     var text = await response.text();
-    var body = text ? JSON.parse(text) : null;
-    if (!response.ok || !body || !body.user) throw new Error(apiError(body, response.statusText));
+    var body = null;
+    try { body = text ? JSON.parse(text) : null; } catch (_) { body = text; }
+    if (!response.ok || !body || !body.user) {
+      throw new Error(apiError(body, 'Supabase account creation failed (HTTP ' + response.status + ').'));
+    }
 
     // If email confirmation is disabled, Supabase returns a session and the
     // new user can enter the app immediately. Otherwise ask them to confirm
