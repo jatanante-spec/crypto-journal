@@ -310,6 +310,40 @@
     return out;
   }
 
+  var PLAN_DELETED_KEEP = 500;
+
+  function planDeletedMap(raw) {
+    var out = {};
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+    Object.keys(raw).slice(-PLAN_DELETED_KEEP).forEach(function (id) {
+      var key = String(id).slice(0, 120);
+      if (!key || key === '__n') return;
+      var value = raw[id];
+      out[key] = { at: value && value.at ? String(value.at).slice(0, 40) : '' };
+    });
+    return out;
+  }
+
+  function mergeDeletedPlans(a, b) {
+    var out = planDeletedMap(a), right = planDeletedMap(b);
+    Object.keys(right).forEach(function (id) { out[id] = right[id]; });
+    var ids = Object.keys(out);
+    if (ids.length > PLAN_DELETED_KEEP) {
+      ids.sort(function (x, y) { return String(out[y].at || '').localeCompare(String(out[x].at || '')); });
+      var keep = {};
+      ids.slice(0, PLAN_DELETED_KEEP).forEach(function (id) { keep[id] = out[id]; });
+      out = keep;
+    }
+    return out;
+  }
+
+  function dropDeletedPlanRows(plans, deletedPlans) {
+    var map = planDeletedMap(deletedPlans);
+    return arrayOrEmpty(plans).filter(function (plan) {
+      return plan && !Object.prototype.hasOwnProperty.call(map, String(plan.id));
+    });
+  }
+
   function coinToRow(coin, userId) {
     var ticker = String(coin.ticker || '').toUpperCase();
     if (!ticker) throw new Error('A coin-library row is missing ticker.');
@@ -348,7 +382,8 @@
       hourlyVolumes: clone(arrayOrEmpty(payload.hourlyVolumes)),
       hourlyAts: clone(arrayOrEmpty(payload.hourlyAts)),
       books: clone(objectOrEmpty(payload.books)),
-      deleted: clone(objectOrEmpty(payload.deleted))
+      deleted: clone(objectOrEmpty(payload.deleted)),
+      deletedPlans: clone(objectOrEmpty(payload.deletedPlans))
     });
   }
 
@@ -360,14 +395,15 @@
       request('/rest/v1/saved_plans?select=*&user_id=' + eq(userId) + '&order=' + inOrder('created_at.asc'))
     ]);
     var settings = results[0] && results[0][0] ? results[0][0] : {};
-    var legacy = objectOrEmpty(settings.legacy_state);
+    var legacy = objectOrEmpty(settings.legacy_state),deletedPlans=planDeletedMap(legacy.deletedPlans);
     return {
       updatedAt: settings.app_state_updated_at || null,
       settings: clone(objectOrEmpty(settings.settings)),
       sizer: clone(objectOrEmpty(legacy.sizer)),
       market: clone(objectOrEmpty(legacy.market)),
       trades: arrayOrEmpty(results[1]).map(tradeFromRow),
-      plans: arrayOrEmpty(results[2]).map(planFromRow),
+      plans: dropDeletedPlanRows(arrayOrEmpty(results[2]).map(planFromRow),deletedPlans),
+      deletedPlans: deletedPlans,
       closes: clone(arrayOrEmpty(legacy.closes)),
       hourly: clone(arrayOrEmpty(legacy.hourly)),
       hourlyVolumes: clone(arrayOrEmpty(legacy.hourlyVolumes)),
@@ -379,19 +415,25 @@
 
   async function saveJournalState(payload) {
     var userId = currentUserId();
+    payload = payload || {};
+    var existingSettings = await request('/rest/v1/user_settings?select=legacy_state&user_id=' + eq(userId));
+    var existingLegacy = existingSettings && existingSettings[0] ? objectOrEmpty(existingSettings[0].legacy_state) : {};
+    var deletedPlans = mergeDeletedPlans(existingLegacy.deletedPlans, payload.deletedPlans);
+    var safePayload = Object.assign({}, payload, { deletedPlans: deletedPlans });
+
     await request('/rest/v1/user_settings?on_conflict=user_id', {
       method: 'POST',
       headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
       body: JSON.stringify({
         user_id: userId,
-        settings: clone(objectOrEmpty(payload.settings)),
-        legacy_state: legacyFromPayload(payload),
+        settings: clone(objectOrEmpty(safePayload.settings)),
+        legacy_state: legacyFromPayload(safePayload),
         state_version: 1,
-        app_state_updated_at: payload.updatedAt || new Date().toISOString()
+        app_state_updated_at: safePayload.updatedAt || new Date().toISOString()
       })
     });
 
-    var trades = arrayOrEmpty(payload.trades).filter(Boolean).map(function (trade) { return tradeToRow(trade, userId); });
+    var trades = arrayOrEmpty(safePayload.trades).filter(Boolean).map(function (trade) { return tradeToRow(trade, userId); });
     if (trades.length) {
       await request('/rest/v1/journal_trades?on_conflict=user_id,source_id', {
         method: 'POST',
@@ -400,7 +442,7 @@
       });
     }
 
-    var plans = arrayOrEmpty(payload.plans).filter(Boolean).map(function (plan) { return planToRow(plan, userId); });
+    var plans = dropDeletedPlanRows(safePayload.plans, deletedPlans).filter(Boolean).map(function (plan) { return planToRow(plan, userId); });
     if (plans.length) {
       await request('/rest/v1/saved_plans?on_conflict=user_id,source_id', {
         method: 'POST',
@@ -408,7 +450,17 @@
         body: JSON.stringify(plans)
       });
     }
-    return { ok: true, updatedAt: payload.updatedAt || new Date().toISOString() };
+
+    var deletedIds = Object.keys(planDeletedMap(deletedPlans));
+    if (deletedIds.length) {
+      await Promise.all(deletedIds.map(function (id) {
+        return request('/rest/v1/saved_plans?user_id=' + eq(userId) + '&source_id=' + eq(id), {
+          method: 'DELETE',
+          headers: { Prefer: 'return=minimal' }
+        });
+      }));
+    }
+    return { ok: true, updatedAt: safePayload.updatedAt || new Date().toISOString() };
   }
 
   async function deleteSavedPlan(sourceId) {
