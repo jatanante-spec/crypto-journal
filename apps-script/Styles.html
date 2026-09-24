@@ -4748,5 +4748,63 @@ body.command-strip-mode #budget{top:0!important}
   body.command-strip-mode .stage{margin-left:300px!important}
 }
 
+/* SMOOTH-OLD-THEME-RESTORE — visual layer based on the corrected older frontend files.
+   The current Supabase bridge, saved plans, market safeguards and Command Strip navigation stay intact. */
+body.command-strip-mode{
+  --bg:#0b1220;--panel:#151f35;--panel-2:#1b2742;--line:#2a3a5c;--text:#e8eefc;--muted:#93a0c0;
+  --input:#0e1730;--accent:#3d7dff;--green:#3dcf8e;--green-bg:#123526;--yellow:#e6c35c;--yellow-bg:#332c12;
+  --red:#ff6b7a;--red-bg:#3a1520;--radius:14px;--shadow:0 10px 30px rgba(0,0,0,.28);
+  font-family:"Segoe UI","IBM Plex Sans",system-ui,sans-serif!important;
+  background:radial-gradient(900px 500px at 10% -10%,#1a2b55 0%,transparent 55%),radial-gradient(700px 400px at 100% 0%,#15243f 0%,transparent 50%),var(--bg);
+}
+body.command-strip-mode .app{display:block;min-height:100vh;background:transparent}
+body.command-strip-mode .stage{min-height:100vh;background:transparent}
+body.command-strip-mode main{max-width:1240px;width:100%;margin:0 auto;padding:16px 20px 42px!important;font-family:inherit}
+body.command-strip-mode #budget{top:0!important;background:var(--bg);border-bottom:1px solid var(--line)}
+body.command-strip-mode #budget .budget-bar{min-height:34px!important;padding:5px 14px!important;border:0!important;border-radius:0!important;background:rgba(11,18,32,.94)!important;box-shadow:none!important;gap:8px!important}
+body.command-strip-mode #budget .budget-bar *{font-size:11px!important}
+body.command-strip-mode .cmd-strip{min-height:44px;margin:0 0 14px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:rgba(21,31,53,.96);color:var(--muted);box-shadow:var(--shadow);gap:6px}
+body.command-strip-mode .cmd-prompt{font-size:18px;color:var(--accent)}
+body.command-strip-mode .cmd-input{min-width:160px;height:32px;padding:4px 8px;border-left:1px solid var(--line);color:var(--muted);font-size:12px;font-family:inherit}
+body.command-strip-mode .cmd-pair{padding:0 8px;font-size:11px;color:var(--text)}
+body.command-strip-mode .cmd-theme{width:154px;height:34px;min-height:34px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--input);color:var(--text);font:600 11px/1 inherit}
+body.command-strip-mode .cmd-btn{min-height:34px!important;height:34px!important;padding:7px 10px!important;border:1px solid transparent;border-radius:8px!important;background:transparent;color:var(--muted);font:700 11px/1 inherit;letter-spacing:.02em}
+body.command-strip-mode .cmd-btn:hover,body.command-strip-mode .cmd-btn.on{background:var(--panel-2);border-color:var(--line);color:var(--text)}
+body.command-strip-mode .cmd-btn.on{box-shadow:inset 0 -3px 0 var(--accent)}
+body.command-strip-mode .cmd-btn.cmd-fetch{color:#dbe9ff;border-color:#4f83df;background:#17325c}
+body.command-strip-mode .cmd-btn b{color:var(--accent);font-size:11px}
+body.command-strip-mode .cmd-state{font-size:10px;padding-left:8px}
+body.command-strip-mode .cmd-state i{width:7px;height:7px}
+body.command-strip-mode .page-head{gap:14px;margin:0 0 14px!important}
+body.command-strip-mode .page-head h2{font-size:22px!important;letter-spacing:0;margin:0 0 5px!important}
+body.command-strip-mode .page-head p{font-size:12px!important;line-height:1.45}
+body.command-strip-mode .card,body.command-strip-mode .cd-card,body.command-strip-mode .trade-card,body.command-strip-mode .sizer-mega,body.command-strip-mode .open-plan{border-radius:14px!important;box-shadow:var(--shadow)!important}
+body.command-strip-mode .card{padding:16px!important}
+body.command-strip-mode .cd-card{padding:16px!important;margin:0 0 12px!important;background:var(--panel)!important;border:1px solid var(--line)!important}
+body.command-strip-mode .btn,body.command-strip-mode .btn.secondary,body.command-strip-mode .btn.danger{min-height:38px!important;padding:8px 12px!important;border-radius:10px!important;font-size:12px!important;line-height:1.25}
+body.command-strip-mode #main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){min-height:38px!important;padding:8px 12px!important;border-radius:10px!important;font-size:12px!important}
+body.command-strip-mode #main summary{min-height:40px!important;padding:10px 12px!important;border-radius:10px!important;font-size:12px!important}
+body.command-strip-mode .cd-fold{margin:10px 0 0!important;border:1px solid var(--line)!important;border-radius:12px!important;background:var(--panel)!important}
+body.command-strip-mode .cd-fold>div{padding:0 12px 14px!important}
+body.command-strip-mode .saved-plans-panel{margin-top:12px!important;padding:14px!important;border-radius:14px!important;background:var(--panel)!important;border:1px solid var(--line)!important}
+body.command-strip-mode .saved-plan-card{padding:12px!important;border-radius:10px!important;background:rgba(21,31,53,.92)!important}
+body.command-strip-mode .saved-plan-actions button{min-height:34px!important;padding:7px 10px!important;border-radius:8px!important;font-size:11px!important}
+body.command-strip-mode .trade-card{padding:12px!important;background:var(--panel)!important;border:1px solid var(--line)!important}
+body.command-strip-mode .journal-mega{margin-bottom:14px!important}
+body.command-strip-mode .journal-mega h2{font-size:22px!important}
+body.command-strip-mode .journal-actions{gap:8px!important}
+body.command-strip-mode .journal-actions .btn{min-height:38px!important;padding:8px 12px!important;font-size:12px!important}
+body.command-strip-mode .watchlist-sheet,body.command-strip-mode #quick-switch-panel{border-radius:14px!important}
+body.command-strip-mode .library-header,body.command-strip-mode .quick-switch-head{padding:14px!important}
+body.command-strip-mode .library-search,body.command-strip-mode #quick-switch-search{min-height:38px!important;padding:8px 10px!important;border-radius:9px!important;font-size:12px!important}
+body.command-strip-mode .library-coin{padding:11px!important;border-radius:10px!important}
+body.command-strip-mode .library-open b{font-size:14px!important}
+body.command-strip-mode .library-open span{font-size:11px!important}
+body.command-strip-mode .library-star{font-size:23px!important}
+body.command-strip-mode[data-color-theme="signal"]{--bg:#0b1220;--panel:#151f35;--panel-2:#1b2742;--line:#2a3a5c;--text:#e8eefc;--muted:#93a0c0;--input:#0e1730;--accent:#3d7dff;--green:#3dcf8e;--green-bg:#123526;--yellow:#e6c35c;--yellow-bg:#332c12;--red:#ff6b7a;--red-bg:#3a1520}
+@media(min-width:1180px){body.command-strip-mode main{padding-left:24px!important;padding-right:24px!important}.cmd-strip{scrollbar-width:thin}}
+@media(max-width:900px){body.command-strip-mode main{padding:10px 12px 32px!important}}
+@media(max-width:650px){body.command-strip-mode .cmd-strip{border-radius:8px;padding:5px 6px}.cmd-theme{width:126px!important}.cmd-input{min-width:135px!important}body.command-strip-mode .cmd-btn{min-height:34px!important;height:34px!important;padding:7px 9px!important}}
+
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a402a6088c34075a',t:'MTc5MDI2MTkyMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4036c87cb829b32',t:'MTc5MDI3MDA1MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
