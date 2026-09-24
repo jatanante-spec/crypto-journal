@@ -1343,6 +1343,36 @@
     return order.map(function (id) { return map[id]; });
   }
 
+  function scoutWireHasHourly(book) {
+    var prices=book&&Array.isArray(book.hourly)?book.hourly:[],ats=book&&Array.isArray(book.hourlyAts)?book.hourlyAts:[];
+    if(prices.length<28||ats.length!==prices.length)return false;
+    for(var i=0;i<prices.length;i++){
+      if(!(Number(prices[i])>0)||!isFinite(Number(prices[i]))||!isFinite(Date.parse(ats[i])))return false;
+      if(i&&Date.parse(ats[i])-Date.parse(ats[i-1])!==3600000)return false;
+    }
+    return true;
+  }
+  function scoutWireLatest(book) {
+    var ats=book&&Array.isArray(book.hourlyAts)?book.hourlyAts:[],last=ats.length?Date.parse(ats[ats.length-1]):NaN;
+    if(!isFinite(last))last=Date.parse(book&&book.market&&book.market.lastFetchedAt);
+    return isFinite(last)?last:0;
+  }
+  function mergeScoutWireBooks(remoteBooks,localBooks) {
+    var out=Object.assign({},remoteBooks||{}),preserved=false;
+    Object.keys(localBooks||{}).forEach(function(ticker){
+      var local=localBooks[ticker],remote=out[ticker],localHas=scoutWireHasHourly(local),remoteHas=scoutWireHasHourly(remote);
+      if(!localHas||remoteHas&&scoutWireLatest(remote)>=scoutWireLatest(local))return;
+      var localMarket=local&&local.market||{},remoteMarket=remote&&remote.market||{};
+      out[ticker]=Object.assign({},remote||{},
+        {market:Object.assign({},remoteMarket,localMarket),
+         hourly:(local.hourly||[]).slice(-48),
+         hourlyVolumes:(local.hourlyVolumes||[]).slice(-48),
+         hourlyAts:(local.hourlyAts||[]).slice(-48)});
+      preserved=true;
+    });
+    return {books:out,preserved:preserved};
+  }
+
   function applyRemote(remote) {
     applyingRemote = true;
     var base = defaultState();
@@ -1365,7 +1395,8 @@
     var remotePlanIdsToPurge = normalisePlans(remote.plans).filter(function (p) {
       return Object.prototype.hasOwnProperty.call(deletedPlanMap, String(p.id));
     }).map(function (p) { return String(p.id); });
-    var next = hydrateBooks(remote, {
+    var mergedScoutBooks=mergeScoutWireBooks(remote.books,state.books),remoteForHydration=Object.assign({},remote,{books:mergedScoutBooks.books});
+    var next = hydrateBooks(remoteForHydration, {
       settings: Object.assign({}, base.settings, remoteSettings),
       sizer: Object.assign({}, base.sizer, remote.sizer || {}),
       market: Object.assign({}, base.market, remote.market || {}),
@@ -1416,7 +1447,11 @@
     applyingRemote = false;
     render();
     if (remotePlanIdsToPurge.length) purgeDeletedPlansOnCloud(remotePlanIdsToPurge);
-    if (keptLocalClose) queueCloudSave();
+    if (mergedScoutBooks.preserved) {
+      state.updatedAt=new Date().toISOString();
+      localStorage.setItem(KEY, JSON.stringify(state));
+    }
+    if (keptLocalClose || mergedScoutBooks.preserved) queueCloudSave();
   }
 
   function save() {
@@ -11500,4 +11535,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a404787fcaa8d85e',t:'MTc5MDI4MTAyNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40486df6ff90752',t:'MTc5MDI4MTYxNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
