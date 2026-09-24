@@ -623,25 +623,74 @@
   }
 
   function showSignedInBadge() {
-    var badge = document.createElement('div');
+    var badge = document.createElement('button');
     badge.id = 'cj-supabase-dev-badge';
-    /* Keep the account indicator important but in document flow. A fixed bottom
-       toast covered Scout rows on small screens; this status now sits after the
-       app content and remains available for sign-out. */
-    badge.style.cssText = 'display:block;width:max-content;max-width:calc(100% - 20px);margin:12px auto 28px;padding:7px 10px;border:1px solid #327b5d;border-radius:999px;background:#173529;color:#bdf4d9;font:12px system-ui,sans-serif;cursor:pointer;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
-    badge.setAttribute('role', 'button');
-    badge.setAttribute('tabindex', '0');
-    badge.textContent = 'Supabase dev · ' + ((session && session.user && session.user.email) || 'signed in');
-    badge.title = 'Signed-in development account. Click to sign out.';
-    badge.addEventListener('click', signOut);
-    badge.addEventListener('keydown', function (event) {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        signOut();
+    badge.type = 'button';
+    badge.setAttribute('aria-label', 'Open signed-in development account');
+    badge.setAttribute('aria-expanded', 'false');
+    badge.innerHTML = '<span class="cj-account-avatar">CT<i></i></span><span class="cj-account-label">Account</span>';
+    badge.title = 'Signed in as ' + ((session && session.user && session.user.email) || 'development account');
+
+    var detail = document.createElement('div');
+    detail.id = 'cj-supabase-dev-account-detail';
+    detail.hidden = true;
+    detail.innerHTML = '<span class="cj-account-live-dot"></span><span class="cj-account-identity"><b>Signed in</b><small>' +
+      escapeHtml((session && session.user && session.user.email) || 'development account') +
+      ' · Supabase development</small></span><button type="button" class="cj-account-signout">Sign out</button>';
+
+    var style = document.createElement('style');
+    style.textContent =
+      '#cj-supabase-dev-badge{display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:0 0 auto;min-width:29px;height:27px;padding:3px 7px;border:1px solid #397a62;border-radius:999px;background:#143a30;color:#c5f5df;font:700 10px/1 system-ui,sans-serif;cursor:pointer;white-space:nowrap}' +
+      '#cj-supabase-dev-badge:hover,#cj-supabase-dev-badge:focus-visible{border-color:#68d5a8;outline:2px solid #3d7dff;outline-offset:2px}' +
+      '#cj-supabase-dev-badge .cj-account-avatar{position:relative;display:inline-grid;place-items:center;width:19px;height:19px;flex:0 0 19px!important;min-width:19px!important;border-radius:50%;background:#225e4c;color:#e1fff1;font-size:8px;letter-spacing:.02em;opacity:1!important;overflow:visible!important;white-space:normal!important}' +
+      '#cj-supabase-dev-badge .cj-account-avatar i{position:absolute;right:-1px;bottom:0;width:6px;height:6px;border:1px solid #143a30;border-radius:50%;background:#54dfa1}' +
+      '#cj-supabase-dev-badge .cj-account-label{flex:0 0 auto!important;min-width:auto!important;font-size:10px;opacity:1!important;overflow:visible!important;white-space:nowrap!important}' +
+      '#cj-supabase-dev-account-detail{display:flex;align-items:center;gap:8px;flex:1 0 100%;order:99;min-width:0;margin:3px 0 0;padding:7px 9px;border:1px solid #2f6f5a;border-radius:9px;background:#102c27;color:#d1f8e5;font:11px/1.25 system-ui,sans-serif}' +
+      '#cj-supabase-dev-account-detail .cj-account-live-dot{width:7px;height:7px;flex:0 0 7px!important;min-width:7px!important;border-radius:50%;background:#54dfa1;box-shadow:0 0 0 3px #1e4d3d;opacity:1!important}' +
+      '#cj-supabase-dev-account-detail .cj-account-identity{flex:1 1 auto!important;min-width:0;display:block;overflow:hidden;opacity:1!important}' +
+      '#cj-supabase-dev-account-detail .cj-account-identity b{display:block;font-size:11px}' +
+      '#cj-supabase-dev-account-detail .cj-account-identity small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#9fd1bb;font-size:10px}' +
+      '#cj-supabase-dev-account-detail .cj-account-signout{margin-left:auto;flex:0 0 auto;padding:5px 8px;border:1px solid #8d4858;border-radius:7px;background:#391b2a;color:#ffb5bf;font:600 10px system-ui,sans-serif;cursor:pointer}' +
+      '@media(max-width:650px){#cj-supabase-dev-badge .cj-account-label{display:none}#cj-supabase-dev-account-detail{flex-basis:100%;padding:7px 8px}}';
+    document.head.appendChild(style);
+
+    var budget = document.getElementById('budget');
+    var observer = budget && typeof MutationObserver !== 'undefined' ? new MutationObserver(mount) : null;
+    var accountOpen = false;
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+      });
+    }
+    function mount() {
+      var bar = document.querySelector('#budget .budget-bar');
+      if (!bar) return;
+      bar.style.flexWrap = 'wrap';
+      if (!bar.contains(badge)) bar.appendChild(badge);
+      if (accountOpen) {
+        detail.hidden = false;
+        if (!bar.contains(detail)) bar.appendChild(detail);
+      } else if (detail.parentNode) {
+        detail.remove();
       }
+    }
+    function closeAccount() {
+      accountOpen = false;
+      badge.setAttribute('aria-expanded', 'false');
+      detail.hidden = true;
+      if (detail.parentNode) detail.remove();
+    }
+    badge.addEventListener('click', function () {
+      accountOpen = !accountOpen;
+      badge.setAttribute('aria-expanded', accountOpen ? 'true' : 'false');
+      mount();
     });
-    var mount = document.querySelector('.stage') || document.body;
-    mount.appendChild(badge);
+    detail.querySelector('.cj-account-signout').addEventListener('click', function () {
+      if (window.confirm('Sign out of the Supabase development account?')) signOut();
+    });
+    if (observer) observer.observe(budget, { childList: true });
+    mount();
   }
 
   if (session && session.access_token && session.user) {
