@@ -75,29 +75,31 @@ jobs:
 
           const functionDir = path.join(root, 'supabase', 'functions', 'journal-dev');
           await mkdir(functionDir, { recursive: true });
-          await writeFile(path.join(functionDir, 'index.html'), output, 'utf8');
-          await writeFile(path.join(functionDir, 'index.ts'), `const html = await Deno.readTextFile('./index.html');
-          
-          Deno.serve((request) => {
-            if (request.method !== 'GET' && request.method !== 'HEAD') {
-              return new Response('GET required.', { status: 405 });
-            }
-            return new Response(request.method === 'HEAD' ? null : html, {
-              headers: {
-                'content-type': 'text/html; charset=utf-8',
-                'cache-control': 'no-store',
-                'access-control-allow-origin': '*'
-              }
-            });
-          });
-          `, 'utf8');
+          const functionSource = [
+            `const html = ${JSON.stringify(output)};`,
+            '',
+            'Deno.serve((request) => {',
+            "  if (request.method !== 'GET' && request.method !== 'HEAD') {",
+            "    return new Response('GET required.', { status: 405 });",
+            '  }',
+            "  return new Response(request.method === 'HEAD' ? null : html, {",
+            '    headers: {',
+            "      'content-type': 'text/html; charset=utf-8',",
+            "      'cache-control': 'no-store',",
+            "      'access-control-allow-origin': '*'",
+            '    }',
+            '  });',
+            '});',
+            ''
+          ].join('\n');
+          await writeFile(path.join(functionDir, 'index.ts'), functionSource, 'utf8');
           NODE
 
       - name: Configure development frontend function
         shell: bash
         run: |
           if ! grep -q '^\[functions\.journal-dev\]' supabase/config.toml; then
-            printf '\n[functions.journal-dev]\nverify_jwt = false\nstatic_files = ["./functions/journal-dev/index.html"]\n' >> supabase/config.toml
+            printf '\n[functions.journal-dev]\nverify_jwt = false\n' >> supabase/config.toml
           fi
 
       - name: Deploy online development Journal frontend
