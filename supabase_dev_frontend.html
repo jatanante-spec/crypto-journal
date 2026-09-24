@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crypto Journal · Supabase development test</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #101315;
+      --panel: #181d20;
+      --panel-2: #20272b;
+      --line: #394247;
+      --text: #eef3f3;
+      --muted: #a7b4b7;
+      --accent: #4dd797;
+      --accent-2: #1f9d6a;
+      --danger: #ff8b87;
+      --warning: #f4c76d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at 15% 0%, #19302a 0, transparent 35%), var(--bg);
+      color: var(--text);
+      font: 15px/1.45 system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    main { width: min(1080px, calc(100% - 32px)); margin: 28px auto 56px; }
+    h1, h2 { margin: 0 0 8px; }
+    h1 { font-size: clamp(24px, 4vw, 36px); letter-spacing: -.02em; }
+    h2 { font-size: 18px; }
+    p { margin: 6px 0 12px; }
+    .muted { color: var(--muted); }
+    .notice {
+      border: 1px solid #876b2c;
+      background: #2b2516;
+      color: #f8df9a;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin: 16px 0;
+    }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .panel {
+      background: color-mix(in srgb, var(--panel) 94%, transparent);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 12px 30px #0003;
+    }
+    .wide { grid-column: 1 / -1; }
+    label { display: block; color: var(--muted); font-size: 13px; margin: 12px 0 5px; }
+    input {
+      width: 100%;
+      padding: 10px 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #0d1113;
+      color: var(--text);
+      outline: none;
+    }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px #4dd79733; }
+    button {
+      border: 1px solid var(--accent-2);
+      border-radius: 8px;
+      background: var(--accent);
+      color: #062719;
+      font-weight: 700;
+      padding: 10px 13px;
+      cursor: pointer;
+      margin: 12px 8px 0 0;
+    }
+    button.secondary { background: var(--panel-2); color: var(--text); border-color: var(--line); }
+    button.danger { background: transparent; color: var(--danger); border-color: #8e4747; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .status { min-height: 24px; margin-top: 12px; white-space: pre-wrap; }
+    .ok { color: var(--accent); }
+    .error { color: var(--danger); }
+    .warning { color: var(--warning); }
+    .user-pill {
+      display: inline-flex; gap: 8px; align-items: center;
+      padding: 6px 10px; border: 1px solid #2f765b; border-radius: 999px;
+      background: #173529; color: #b8f4d7; font-size: 13px;
+    }
+    pre {
+      max-height: 320px;
+      overflow: auto;
+      padding: 12px;
+      border-radius: 9px;
+      background: #0b0e10;
+      border: 1px solid #293136;
+      color: #cfe0de;
+      font: 12px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .hidden { display: none !important; }
+    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } .wide { grid-column: auto; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Crypto Journal · Supabase development test</h1>
+  <p class="muted">A disposable development-only frontend. It does not connect to the existing Apps Script application.</p>
+
+  <div class="notice">
+    Use only the project publishable/anon key. Never paste a secret or service-role key here.
+    This page keeps the access token in memory only and does not save it to browser storage.
+  </div>
+
+  <section class="panel" id="loginPanel">
+    <h2>Sign in</h2>
+    <p class="muted">Sign in as either development test user to verify the client-side authentication path.</p>
+    <label for="anonKey">Project publishable/anon key</label>
+    <input id="anonKey" type="password" autocomplete="off" placeholder="Paste the public/anon key from Project Settings → API">
+    <label for="email">Email</label>
+    <input id="email" type="email" autocomplete="username" placeholder="crypto-test-a@example.com">
+    <label for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password">
+    <button id="signInButton">Sign in</button>
+    <div id="loginStatus" class="status muted"></div>
+  </section>
+
+  <section class="panel hidden" id="appPanel">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+      <div>
+        <h2>Signed-in development session</h2>
+        <div id="userPill" class="user-pill"></div>
+      </div>
+      <button id="signOutButton" class="secondary">Sign out</button>
+    </div>
+    <div id="appStatus" class="status muted"></div>
+    <button id="refreshButton">Refresh my data</button>
+    <button id="createButton" class="secondary">Create temporary Journal + Plan rows</button>
+    <button id="deleteButton" class="danger">Delete rows created in this session</button>
+  </section>
+
+  <section class="grid hidden" id="dataGrid">
+    <div class="panel">
+      <h2>Profile</h2>
+      <pre id="profileOutput">Not loaded.</pre>
+    </div>
+    <div class="panel">
+      <h2>Settings</h2>
+      <pre id="settingsOutput">Not loaded.</pre>
+    </div>
+    <div class="panel">
+      <h2>My Journal trades</h2>
+      <pre id="tradesOutput">Not loaded.</pre>
+    </div>
+    <div class="panel">
+      <h2>My Saved Plans</h2>
+      <pre id="plansOutput">Not loaded.</pre>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  const PROJECT_URL = 'https://cvwdegezormxxhskojmf.supabase.co';
+  const state = { anonKey: '', accessToken: '', user: null, createdTradeIds: [], createdPlanIds: [] };
+  const $ = (id) => document.getElementById(id);
+
+  function setStatus(id, text, kind = 'muted') {
+    const el = $(id);
+    el.textContent = text || '';
+    el.className = `status ${kind}`;
+  }
+
+  function showApp(show) {
+    $('loginPanel').classList.toggle('hidden', show);
+    $('appPanel').classList.toggle('hidden', !show);
+    $('dataGrid').classList.toggle('hidden', !show);
+  }
+
+  function json(value) {
+    return JSON.stringify(value ?? null, null, 2);
+  }
+
+  async function api(path, options = {}) {
+    if (!state.anonKey) throw new Error('No publishable/anon key has been entered.');
+    const headers = new Headers(options.headers || {});
+    headers.set('apikey', state.anonKey);
+    if (state.accessToken) headers.set('Authorization', `Bearer ${state.accessToken}`);
+    if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+    const response = await fetch(`${PROJECT_URL}${path}`, { ...options, headers });
+    const text = await response.text();
+    let body = null;
+    try { body = text ? JSON.parse(text) : null; } catch (_) { body = text; }
+    if (!response.ok) {
+      const message = body && (body.message || body.error_description || body.error) ? (body.message || body.error_description || body.error) : text;
+      throw new Error(`${response.status}: ${message || response.statusText}`);
+    }
+    return body;
+  }
+
+  async function signIn() {
+    state.anonKey = $('anonKey').value.trim();
+    const email = $('email').value.trim();
+    const password = $('password').value;
+    if (!state.anonKey || !email || !password) {
+      setStatus('loginStatus', 'Enter the public/anon key, email and password.', 'error');
+      return;
+    }
+    $('signInButton').disabled = true;
+    setStatus('loginStatus', 'Signing in…');
+    try {
+      const session = await api('/auth/v1/token?grant_type=password', {
+        method: 'POST',
+        body: JSON.stringify({ email, password })
+      });
+      state.accessToken = session.access_token;
+      state.user = await api('/auth/v1/user');
+      $('userPill').textContent = `${state.user.email || email} · ${state.user.id}`;
+      showApp(true);
+      $('password').value = '';
+      setStatus('appStatus', 'Signed in. Loading records through the authenticated API…', 'ok');
+      await refreshData();
+    } catch (error) {
+      state.accessToken = '';
+      state.user = null;
+      setStatus('loginStatus', error.message, 'error');
+    } finally {
+      $('signInButton').disabled = false;
+    }
+  }
+
+  async function refreshData() {
+    if (!state.user) return;
+    try {
+      const userId = encodeURIComponent(state.user.id);
+      const [profiles, settings, trades, plans] = await Promise.all([
+        api(`/rest/v1/profiles?select=id,display_name,created_at,updated_at&id=eq.${userId}`),
+        api(`/rest/v1/user_settings?select=user_id,settings,created_at,updated_at&user_id=eq.${userId}`),
+        api('/rest/v1/journal_trades?select=id,source_id,trade_date,coin,side,entry,stop,target,notes,created_at,updated_at&order=created_at.desc'),
+        api('/rest/v1/saved_plans?select=id,source_id,coin,coin_id,vs_currency,setup,status,entry,stop,target,note,created_at,updated_at&order=created_at.desc')
+      ]);
+      $('profileOutput').textContent = json(profiles);
+      $('settingsOutput').textContent = json(settings);
+      $('tradesOutput').textContent = json(trades);
+      $('plansOutput').textContent = json(plans);
+      setStatus('appStatus', `Loaded ${trades.length} Journal row(s) and ${plans.length} Saved Plan(s). RLS filtered the response for the signed-in user.`, 'ok');
+    } catch (error) {
+      setStatus('appStatus', error.message, 'error');
+    }
+  }
+
+  async function createTemporaryRows() {
+    if (!state.user) return;
+    const stamp = Date.now();
+    $('createButton').disabled = true;
+    try {
+      const trade = await api('/rest/v1/journal_trades?select=id', {
+        method: 'POST',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify({
+          user_id: state.user.id,
+          source_id: `dev-ui-${stamp}`,
+          coin: 'DEV-TEST',
+          side: 'Buy',
+          entry: 1,
+          notes: 'Temporary row created by the development frontend'
+        })
+      });
+      const plan = await api('/rest/v1/saved_plans?select=id', {
+        method: 'POST',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify({
+          user_id: state.user.id,
+          source_id: `dev-ui-plan-${stamp}`,
+          coin: 'DEV-TEST',
+          status: 'TEST_ONLY',
+          entry: 1,
+          note: 'Temporary row created by the development frontend'
+        })
+      });
+      state.createdTradeIds.push(trade[0].id);
+      state.createdPlanIds.push(plan[0].id);
+      setStatus('appStatus', 'Temporary Journal and Saved Plan rows created under the signed-in user.', 'ok');
+      await refreshData();
+    } catch (error) {
+      setStatus('appStatus', error.message, 'error');
+    } finally {
+      $('createButton').disabled = false;
+    }
+  }
+
+  async function deleteTemporaryRows() {
+    if (!state.user) return;
+    $('deleteButton').disabled = true;
+    try {
+      for (const id of state.createdPlanIds) {
+        await api(`/rest/v1/saved_plans?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+      }
+      for (const id of state.createdTradeIds) {
+        await api(`/rest/v1/journal_trades?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+      }
+      state.createdPlanIds = [];
+      state.createdTradeIds = [];
+      setStatus('appStatus', 'Rows created in this browser session were deleted.', 'ok');
+      await refreshData();
+    } catch (error) {
+      setStatus('appStatus', error.message, 'error');
+    } finally {
+      $('deleteButton').disabled = false;
+    }
+  }
+
+  function signOut() {
+    state.accessToken = '';
+    state.user = null;
+    $('profileOutput').textContent = 'Not loaded.';
+    $('settingsOutput').textContent = 'Not loaded.';
+    $('tradesOutput').textContent = 'Not loaded.';
+    $('plansOutput').textContent = 'Not loaded.';
+    showApp(false);
+    setStatus('loginStatus', 'Signed out.');
+  }
+
+  $('signInButton').addEventListener('click', signIn);
+  $('signOutButton').addEventListener('click', signOut);
+  $('refreshButton').addEventListener('click', refreshData);
+  $('createButton').addEventListener('click', createTemporaryRows);
+  $('deleteButton').addEventListener('click', deleteTemporaryRows);
+  $('password').addEventListener('keydown', (event) => { if (event.key === 'Enter') signIn(); });
+})();
+</script>
+</body>
+</html>

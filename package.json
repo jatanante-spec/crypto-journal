@@ -1,0 +1,18 @@
+{
+  "name": "crypto-journal",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@google/clasp": "^3.4.1",
+    "@supabase/supabase-js": "^2.117.1",
+    "supabase": "^2.117.0"
+  }
+}
