@@ -9522,6 +9522,21 @@
     var p=planById(id);if(!p)return;
     p.status=p.status==='ARCHIVED'?'WATCHING':'ARCHIVED';p.updatedAt=new Date().toISOString();state.plans=normalisePlans(state.plans).map(function(x){return x.id===p.id?p:x;});save();render();
   }
+  function deleteSavedPlan(id) {
+    var p=planById(id);if(!p)return;
+    if(!window.confirm('Delete this Saved Plan permanently? It will not delete any Journal trade already linked to it.'))return;
+    state.plans=normalisePlans(state.plans).filter(function(x){return String(x.id)!==String(id);});
+    if(String(planSelectedId)===String(id))planSelectedId='';
+    errorMsg='';
+    save();
+    render();
+    if(canCloud()){
+      google.script.run
+        .withSuccessHandler(function(){syncOk=true;syncMsg='Saved Plan deleted';render();})
+        .withFailureHandler(function(err){syncOk=false;syncMsg=err&&err.message?err.message:String(err);render();})
+        .deleteSavedPlan(id);
+    }
+  }
   function logSavedPlan(id) {
     var p=planById(id);if(!p)return;
     if(planPairKey(p)!==activePlanPairKey()){planSelectedId=p.id;errorMsg='View this plan first so its coin and current evidence are active. No ticket was logged.';render();return;}
@@ -9541,7 +9556,7 @@
     var visible=all.filter(function(p){var pair=planPairKey(p),ok=true;if(planFilter==='current')ok=pair===active;else if(planFilter==='watching')ok=p.status==='WATCHING'||p.status==='READY';else if(planFilter==='archived')ok=p.status==='ARCHIVED';return ok;});
     var logged=all.filter(function(p){return p.status==='CONVERTED';}).length;
     var tabs=[['current','Current coin'],['all','All plans'],['watching','Watching'],['archived','Archived']];
-    var cards=visible.map(function(p){var current=planPairKey(p)===active,selected=String(p.id)===String(planSelectedId),status=p.status||'WATCHING',vs=String(p.vsCurrency||'gbp').toUpperCase(),source=planSourceLabel(p),vol=planVolumeLabel(p),actions='<button type="button" data-action="plan-view" data-id="'+esc(p.id)+'">View</button><button type="button" data-action="plan-duplicate" data-id="'+esc(p.id)+'">Duplicate</button>'+(status==='CONVERTED'?'<button type="button" class="secondary" data-page="journal">Open Journal</button>':'<button type="button" class="archive" data-action="plan-archive" data-id="'+esc(p.id)+'">'+(status==='ARCHIVED'?'Restore':'Archive')+'</button><button type="button" class="log" data-action="plan-log" data-id="'+esc(p.id)+'">Log as executed</button>');return '<article class="saved-plan-card '+planStatusClass(status)+(selected?' selected':'')+'"><div class="saved-plan-top"><div><b>'+esc(p.coin)+' / '+esc(vs)+' · '+esc(p.setup||'Unlabelled setup')+'</b><small>Saved '+esc(planSavedTime(p))+' · '+(status==='CONVERTED'?'<strong>JOURNAL LINKED</strong>':'<strong>UNLOGGED PLAN</strong>')+'</small></div><div class="saved-plan-badges"><span class="saved-plan-badge '+planStatusClass(status)+'">'+esc(planStatusLabel(status))+'</span><span class="saved-plan-badge">'+(current?'CURRENT':'OTHER COIN')+'</span></div></div><div class="saved-plan-levels"><div><label>Entry</label><b>'+esc(priceGbp(p.entry,5))+'</b></div><div><label>Stop</label><b>'+esc(priceGbp(p.stop,5))+'</b></div><div><label>Target</label><b>'+esc(priceGbp(p.target,5))+'</b></div></div><div class="saved-plan-meta"><span class="saved-plan-volume">'+esc(vol)+'</span><span>'+esc(source)+'</span><span>'+esc(p.note||'No note')+'</span></div><div class="saved-plan-actions">'+actions+'</div></article>';}).join('');
+    var cards=visible.map(function(p){var current=planPairKey(p)===active,selected=String(p.id)===String(planSelectedId),status=p.status||'WATCHING',vs=String(p.vsCurrency||'gbp').toUpperCase(),source=planSourceLabel(p),vol=planVolumeLabel(p),actions='<button type="button" data-action="plan-view" data-id="'+esc(p.id)+'">View</button><button type="button" data-action="plan-duplicate" data-id="'+esc(p.id)+'">Duplicate</button>'+(status==='CONVERTED'?'<button type="button" class="secondary" data-page="journal">Open Journal</button>':'<button type="button" class="archive" data-action="plan-archive" data-id="'+esc(p.id)+'">'+(status==='ARCHIVED'?'Restore':'Archive')+'</button><button type="button" class="log" data-action="plan-log" data-id="'+esc(p.id)+'">Log as executed</button><button type="button" class="danger" data-action="plan-delete" data-id="'+esc(p.id)+'">Delete</button>');return '<article class="saved-plan-card '+planStatusClass(status)+(selected?' selected':'')+'"><div class="saved-plan-top"><div><b>'+esc(p.coin)+' / '+esc(vs)+' · '+esc(p.setup||'Unlabelled setup')+'</b><small>Saved '+esc(planSavedTime(p))+' · '+(status==='CONVERTED'?'<strong>JOURNAL LINKED</strong>':'<strong>UNLOGGED PLAN</strong>')+'</small></div><div class="saved-plan-badges"><span class="saved-plan-badge '+planStatusClass(status)+'">'+esc(planStatusLabel(status))+'</span><span class="saved-plan-badge">'+(current?'CURRENT':'OTHER COIN')+'</span></div></div><div class="saved-plan-levels"><div><label>Entry</label><b>'+esc(priceGbp(p.entry,5))+'</b></div><div><label>Stop</label><b>'+esc(priceGbp(p.stop,5))+'</b></div><div><label>Target</label><b>'+esc(priceGbp(p.target,5))+'</b></div></div><div class="saved-plan-meta"><span class="saved-plan-volume">'+esc(vol)+'</span><span>'+esc(source)+'</span><span>'+esc(p.note||'No note')+'</span></div><div class="saved-plan-actions">'+actions+'</div></article>';}).join('');
     return '<section class="cd-card saved-plans-panel"><header><div><h3>Saved Plans</h3><small>Multiple scenarios · no Journal ticket until you choose Log as executed</small></div><button type="button" class="btn secondary saved-plan-save" data-action="plan-save">+ Save current plan</button></header><div class="saved-plans-toolbar">'+tabs.map(function(t){return '<button type="button" class="saved-plan-filter '+(planFilter===t[0]?'on':'')+'" data-action="plan-filter" data-filter="'+t[0]+'">'+t[1]+'</button>';}).join('')+'<span class="saved-plan-count">'+visible.length+' shown · '+logged+' linked</span></div><div class="saved-plan-list">'+(cards||'<p class="cd-small saved-plan-empty">No saved plans in this view. Saving a plan does not log a trade.</p>')+'</div><p class="cd-small saved-plans-foot"><b>Safe separation:</b> plans do not affect open-trade locks, P/L, statistics or account risk room.</p></section>';
   }
 
@@ -10822,6 +10837,7 @@
     if(action==='plan-view'){viewSavedPlan(btn.getAttribute('data-id'));return;}
     if(action==='plan-duplicate'){duplicateSavedPlan(btn.getAttribute('data-id'));return;}
     if(action==='plan-archive'){archiveSavedPlan(btn.getAttribute('data-id'));return;}
+    if(action==='plan-delete'){deleteSavedPlan(btn.getAttribute('data-id'));return;}
     if(action==='plan-log'){logSavedPlan(btn.getAttribute('data-id'));return;}
     if(action==='plan-filter'){planFilter=btn.getAttribute('data-filter')||'current';planSelectedId='';render();return;}
     if (action === "toggle-training" || action === "set-training") {
@@ -11379,4 +11395,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40379fc0fbed85e',t:'MTc5MDI3MDYwMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a403952dd8d188d3',t:'MTc5MDI3MTcxNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
