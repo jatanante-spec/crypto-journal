@@ -10490,11 +10490,8 @@
   }
 
   function commandStripHtml() {
-    var labels={sizer:'TICKET',journal:'JOURNAL',market:'MARKET',scout:'SCOUT',settings:'SETTINGS',manual:'MANUAL',trend:'TREND',updates:'UPDATES'};
-    var label=labels[page]||'WORKSPACE',coin=String(state.settings.coinTicker||'SOL')+'/'+String(state.settings.vsCurrency||'gbp').toUpperCase(),planCount=normalisePlans(state.plans).length;
+    var coin=String(state.settings.coinTicker||'SOL')+'/'+String(state.settings.vsCurrency||'gbp').toUpperCase(),planCount=normalisePlans(state.plans).length;
     return '<div class="cmd-strip" role="toolbar" aria-label="Compact command strip">'+
-      '<span class="cmd-prompt">:</span>'+
-      '<input class="cmd-input" value="'+esc(label.toLowerCase()+' --compact --'+String(state.settings.coinTicker||'SOL').toLowerCase())+'" readonly aria-label="Current command context">'+
       '<span class="cmd-pair">'+esc(coin)+'</span>'+
       '<select class="cmd-theme" id="cmd-theme" aria-label="Colour palette">'+colorThemeOptionsHtml()+'</select>'+
       '<button type="button" class="cmd-btn '+(page==='scout'?'on':'')+'" data-page="scout">SCOUT</button>'+
@@ -11382,4 +11379,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40339a77fe2a62f',t:'MTc5MDI2Nzk2Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40379fc0fbed85e',t:'MTc5MDI3MDYwMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
