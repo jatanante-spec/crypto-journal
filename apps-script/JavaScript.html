@@ -1137,16 +1137,23 @@
     return realTradeCount(s) === 0 && normalisePlans(s && s.plans).length === 0;
   }
 
-/** SYNC FIX 2 - a book on the wire carries what a device cannot recompute cheaply, not the candles it can
-    refetch. state itself keeps everything, so nothing local changes: this is a view for the payload only.
+/** SYNC FIX 2 - a book on the wire carries compact validated Scout evidence, while dropping the large OHLC
+    payload that a device can refetch. state itself keeps everything, so nothing local changes: this is a view for
+    the payload only. The final 48 hourly closes/timestamps remain so a pull does not erase a fresh Scout result.
     SYNC FIX 1 - deleted() is the list of trade ids this user removed on purpose; a union of both sides' lists is
     what makes a delete stick across devices, so it travels with the payload and is applied on a pull. */
+  var SCOUT_WIRE_HOURS = 48;
   function payloadBook(book) {
     if (!book) return book;
     var out = {
       market: Object.assign({}, book.market || {}),
       closes: (book.closes || []).slice(),
-      sizer: Object.assign({}, book.sizer || {})
+      sizer: Object.assign({}, book.sizer || {}),
+      /* Scout needs a compact validated tail after a pull; sending no hourly
+         arrays made a fresh Peek fall back to Unknown on the next sync. */
+      hourly: (book.hourly || []).slice(-SCOUT_WIRE_HOURS),
+      hourlyVolumes: (book.hourlyVolumes || []).slice(-SCOUT_WIRE_HOURS),
+      hourlyAts: (book.hourlyAts || []).slice(-SCOUT_WIRE_HOURS)
     };
     if (book.market) delete out.market.hourlyOhlc;
     return out;
@@ -11493,4 +11500,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40406521872f2b0',t:'MTc5MDI3NjM0OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4043f39ea0ff2b0',t:'MTc5MDI3ODY4MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
