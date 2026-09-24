@@ -16,7 +16,6 @@
           <h1>Scalping journal</h1>
           <p id="brand-pair">SOL / GBP · online</p>
         </div>
-        <button type="button" data-page="scout">Scout</button>
         <button type="button" data-page="sizer" class="active">Sizer</button>
         <button type="button" data-page="journal">Journal</button>
         <button type="button" data-page="market">Market</button>
@@ -38,40 +37,70 @@
     </div>
     <div id="watchlist-root" hidden>
       <div class="watchlist-scrim" data-action="close-watchlist"></div>
-      <section id="watchlist-sheet" class="watchlist-sheet library-sheet" role="dialog" aria-modal="true" aria-labelledby="wl-title">
-        <div class="library-header"><div><h2 id="wl-title">Coin library</h2><span class="library-build" title="U1 · T1 · C1 · S2 · P1 · CD1">PC1 · BP1 · S2</span><p id="library-count"></p></div><button type="button" class="library-close" data-action="close-watchlist" aria-label="Close coin library">×</button></div>
-        <div id="wl-mode-tabs" class="wl-mode-tabs">
-          <button type="button" data-action="wl-mode" data-wl-mode="library">Saved</button>
-          <button type="button" data-action="wl-mode" data-wl-mode="scout">Scout</button>
-          <button type="button" data-action="wl-mode" data-wl-mode="favourites" aria-label="Favourites" title="Favourites">★</button>
+      <div class="watchlist-sheet strip" id="watchlist-sheet" data-mood="ink" role="dialog" aria-modal="true" aria-labelledby="wl-title">
+        <div class="watchlist-grab" aria-hidden="true"></div>
+        <div class="watchlist-head">
+          <h2 id="wl-title">Scout <span id="wl-seats" class="wl-seats">0 / 8</span></h2>
+          <div class="watchlist-head-actions">
+            <button type="button" class="watchlist-expand" id="wl-expand" data-action="toggle-watchlist-full" aria-label="Full screen" title="Full screen">⤢</button>
+            <button type="button" class="watchlist-x" data-action="close-watchlist" aria-label="Close">×</button>
+          </div>
+        </div>
+        <div class="wl-mode-tabs" id="wl-mode-tabs">
+          <button type="button" data-action="wl-mode" data-wl-mode="scout" class="on">Scout</button>
+          <button type="button" data-action="wl-mode" data-wl-mode="seats">Seats</button>
+          <button type="button" data-action="wl-mode" data-wl-mode="library">Library</button>
           <button type="button" data-action="wl-mode" data-wl-mode="find">Find</button>
         </div>
-        <div class="library-search-wrap"><input id="wl-search" class="library-search" type="search" placeholder="Search saved coins…" aria-label="Search coins" autocomplete="off"><button type="button" data-action="library-clear" aria-label="Clear coin search">×</button></div>
-        <div class="library-toolbar"><span id="library-page" aria-live="polite"></span><select id="library-sort" aria-label="Sort coins"><option value="saved">Saved order</option><option value="az">Symbol A–Z</option><option value="name">Name A–Z</option></select></div>
-        <div id="scout-restored-tools" hidden><span>● Book · ◉ Peek · ○ Empty<br>24h change · cached backdrop, not Gates</span><button id="scout-restored-batch" type="button" data-action="scout-peek-all">Peek first 10</button></div>
-        <div id="wl-catalog" class="watchlist-catalog"></div>
-        <p class="library-hint">Tap a coin to open · ★ favourite · ⓘ details</p>
-        <details class="library-tools"><summary>More tools <span id="library-tools-status"></span></summary><div class="library-tools-body"><div class="library-tool-buttons"><button type="button" data-action="library-density" aria-pressed="false">Roomier rows</button></div>
-        <div class="library-refresh"><button id="wl-peek-all" type="button" data-action="scout-peek-all">Refresh page</button><button id="library-cancel" type="button" data-action="library-cancel">Cancel queue</button></div>
-        <p id="library-queue"></p><p id="library-storage" class="library-storage"></p>
-        <details class="watchlist-adv"><summary>Custom coin (advanced)</summary><div class="watchlist-adv-grid"><label>Ticker<input id="wl-ticker" maxlength="12"></label><label>Sample £<input id="wl-sample" inputmode="decimal"></label><label class="full">CoinGecko id<input id="wl-id"></label></div><div class="row"><button type="button" class="btn" data-action="watchlist-add-custom">Save to Library</button><button type="button" class="btn secondary" data-action="watchlist-clear-custom">Clear</button></div></details>
-        </div></details>
-        <p id="wl-toast" role="status"></p>
-        <div class="coin-sync-row"><span id="coin-sync-status" role="status">Coins: waiting for sync</span><button type="button" data-action="library-sync">Sync coins</button></div>
+        <div class="wl-tools">
+          <input class="watchlist-search" id="wl-search" type="search" placeholder="Filter…" autocomplete="off" />
+          <button type="button" class="wl-peek-all" id="wl-peek-all" data-action="scout-peek-all" hidden>Peek all</button>
+        </div>
+        <div class="wl-mood" id="wl-mood" hidden>
+          <span class="wl-mood-label">Mood</span>
+          <button type="button" data-action="scout-mood" data-mood="ink">Ink</button>
+          <button type="button" data-action="scout-mood" data-mood="slate">Slate</button>
+          <button type="button" data-action="scout-mood" data-mood="paper">Paper</button>
+        </div>
+        <p class="wl-legend" id="wl-legend" hidden>
+          <span><i class="book"></i>Book</span>
+          <span><i class="peek"></i>Peek</span>
+          <span><i class="none"></i>Empty</span>
+          <span class="wl-legend-note">· tape skim · not Gates</span>
+        </p>
+        <div class="watchlist-catalog" id="wl-catalog"></div>
+        <p class="watchlist-toast" id="wl-toast"></p>
+        <details class="watchlist-adv">
+          <summary>Custom coin (advanced)</summary>
+          <div class="watchlist-adv-grid">
+            <label>Ticker<input id="wl-ticker" placeholder="MANA" maxlength="12" /></label>
+            <label>Sample £<input id="wl-sample" placeholder="0.28" inputmode="decimal" /></label>
+            <label class="full">CoinGecko id<input id="wl-id" placeholder="decentraland" /></label>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button type="button" class="btn" data-action="watchlist-add-custom">Add to library</button>
+            <button type="button" class="btn secondary" data-action="watchlist-clear-custom">Clear</button>
+          </div>
+        </details>
+      </div>
+    </div>
+    <div id="trend-dialog-root" hidden>
+      <div class="trend-dialog-backdrop" data-action="trend-close"></div>
+      <section class="trend-dialog" id="trend-dialog" role="dialog" aria-modal="true" aria-labelledby="trend-dialog-title">
+        <header>
+          <div><h2 id="trend-dialog-title">Signal history</h2><small id="trend-dialog-subtitle"></small></div>
+          <button type="button" id="trend-dialog-close" data-action="trend-close" aria-label="Close">×</button>
+        </header>
+        <div id="trend-dialog-body"></div>
       </section>
     </div>
-    <div id="quick-switch-root" hidden>
-      <div class="quick-switch-backdrop" data-action="quick-close"></div>
-      <section id="quick-switch-panel" role="dialog" aria-modal="true" aria-labelledby="quick-switch-title" aria-describedby="quick-switch-destination">
-        <div class="quick-switch-handle" aria-hidden="true"></div>
-        <header class="quick-switch-head"><div class="quick-switch-heading"><h2 id="quick-switch-title">Switch coin</h2><button type="button" id="quick-switch-close" data-action="quick-close" aria-label="Close coin switcher">×</button></div><p id="quick-switch-destination"></p><input type="search" id="quick-switch-search" placeholder="Search saved coins…" aria-label="Search saved coins by ticker or name" autocomplete="off"><div class="quick-switch-filters" role="group" aria-label="Coin filter"><button id="quick-switch-all" type="button" data-action="quick-filter" data-filter="all">All saved</button><button id="quick-switch-favourites" type="button" data-action="quick-filter" data-filter="favourites">★ Favourites</button></div></header>
-        <div id="quick-switch-list"></div>
-        <footer class="quick-switch-foot"><span id="quick-switch-count" role="status"></span><button id="quick-switch-more" type="button" data-action="quick-more" hidden>Show more</button><button type="button" data-action="quick-library">Manage library ↗</button></footer>
-      </section>
-    </div>
-    <div id="trend-dialog-root" hidden><div class="trend-dialog-backdrop" data-action="trend-close"></div><section class="trend-dialog" role="dialog" aria-modal="true" aria-labelledby="trend-dialog-title"><header><h2 id="trend-dialog-title"></h2><button id="trend-dialog-close" type="button" data-action="trend-close" aria-label="Close diagnostics">×</button></header><div id="trend-dialog-body"></div></section></div>
-    <div id="triage-scrim" hidden data-action="triage-close"></div>
-    <dialog id="cd-dialog" aria-labelledby="cd-dialog-title"><header class="cd-dialog-head"><div><h2 id="cd-dialog-title">Cue deck</h2><small>Read-only instruments · existing engine</small></div><button type="button" id="cd-dialog-close" data-action="cd-close" aria-label="Close cue deck">×</button></header><div id="cd-dialog-body"></div></dialog>
+    <dialog id="cd-dialog" aria-labelledby="cd-dialog-title">
+      <header class="cd-dialog-head">
+        <div><h2 id="cd-dialog-title">Cue Deck</h2><small>Read-only instrument evidence</small></div>
+        <button type="button" id="cd-dialog-close" data-action="cd-close" aria-label="Close Cue Deck">×</button>
+      </header>
+      <div id="cd-dialog-body"></div>
+    </dialog>
     <?!= include('JavaScript'); ?>
-  </body>
+  <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a405651839b4db2b',t:'MTc5MDI5MDcxNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
