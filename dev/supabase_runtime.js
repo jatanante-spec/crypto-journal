@@ -18,8 +18,20 @@
   var KEY_STORAGE = 'crypto-journal-dev-supabase-anon-key-v1';
   var SESSION_STORAGE = 'crypto-journal-dev-supabase-session-v1';
   var ACTIVE_USER_STORAGE = 'crypto-journal-dev-active-user-v1';
+
+  /*
+   * This is the public browser key, not a secret. Configure it once here from
+   * Supabase Project Settings → API. Never put a service_role key here.
+   * Keeping it in the static frontend is normal for Supabase browser clients;
+   * RLS and Auth protect the data. The local-storage fallback keeps older
+   * development builds working until this file is updated.
+   */
+  var CONFIGURED_PUBLIC_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2d2RlZ2V6b3JteHhoc2tvam1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxOTYzODIsImV4cCI6MjEwNTc3MjM4Mn0.5XKLt5zbmBs8_TZvToO0mO3qx4pk_uMgjVCnuu_109s';
   var session = loadJson(SESSION_STORAGE);
-  var anonKey = localStorage.getItem(KEY_STORAGE) || '';
+  var anonKey = CONFIGURED_PUBLIC_KEY || localStorage.getItem(KEY_STORAGE) || '';
+  if (CONFIGURED_PUBLIC_KEY && localStorage.getItem(KEY_STORAGE) !== CONFIGURED_PUBLIC_KEY) {
+    try { localStorage.setItem(KEY_STORAGE, CONFIGURED_PUBLIC_KEY); } catch (_) {}
+  }
 
   // The original Apps Script UI uses device-local keys that are not user-scoped.
   // Clear account-owned local state when changing development accounts, but
@@ -109,7 +121,7 @@
   }
 
   async function request(path, options, retried) {
-    if (!anonKey) throw new Error('Enter the Supabase publishable/anon key in the development sign-in panel.');
+    if (!anonKey) throw new Error('The development site has not been configured with its public Supabase key yet.');
     options = options || {};
     var headers = new Headers(options.headers || {});
     headers.set('apikey', anonKey);
@@ -129,7 +141,7 @@
   }
 
   async function signIn(email, password) {
-    if (!anonKey) throw new Error('Enter the publishable/anon key first.');
+    if (!anonKey) throw new Error('The development site has not been configured with its public Supabase key yet.');
     var response = await fetch(PROJECT_URL + '/auth/v1/token?grant_type=password', {
       method: 'POST',
       headers: { apikey: anonKey, 'Content-Type': 'application/json' },
@@ -142,6 +154,30 @@
     session = body;
     saveJson(SESSION_STORAGE, session);
     localStorage.setItem(KEY_STORAGE, anonKey);
+  }
+
+  async function signUp(email, password) {
+    if (!anonKey) throw new Error('The development site has not been configured with its public Supabase key yet.');
+    var response = await fetch(PROJECT_URL + '/auth/v1/signup', {
+      method: 'POST',
+      headers: { apikey: anonKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: password })
+    });
+    var text = await response.text();
+    var body = text ? JSON.parse(text) : null;
+    if (!response.ok || !body || !body.user) throw new Error(apiError(body, response.statusText));
+
+    // If email confirmation is disabled, Supabase returns a session and the
+    // new user can enter the app immediately. Otherwise ask them to confirm
+    // the email and then use the normal Sign in button.
+    if (body.access_token) {
+      prepareUserLocalData(body.user.id);
+      session = body;
+      saveJson(SESSION_STORAGE, session);
+      localStorage.setItem(KEY_STORAGE, anonKey);
+      return { signedIn: true };
+    }
+    return { signedIn: false, confirmationRequired: true };
   }
 
   async function signOut() {
@@ -456,37 +492,62 @@
       '#cj-supabase-dev-auth p{color:#abb9bc;margin:6px 0 14px}' +
       '#cj-supabase-dev-auth label{display:block;margin:12px 0 5px;color:#abb9bc;font-size:13px}' +
       '#cj-supabase-dev-auth input{display:block;width:100%;box-sizing:border-box;padding:10px;border:1px solid #405056;border-radius:8px;background:#0d1214;color:#eef3f3}' +
-      '#cj-supabase-dev-auth button{margin-top:16px;padding:10px 14px;border:1px solid #32aa78;border-radius:8px;background:#4dd797;color:#06271a;font-weight:700;cursor:pointer}' +
+      '#cj-supabase-dev-auth .cj-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}' +
+      '#cj-supabase-dev-auth button{padding:10px 14px;border:1px solid #32aa78;border-radius:8px;background:#4dd797;color:#06271a;font-weight:700;cursor:pointer}' +
+      '#cj-supabase-dev-auth button.cj-secondary{border-color:#52706d;background:#203034;color:#d7eeea}' +
       '#cj-supabase-dev-auth .cj-status{min-height:23px;margin-top:12px;color:#f2c86d;white-space:pre-wrap}' +
       '#cj-supabase-dev-auth .cj-small{font-size:12px;color:#849497;margin-top:14px}' +
       '</style>' +
-      '<div class="cj-card"><h2>Crypto Journal development sign-in</h2>' +
-      '<p>This local build uses Supabase Auth and the tested per-user RLS tables. The production Apps Script app is not changed.</p>' +
-      '<label>Publishable/anon key</label><input id="cj-sb-key" type="password" autocomplete="off" placeholder="Paste the public key from Project Settings → API">' +
-      '<label>Email</label><input id="cj-sb-email" type="email" autocomplete="username" placeholder="crypto-test-a@example.com">' +
+      '<div class="cj-card"><h2>Crypto Journal</h2>' +
+      '<p>Sign in with your own Supabase account, or create one for this development Journal.</p>' +
+      '<label>Email</label><input id="cj-sb-email" type="email" autocomplete="username" placeholder="you@example.com">' +
       '<label>Password</label><input id="cj-sb-password" type="password" autocomplete="current-password">' +
-      '<button id="cj-sb-signin">Sign in</button><div id="cj-sb-status" class="cj-status"></div>' +
-      '<div class="cj-small">This development build uses the Supabase Edge Function for market data. Stored state, Journal, Saved Plans and coin preferences use Supabase. The production Apps Script app is unchanged.</div></div>';
+      '<div class="cj-actions"><button id="cj-sb-signin">Sign in</button><button id="cj-sb-signup" class="cj-secondary">Create account</button></div>' +
+      '<div id="cj-sb-status" class="cj-status"></div>' +
+      '<div class="cj-small">This development site uses the configured public Supabase key behind the scenes. It is safe for a browser client; never use a service-role key. Your Journal, Saved Plans and coin preferences remain separated by your Supabase account.</div></div>';
     document.body.appendChild(root);
-    var keyInput = document.getElementById('cj-sb-key');
     var emailInput = document.getElementById('cj-sb-email');
     var passwordInput = document.getElementById('cj-sb-password');
     var status = document.getElementById('cj-sb-status');
-    keyInput.value = anonKey;
-    document.getElementById('cj-sb-signin').addEventListener('click', async function () {
-      anonKey = keyInput.value.trim();
+
+    async function authenticate(mode) {
       var email = emailInput.value.trim();
       var password = passwordInput.value;
-      if (!anonKey || !email || !password) { status.textContent = 'Enter the key, email and password.'; return; }
-      status.textContent = 'Signing in…';
+      if (!anonKey) {
+        status.textContent = 'The development site still needs its public Supabase key configured once in dev/supabase_runtime.js.';
+        return;
+      }
+      if (!email || !password) {
+        status.textContent = 'Enter your email and password.';
+        return;
+      }
+      if (mode === 'signup' && password.length < 6) {
+        status.textContent = 'Use a password of at least 6 characters.';
+        return;
+      }
+      status.textContent = mode === 'signup' ? 'Creating account…' : 'Signing in…';
       try {
-        await signIn(email, password);
-        window.location.reload();
+        if (mode === 'signup') {
+          var result = await signUp(email, password);
+          if (result.signedIn) {
+            window.location.reload();
+          } else {
+            status.textContent = 'Account created. Check your email to confirm it, then use Sign in.';
+          }
+        } else {
+          await signIn(email, password);
+          window.location.reload();
+        }
       } catch (error) {
         status.textContent = error.message || String(error);
       }
+    }
+
+    document.getElementById('cj-sb-signin').addEventListener('click', function () { authenticate('signin'); });
+    document.getElementById('cj-sb-signup').addEventListener('click', function () { authenticate('signup'); });
+    passwordInput.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') authenticate('signin');
     });
-    passwordInput.addEventListener('keydown', function (event) { if (event.key === 'Enter') document.getElementById('cj-sb-signin').click(); });
   }
 
   function showSignedInBadge() {
