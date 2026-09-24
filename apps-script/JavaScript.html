@@ -384,6 +384,9 @@
       return;
     }
     var pair = pairByTicker(want);
+    ensureCoinBook(want);
+    state.books[pair.ticker].market.scoutPeekStatus='pending';
+    state.books[pair.ticker].market.scoutPeekStatusAt=new Date().toISOString();
     scoutPeekInflight[want] = true;
     if(triageJob&&Object.prototype.hasOwnProperty.call(triageJob.items,want))triageJob.items[want]='active';
     scoutSelected = want;
@@ -408,6 +411,9 @@
       })
       .withFailureHandler(function (err) {
         delete scoutPeekInflight[want];
+        ensureCoinBook(want);
+        state.books[want].market.scoutPeekStatus='failed';
+        state.books[want].market.scoutPeekStatusAt=new Date().toISOString();
         var left = scoutPeekCount() + scoutPeekQueue.length;
         triageJobOutcome(want,false,err&&err.message?err.message:String(err||''));
         watchlistToast = "Peek " + want + " failed: " +
@@ -698,6 +704,8 @@
         ? live.hourlyAts.slice(-168)
         : [];
     }
+    book.market.scoutPeekStatus='success';
+    book.market.scoutPeekStatusAt=new Date().toISOString();
     if (pair.ticker === state.settings.coinTicker) {
       state.market = Object.assign({}, book.market);
       state.closes = book.closes.slice();
@@ -781,7 +789,7 @@
     return libraryPageCoins().map(function(c,i){
       var active=c.ticker===state.settings.coinTicker;
       var book=active?{market:state.market,closes:state.closes,hourly:state.hourly,hourlyVolumes:state.hourlyVolumes,hourlyAts:state.hourlyAts}:state.books&&state.books[c.ticker];
-      var m=book&&book.market,valid=!!(m&&m.lastFetchedAt&&Number(m.price)>0);
+      var m=book&&book.market,context=book?triageContext(book):{ready:false},valid=!!(m&&m.lastFetchedAt&&Number(m.price)>0&&context.ready&&m.scoutPeekStatus!=='failed'&&m.scoutPeekStatus!=='pending');
       var cl=valid?scoutClimateFromBook(book):null;
       var source=valid?(/peek/i.test(String(m.source||''))?'Peek':'Book'):'Empty';
       var age=valid?scoutAgeLabel(m.lastFetchedAt):'';
@@ -10362,7 +10370,7 @@
   // S1: pure per-coin Scout summaries; never swaps the active trading state.
   var triageFilter='review',triageKind='any',triageQuery='',triageFav=false,triageSort='priority',triageSelected='',triageCache=[],triageScroll=0,triageSheet=false,triageFocus=null,triageBatch=[],triageOldOverflow='';
   function triageBook(ticker){return ticker===state.settings.coinTicker?{market:state.market,closes:state.closes,hourly:state.hourly,hourlyAts:state.hourlyAts,hourlyVolumes:state.hourlyVolumes,sizer:state.sizer}:state.books&&state.books[ticker]||{market:{},closes:[],hourly:[],hourlyAts:[],hourlyVolumes:[],sizer:{}};}
-  function triageFreshness(book){var m=book.market||{},at=Date.parse(m.lastFetchedAt),age=Date.now()-at;return {stale:!(Number(m.price)>0)||!isFinite(at)||age<0||age>=STALE_MS,age:age,label:!isFinite(at)||!(Number(m.price)>0)?'Not fetched':age<0?'Invalid timestamp':age>=STALE_MS?'Stale '+ageLabel(age):ageLabel(age)};}
+  function triageFreshness(book){var m=book.market||{},at=Date.parse(m.lastFetchedAt),age=Date.now()-at,status=String(m.scoutPeekStatus||''),failed=status==='failed',pending=status==='pending';return {stale:failed||pending||!(Number(m.price)>0)||!isFinite(at)||age<0||age>=STALE_MS,age:age,label:failed?'Refresh failed · cached data withheld':pending?'Refresh pending · cached data withheld':!isFinite(at)||!(Number(m.price)>0)?'Not fetched':age<0?'Invalid timestamp':age>=STALE_MS?'Stale '+ageLabel(age):ageLabel(age)};}
   /* SC1 \u2014 Scout's early warning, in the Timing gate's own words. The position words are the labels Market
      already computes, and the figure is the gate's dip level. Nothing here decides a buy: ticket, account and
      plan gates still run in Market on their own, and no coin is fetched to fill this in. */
@@ -10406,8 +10414,14 @@
     var watch=!c.ready?'Unknown · hourly data needed':kind==='hold'?'Hold observed · NOT GO':o.watch;
     var row={pair:pair,book:book,context:c,observation:o,continuation:continuation,fresh:fresh,price:px,change:isFinite(Date.parse(m.lastFetchedAt))&&m.change24h!=null&&isFinite(Number(m.change24h))?Number(m.change24h):null,kind:kind,watch:watch,mismatch:mismatch,draftKnown:draftKnown,gap:gap,review:c.ready&&['turn','hold'].indexOf(kind)>=0};
     row.pattern=pcObserve(pair.ticker,book,c,record);row.watch+=' · Retest: '+pcLabel(row.pattern.code);var stored=pcLoad().coins[pair.ticker];if(c.ready&&stored&&!stored.ack&&['BREAK','HELD','INVALIDATED'].indexOf(row.pattern.code)>=0)row.review=true;row.candle=crObserve(pair.ticker,book,c,record);row.watch+=' · Candles: '+crShort(row.candle);var crStored=crLoad().coins[pair.ticker];if(c.ready&&row.candle.ready&&row.candle.lead&&row.candle.fresh&&row.candle.lead.supported&&row.candle.lead.direction!=='neutral'&&crStored&&!crStored.ack)row.review=true;
+    var scanState=triageJob&&Object.prototype.hasOwnProperty.call(triageJob.items,pair.ticker)?triageJob.items[pair.ticker]:null;
+    if(scanState&&scanState!=='done'){
+      row.scanStatus=scanState;
+      row.context=Object.assign({},row.context,{ready:false,title:scanState==='failed'?'Refresh incomplete · cached cue withheld':'Refresh pending · cached cue withheld',say:scanState==='failed'?'This coin did not return a complete current Peek. Its previous cue is not shown as current.':'This coin is queued or being refreshed. Its previous cue is not shown as current.'});
+      row.kind='unknown';row.watch=scanState==='failed'?'Data needs attention · refresh incomplete':'Refresh pending · current cue withheld';row.review=true;row.mismatch=false;
+    }
     row.pos=scoutPosition(row.context.ready?scoutClimateFromBook(book):null,px);
-    if(record)triageRecord(row);return row;
+    if(record&&(!scanState||scanState==='done'))triageRecord(row);return row;
   }
   function triageRecord(row){
     var key=row.pair.ticker,o=row.observation,c=row.context,m=row.book.market||{},store=trendLoad(),prior=store.coins[key];
@@ -10423,7 +10437,15 @@
     var active=document.activeElement,focusTicker=el.contains(active)&&active.getAttribute('data-ticker');
     document.getElementById('triage-count-review').textContent=triageCache.filter(function(r){return r.review;}).length;document.getElementById('triage-count-all').textContent=triageCache.length;document.getElementById('triage-count-quality').textContent=triageCache.filter(function(r){return !r.context.ready;}).length;document.getElementById('triage-count-draft').textContent=triageCache.filter(function(r){return r.mismatch;}).length;
     document.querySelectorAll('[data-action="triage-filter"]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.filter===triageFilter);});document.querySelectorAll('[data-action="triage-kind"]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.kind===triageKind);});document.querySelector('[data-action="triage-fav"]').setAttribute('aria-pressed',triageFav);document.getElementById('triage-sort').value=triageSort;
-    el.innerHTML=rows.map(function(r){var c=r.pair;return '<button type="button" class="triage-row'+(triageSelected===c.ticker?' selected':'')+'" data-action="triage-inspect" data-ticker="'+esc(c.ticker)+'" aria-label="Inspect '+esc(c.name)+'"><span><b>'+esc(c.ticker)+(state.settings.watchlist.indexOf(c.ticker)>=0?' ★':'')+'</b><small>'+esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched')+'</small></span><span><b>'+esc(r.context.ready?r.observation.trend:'Unknown')+'</b><small>'+esc((r.mismatch?'Draft discrepancy · ':'')+r.watch)+'</small>'+r.pos.chip+'</span><span class="triage-change '+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(r.change==null?'—':(r.change>=0?'+':'')+num(r.change,1)+'%')+'<small>'+esc(r.fresh.label)+'</small>'+r.pos.midTag+'</span><span class="triage-data">'+esc(r.context.ready?'Hourly ready':'Needs data')+'<small>'+esc(r.mismatch?'Check draft':'Not evaluated')+'</small></span></button>';}).join('')||'<p class="triage-empty">No matching coins. Try All saved or Data needs attention. No result is also useful information.</p>';
+    el.innerHTML=rows.map(function(r){
+      var c=r.pair,scanPending=r.scanStatus&&r.scanStatus!=='done',scanFailed=r.scanStatus==='failed';
+      var trendLabel=scanFailed?'Outdated':scanPending?'Refreshing…':r.context.ready?r.observation.trend:'Unknown';
+      var dataLabel=scanFailed?'Refresh incomplete':scanPending?'Current Peek pending':r.context.ready?'Hourly ready':'Needs data';
+      var freshnessLabel=scanFailed?'Cached · not current':scanPending?'Cached · awaiting refresh':r.fresh.label;
+      var currentChange=!scanPending&&!scanFailed&&r.change!=null;
+      var changeText=currentChange?(r.change>=0?'+':'')+num(r.change,1)+'%':'—';
+      return '<button type="button" class="triage-row'+(triageSelected===c.ticker?' selected':'')+'" data-action="triage-inspect" data-ticker="'+esc(c.ticker)+'" aria-label="Inspect '+esc(c.name)+'"><span><b>'+esc(c.ticker)+(state.settings.watchlist.indexOf(c.ticker)>=0?' ★':'')+'</b><small>'+esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched')+'</small></span><span><b>'+esc(trendLabel)+'</b><small>'+esc((r.mismatch?'Draft discrepancy · ':'')+r.watch)+'</small>'+r.pos.chip+'</span><span class="triage-change '+(currentChange&&r.change>0?'up':currentChange&&r.change<0?'down':'')+'">'+esc(changeText)+'<small>'+esc(freshnessLabel)+'</small>'+r.pos.midTag+'</span><span class="triage-data">'+esc(dataLabel)+'<small>'+esc(scanFailed?'Previous cue withheld':scanPending?'Not current':'Not evaluated')+'</small></span></button>';
+    }).join('')||'<p class="triage-empty">No matching coins. Try All saved or Data needs attention. No result is also useful information.</p>';
     el.scrollTop=triageScroll;if(focusTicker){var match=Array.prototype.slice.call(el.querySelectorAll('[data-ticker]')).find(function(b){return b.dataset.ticker===focusTicker;});if(match)match.focus({preventScroll:true});else document.getElementById('triage-search').focus({preventScroll:true});}
     document.getElementById('triage-result-count').textContent=rows.length+' shown / '+triageCache.length+' saved · select to inspect, not switch';
     document.getElementById('triage-scan-status').textContent=triageQueueText();
@@ -10447,13 +10469,22 @@
     if(!triageJob||!Object.prototype.hasOwnProperty.call(triageJob.items,ticker))return;
     if(triageJob.items[ticker]==='cancelled')return;
     triageJob.items[ticker]=ok?'done':'failed';
-    if(!ok&&scoutPeekQueue.length&&/429|rate.?limit|too many requests|Incomplete validated hourly data/i.test(String(error||''))){
+    /* Missing/incomplete hourly evidence is an advisory result, not a reason to
+       stop the whole scan. Only an actual provider throttle pauses the queue. */
+    if(!ok&&scoutPeekQueue.length&&/429|rate.?limit|too many requests/i.test(String(error||''))){
       triagePaused=true;triagePauseUntil=Date.now()+60000;
-      clearTimeout(triagePauseTimer);triagePauseTimer=setTimeout(function(){syncWatchlistUi();},60000);
+      clearTimeout(triagePauseTimer);
+      triagePauseTimer=setTimeout(function(){
+        if(triagePaused&&Date.now()>=triagePauseUntil){
+          triagePaused=false;triagePauseUntil=0;
+          watchlistToast='Provider cooldown ended · resuming queue…';
+          drainScoutPeekQueue();
+        } else syncWatchlistUi();
+      },60000);
     }
   }
   function triageJobCounts(){var c={total:0,done:0,failed:0,cancelled:0};if(triageJob)Object.keys(triageJob.items).forEach(function(t){c.total++;var status=triageJob.items[t];if(c[status]!=null)c[status]++;});return c;}
-  function triageQueueText(){var c=triageJobCounts();return (c.total?c.done+c.failed+' / '+c.total+' finished · '+c.done+' successful · '+c.failed+' failed / incomplete · '+c.cancelled+' cancelled · ':'')+scoutPeekCount()+' active · '+scoutPeekQueue.length+' queued'+(triagePaused?' · PAUSED: rate limit or incomplete hourly data; resume after '+Math.max(0,Math.ceil((triagePauseUntil-Date.now())/1000))+'s':'')+(watchlistToast?' · '+watchlistToast:'');}
+  function triageQueueText(){var c=triageJobCounts();return (c.total?c.done+c.failed+' / '+c.total+' finished · '+c.done+' successful · '+c.failed+' failed / incomplete · '+c.cancelled+' cancelled · ':'')+scoutPeekCount()+' active · '+scoutPeekQueue.length+' queued'+(triagePaused?' · PAUSED: provider rate limit; auto-resumes after '+Math.max(0,Math.ceil((triagePauseUntil-Date.now())/1000))+'s':'')+(watchlistToast?' · '+watchlistToast:'');}
   function triageCancelQueue(){
     if(triageJob)scoutPeekQueue.forEach(function(t){if(Object.prototype.hasOwnProperty.call(triageJob.items,t))triageJob.items[t]='cancelled';});
     scoutPeekQueue=[];triagePaused=false;triagePauseUntil=0;clearTimeout(triagePauseTimer);watchlistToast='Queued refreshes cancelled. In-flight operations may still finish.';syncWatchlistUi();
@@ -11395,4 +11426,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a403952dd8d188d3',t:'MTc5MDI3MTcxNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a403ab6a3cf4ada5',t:'MTc5MDI3MjYyNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
