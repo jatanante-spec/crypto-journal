@@ -1396,6 +1396,9 @@
       return Object.prototype.hasOwnProperty.call(deletedPlanMap, String(p.id));
     }).map(function (p) { return String(p.id); });
     var mergedScoutBooks=mergeScoutWireBooks(remote.books,state.books),remoteForHydration=Object.assign({},remote,{books:mergedScoutBooks.books});
+    var localActiveTicker=coinHadLocal&&state.settings&&state.settings.coinTicker?String(state.settings.coinTicker).toUpperCase():'';
+    var localActivePair=localActiveTicker&&allPairsList(state.settings).some(function(p){return p.ticker===localActiveTicker;})?pairByTicker(localActiveTicker,state.settings):null;
+    var localActiveBook=localActivePair&&state.books?state.books[localActivePair.ticker]:null;
     var next = hydrateBooks(remoteForHydration, {
       settings: Object.assign({}, base.settings, remoteSettings),
       sizer: Object.assign({}, base.sizer, remote.sizer || {}),
@@ -1423,10 +1426,16 @@
       if (!rt || tradeExitValue(rt) == null) { keptLocalClose = true; break; }
     }
     var keepCoinSettings={watchlist:state.settings.watchlist,coinLibrary:state.settings.coinLibrary,customCoins:state.settings.customCoins};
+    var activeSelectionKept=!!localActivePair&&String(next.settings.coinTicker||'').toUpperCase()!==localActivePair.ticker;
     state.settings = next.settings;
     state.settings.watchlist=keepCoinSettings.watchlist;
     state.settings.coinLibrary=keepCoinSettings.coinLibrary;
     state.settings.customCoins=keepCoinSettings.customCoins;
+    if(activeSelectionKept){
+      state.settings.coinTicker=localActivePair.ticker;
+      state.settings.coinId=localActivePair.id;
+      state.settings.vsCurrency=localActivePair.vs;
+    }
     state.sizer = next.sizer;
     state.market = next.market;
     state.trades = next.trades;
@@ -1436,7 +1445,17 @@
     state.hourlyVolumes = next.hourlyVolumes || [];
     state.hourlyAts = next.hourlyAts || [];
     state.books = next.books;
-    state.updatedAt = keptLocalClose
+    if(activeSelectionKept){
+      if(localActiveBook)state.books[localActivePair.ticker]=localActiveBook;
+      var activeBook=state.books[localActivePair.ticker]||sampleBook(localActivePair);
+      state.market=Object.assign({},activeBook.market);
+      state.sizer=Object.assign({},activeBook.sizer);
+      state.closes=(activeBook.closes||[]).slice();
+      state.hourly=(activeBook.hourly||[]).slice();
+      state.hourlyVolumes=(activeBook.hourlyVolumes||[]).slice();
+      state.hourlyAts=(activeBook.hourlyAts||[]).slice();
+    }
+    state.updatedAt = (keptLocalClose||activeSelectionKept)
       ? (state.updatedAt && (!remote.updatedAt || state.updatedAt > remote.updatedAt)
           ? state.updatedAt
           : new Date().toISOString())
@@ -1451,7 +1470,7 @@
       state.updatedAt=new Date().toISOString();
       localStorage.setItem(KEY, JSON.stringify(state));
     }
-    if (keptLocalClose || mergedScoutBooks.preserved) queueCloudSave();
+    if (keptLocalClose || activeSelectionKept || mergedScoutBooks.preserved) queueCloudSave();
   }
 
   function save() {
@@ -11544,4 +11563,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a405643d2995db2b',t:'MTc5MDI5MDY4Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4058350ce12cc9e',t:'MTc5MDI5MTk1NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
