@@ -5233,7 +5233,63 @@ body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-ro
   body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-observation span{white-space:nowrap}
 }
 body.command-strip-mode .scout-triage-layout-settings{margin-top:16px!important}
-body.command-strip-mode .scout-triage-layout-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.command-strip-mode .scout-triage-layout-options{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:760px){body.command-strip-mode .scout-triage-layout-options{grid-template-columns:1fr}}
+
+/* Combined A + C phone-first Scout: list arrives first, evidence stays inside each record. */
+body[data-scout-triage-layout="combined"] #main .triage-compact-page .triage-head-compact{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:3px 2px 0;margin-bottom:2px}
+body[data-scout-triage-layout="combined"] #main .triage-head-compact h2{font-size:22px;line-height:1;margin:2px 0 3px;letter-spacing:-.04em}
+body[data-scout-triage-layout="combined"] #main .triage-head-compact p{margin:0;color:var(--muted);font-size:10px}
+body[data-scout-triage-layout="combined"] #main .triage-head-compact .triage-kicker{font-size:8px;letter-spacing:.12em}
+body[data-scout-triage-layout="combined"] #main .triage-head-tools{display:flex;align-items:center;gap:5px}
+body[data-scout-triage-layout="combined"] #main .triage-method-button{border:1px solid var(--line);border-radius:8px;background:var(--panel-2);color:var(--cyan);padding:7px 8px;font-size:9px;font-weight:700}
+body[data-scout-triage-layout="combined"] #main .triage-head-compact .triage-plans-button{padding:7px 8px;font-size:9px}
+body[data-scout-triage-layout="combined"] #main .triage-compact-notice{display:flex;align-items:center;gap:6px;padding:5px 2px 3px;color:var(--muted);font-size:9px}
+body[data-scout-triage-layout="combined"] #main .triage-compact-notice b{color:var(--cyan)}
+body[data-scout-triage-layout="combined"] #main .triage-compact-principles{display:flex;gap:5px;overflow-x:auto;padding:2px 0 7px;scrollbar-width:none}
+body[data-scout-triage-layout="combined"] #main .triage-compact-principles::-webkit-scrollbar{display:none}
+body[data-scout-triage-layout="combined"] #main .triage-compact-principles span{flex:0 0 auto;padding:4px 7px;border:1px solid #263d60;border-radius:999px;background:#0d1b30;color:#adbed8;font-size:8px;white-space:nowrap}
+body[data-scout-triage-layout="combined"] #main .triage-compact-principles span:first-child{border-color:#3d6195;color:#c4d9ff}
+body[data-scout-triage-layout="combined"] #main .triage-compact-method{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:0 0 7px}
+body[data-scout-triage-layout="combined"] #main .triage-compact-method span{border:1px solid var(--line-soft);border-radius:8px;background:var(--panel-2);padding:6px 7px;color:var(--muted);font-size:8px;line-height:1.25}
+body[data-scout-triage-layout="combined"] #main .triage-compact-method b{display:block;color:var(--text);font-size:9px}
+body[data-scout-triage-layout="combined"] #main .triage-compact-page .triage-tools{margin-top:2px}
+body[data-scout-triage-layout="combined"] #main .triage-compact-page .triage-columns{display:none}
+body[data-scout-triage-layout="combined"] #main .triage-compact-page .triage-scanbar{display:flex;align-items:center;gap:5px;overflow-x:auto;padding:6px 0;scrollbar-width:none}
+body[data-scout-triage-layout="combined"] #main .triage-compact-page .triage-scanbar::-webkit-scrollbar{display:none}
+body[data-scout-triage-layout="combined"] #main .triage-compact-page .triage-scanbar>span{flex:0 0 auto;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px}
+body[data-scout-triage-layout="combined"] #main .triage-compact-page .triage-scanbar button{flex:0 0 auto;min-height:29px;padding:5px 8px;font-size:9px}
+body[data-scout-triage-layout="combined"] #main .triage-combined-row{min-height:104px;padding:10px 8px;border:1px solid var(--line);border-radius:11px;background:var(--panel);margin:6px 0;align-items:stretch}
+body[data-scout-triage-layout="combined"] #main .triage-combined-row:hover{background:var(--panel-2)}
+body[data-scout-triage-layout="combined"] #main .triage-combined-main{display:block;width:100%;padding:2px 3px;text-align:left}
+body[data-scout-triage-layout="combined"] #main .triage-combined-head{display:flex;align-items:start;justify-content:space-between;gap:8px;min-width:0}
+body[data-scout-triage-layout="combined"] #main .triage-combined-head .triage-unified-health{flex:0 0 auto;margin-top:1px}
+body[data-scout-triage-layout="combined"] #main .triage-combined-observation{display:grid;grid-template-columns:1fr;gap:3px;margin-top:9px;padding-top:8px;border-top:1px solid var(--line-soft)}
+body[data-scout-triage-layout="combined"] #main .triage-combined-observation>small{color:var(--cyan);font-size:8px;letter-spacing:.08em;text-transform:uppercase}
+body[data-scout-triage-layout="combined"] #main .triage-combined-observation>span{display:flex;align-items:baseline;gap:7px;min-width:0}
+body[data-scout-triage-layout="combined"] #main .triage-combined-observation b{font-size:11px;white-space:nowrap}
+body[data-scout-triage-layout="combined"] #main .triage-combined-observation em{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:10px;font-style:normal}
+body[data-scout-triage-layout="combined"] #main .triage-combined-next{display:flex;justify-content:space-between;align-items:center;gap:7px;margin-top:9px;color:var(--muted);font-size:9px}
+body[data-scout-triage-layout="combined"] #main .triage-combined-next span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body[data-scout-triage-layout="combined"] #main .triage-combined-next b{color:var(--mint)}
+body[data-scout-triage-layout="combined"] #main .triage-combined-next strong{white-space:nowrap;font-size:10px}
+body[data-scout-triage-layout="combined"] #main .triage-combined-row .triage-unified-lock,
+body[data-scout-triage-layout="combined"] #main .triage-combined-row .triage-unified-open{align-self:start;margin-top:2px}
+@media(max-width:650px){
+  body[data-scout-triage-layout="combined"] #main .triage-head-compact{padding-top:1px}
+  body[data-scout-triage-layout="combined"] #main .triage-head-compact .triage-plans-button{display:none}
+  body[data-scout-triage-layout="combined"] #main .triage-method-button{padding:6px 7px}
+  body[data-scout-triage-layout="combined"] #main .triage-compact-page .triage-tools{gap:5px}
+  body[data-scout-triage-layout="combined"] #main .triage-combined-row{min-height:110px;margin:5px 0;padding:9px 6px}
+  body[data-scout-triage-layout="combined"] #main .triage-combined-observation>span{gap:5px}
+}
+
+body[data-scout-triage-layout="combined"] #main .triage-combined-row{display:block!important;grid-template-columns:none!important}
+body[data-scout-triage-layout="combined"] #main .triage-combined-actions{display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-top:7px;padding-top:7px;border-top:1px solid var(--line-soft)}
+body[data-scout-triage-layout="combined"] #main .triage-combined-actions .triage-unified-star,
+body[data-scout-triage-layout="combined"] #main .triage-combined-actions .triage-unified-lock,
+body[data-scout-triage-layout="combined"] #main .triage-combined-actions .triage-unified-open{align-self:auto;margin-top:0;min-width:0!important;min-height:29px!important;padding:5px 9px!important}
+body[data-scout-triage-layout="combined"] #main .triage-combined-actions .triage-unified-star{font-size:17px;padding-left:10px!important;padding-right:10px!important}
+@media(max-width:650px){body[data-scout-triage-layout="combined"] #main .triage-combined-actions .triage-unified-lock,body[data-scout-triage-layout="combined"] #main .triage-combined-actions .triage-unified-open{font-size:9px!important}}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40db7016e801118',t:'MTc5MDM3Nzk1OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40de6003e4721cc',t:'MTc5MDM3OTg4Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
