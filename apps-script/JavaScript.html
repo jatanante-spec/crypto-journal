@@ -15,6 +15,8 @@
     if (storedColorTheme && COLOR_THEMES[storedColorTheme]) colorTheme = storedColorTheme;
   } catch (e) {}
   var coinHadLocal=false;
+  var activeCoinIntent="";
+  var activeCoinIntentAt=0;
   try{coinHadLocal=!!localStorage.getItem(KEY);}catch(e){}
   var page = "sizer";
   var editingId = null;
@@ -918,7 +920,12 @@
 
   function applyPair(ticker) {
     var pair = pairByTicker(ticker);
+    if (!pair || !pair.ticker) return;
     var current = pairByTicker(state.settings.coinTicker).ticker;
+    // An explicit tap is the local source of truth for the active workspace. A
+    // delayed cloud pull must not undo it while the new selection is saving.
+    activeCoinIntent = pair.ticker;
+    activeCoinIntentAt = Date.now();
     if (current === pair.ticker) return;
     fetchSeq += 1;
     stashActiveBook();
@@ -1273,7 +1280,15 @@
       var rows=Object.keys(map).map(function(t){return map[t];});
       // Preserve active selection and all price books/drafts; only coin preferences change.
       state.settings.customCoins=rows.map(function(c){return {ticker:c.ticker,id:c.id,name:c.name,sample:c.sample,vs:'gbp',core:false};});
-      state.settings.coinLibrary=rows.map(function(c){return c.ticker;});
+      var library=[],librarySeen={};
+      function keepLibraryTicker(ticker){ticker=String(ticker||'').toUpperCase();if(ticker&&!librarySeen[ticker]){librarySeen[ticker]=true;library.push(ticker);}}
+      // These are the original seeded choices. Coin sync must not make a fresh
+      // device appear to have only the last cloud-selected coin.
+      ['SOL','ETH','BTC','XRP','ADA','LINK'].forEach(keepLibraryTicker);
+      (state.settings.coinLibrary||[]).forEach(keepLibraryTicker);
+      rows.forEach(function(c){keepLibraryTicker(c.ticker);});
+      keepLibraryTicker(activeCoinIntent||state.settings.coinTicker);
+      state.settings.coinLibrary=library;
       state.settings.watchlist=rows.filter(function(c){return c.favourite;}).map(function(c){return c.ticker;});
       normalizeWatchlist(state.settings);localStorage.setItem(KEY,JSON.stringify(state));
       coinSyncSnapshot=snapshot;coinSyncReady=true;
@@ -1286,7 +1301,9 @@
     var box;
     try{box=readCoinOutbox();}catch(e){coinSyncStatus='Coins: '+e.message;syncWatchlistUi();return;}
     var seed=[];
-    if(!box.imported&&coinHadLocal){
+    if(!box.imported){
+      // Seed the user's saved library once, even on a fresh device. The server
+      // result is merged below; this never removes an existing cloud coin.
       seed=libraryPairs().map(function(p){return coinRecord(p,state.settings.watchlist.indexOf(p.ticker)>=0);});
     }
     coinSyncBusy=true;coinSyncLast=Date.now();coinSyncStatus='Coins: syncing with sheet…';syncWatchlistUi();
@@ -1396,7 +1413,9 @@
       return Object.prototype.hasOwnProperty.call(deletedPlanMap, String(p.id));
     }).map(function (p) { return String(p.id); });
     var mergedScoutBooks=mergeScoutWireBooks(remote.books,state.books),remoteForHydration=Object.assign({},remote,{books:mergedScoutBooks.books});
-    var localActiveTicker=coinHadLocal&&state.settings&&state.settings.coinTicker?String(state.settings.coinTicker).toUpperCase():'';
+    var intentTicker=activeCoinIntent?String(activeCoinIntent).toUpperCase():'';
+    var storedActiveTicker=state.settings&&state.settings.coinTicker?String(state.settings.coinTicker).toUpperCase():'';
+    var localActiveTicker=intentTicker||(coinHadLocal?storedActiveTicker:'');
     var localActivePair=localActiveTicker&&allPairsList(state.settings).some(function(p){return p.ticker===localActiveTicker;})?pairByTicker(localActiveTicker,state.settings):null;
     var localActiveBook=localActivePair&&state.books?state.books[localActivePair.ticker]:null;
     var next = hydrateBooks(remoteForHydration, {
@@ -1483,34 +1502,38 @@
     if (!applyingRemote) queueCloudSave();
   }
 
+  function cloudPayloadForSave() {
+    var payload=cloudPayload();
+    // A coin switch and other settings still need to sync when the Journal has
+    // no real trades. Do not send the example row or empty plans as a request
+    // to replace user data; the backends still receive settings/books safely.
+    if(isThinState(state)&&!hasPendingPlanDeletes()){
+      payload.trades=[];
+      payload.plans=[];
+    }
+    return payload;
+  }
+
   function queueCloudSave() {
     if (!canCloud()) return;
-    if (isThinState(state) && !hasPendingPlanDeletes()) {
-      syncMsg = "No real trades to upload · coin preferences sync separately";
-      return;
-    }
     clearTimeout(syncTimer);
-    syncMsg = "Saving to sheet…";
+    syncMsg = isThinState(state)&&!hasPendingPlanDeletes() ? "Saving settings…" : "Saving to sheet…";
     syncOk = false;
     syncTimer = setTimeout(pushCloud, 500);
   }
 
   function flushCloudSave() {
     if (!canCloud()) return;
-    if (isThinState(state) && !hasPendingPlanDeletes()) {
-      syncMsg = "No real trades to upload · coin preferences sync separately";
-      return;
-    }
     clearTimeout(syncTimer);
     syncTimer = null;
-    syncMsg = "Saving to sheet…";
+    syncMsg = isThinState(state)&&!hasPendingPlanDeletes() ? "Saving settings…" : "Saving to sheet…";
     syncOk = false;
     pushCloud();
   }
 
   function pushCloud() {
     clearTimeout(syncTimer);syncTimer=null;
-    if (!canCloud() || applyingRemote || (isThinState(state) && !hasPendingPlanDeletes())) return;
+    if (!canCloud() || applyingRemote) return;
     pullEpoch += 1;
     google.script.run
       .withSuccessHandler(function () {
@@ -1523,7 +1546,7 @@
         syncMsg = err && err.message ? err.message : String(err);
         if (page === "journal" || page === "settings") render();
       })
-      .saveJournalState(cloudPayload());
+      .saveJournalState(cloudPayloadForSave());
   }
 
   function requestPull(force) {
@@ -10603,7 +10626,7 @@
     if(!triageSelected&&rows.length)triageSelected=rows[0].pair.ticker;triageRenderInspector();
   }
   function triageInspectorHtml(r){if(!r)return '<p class="triage-empty">Select a coin to inspect it without changing your active workspace.</p>';var d=r.book.sizer||{},o=r.observation,c=r.context;
-    return '<header><div><h3 id="triage-inspector-title">'+esc(r.pair.ticker)+'</h3><small>'+esc(r.pair.name)+'</small></div><button type="button" data-action="triage-star" data-ticker="'+esc(r.pair.ticker)+'" aria-label="Toggle favourite" aria-pressed="'+(state.settings.watchlist.indexOf(r.pair.ticker)>=0)+'">'+(state.settings.watchlist.indexOf(r.pair.ticker)>=0?'★':'☆')+'</button><button type="button" class="triage-inspector-close" data-action="triage-close" aria-label="Close inspector">×</button></header><div class="triage-inspector-price">'+esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched')+'</div><small>'+esc(r.fresh.label+' · fetched '+(r.book.market.lastFetchedAt||'never'))+'</small><section><label>Trend / watch</label><b>'+esc(r.watch)+'</b><p>'+esc(c.ready?c.say:c.say||'Need validated hourly history.')+'</p><small>'+esc('Hourly observation '+(o.barAt||'unavailable')+' · pivot confirmed '+(o.confirmedAt||'unavailable'))+'</small></section><section><label>Continuation evidence</label><b>'+esc(contLabel(r.continuation.code))+'</b><p>'+esc('Reference '+(r.continuation.trigger?priceGbp(r.continuation.trigger,4):'unavailable')+' · boundary '+(r.continuation.cap?priceGbp(r.continuation.cap,4):'unavailable')+'. No continuation GO.')+'</p></section><button type="button" data-action="pc-open" data-ticker="'+esc(r.pair.ticker)+'">Pattern context & history</button><section><label>Entry / draft audit</label><b>'+esc(r.mismatch?'Draft discrepancy · inspect before relying on gates':'Entry not evaluated in Scout')+'</b><p>'+esc(r.draftKnown?'Stored entry '+priceGbp(Number(d.entry)||0,4)+(r.gap!=null?' · '+num(r.gap,1)+'% from quote.':' · invalid value.'):'No stored draft entry. Opening a workspace may create its existing sample draft; verify before use.')+'</p><p>A gap above 15% is an audit flag, not a trade rule. A deliberate resting limit can trigger it. Stale quotes do not produce this comparison. No draft is rewritten.</p></section><button type="button" data-action="triage-refresh-one" data-ticker="'+esc(r.pair.ticker)+'"'+(!canCloud()||busy||scoutPeekCount()||scoutPeekQueue.length?' disabled':'')+'>Refresh this coin</button><div class="triage-inspector-actions"><button type="button" data-action="triage-open" data-page-target="sizer" data-ticker="'+esc(r.pair.ticker)+'">Open Sizer</button><button type="button" data-action="triage-open" data-page-target="market" data-ticker="'+esc(r.pair.ticker)+'">Open Market</button></div><small>Active workspace remains '+esc(state.settings.coinTicker)+'. No market request is sent by inspection.</small>';
+    return '<header><div><h3 id="triage-inspector-title">'+esc(r.pair.ticker)+'</h3><small>'+esc(r.pair.name)+'</small></div><button type="button" data-action="triage-star" data-ticker="'+esc(r.pair.ticker)+'" aria-label="Toggle favourite" aria-pressed="'+(state.settings.watchlist.indexOf(r.pair.ticker)>=0)+'">'+(state.settings.watchlist.indexOf(r.pair.ticker)>=0?'★':'☆')+'</button><button type="button" class="triage-inspector-close" data-action="triage-close" aria-label="Close inspector">×</button></header><div class="triage-inspector-price">'+esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched')+'</div><small>'+esc(r.fresh.label+' · fetched '+(r.book.market.lastFetchedAt||'never'))+'</small><section><label>Trend / watch</label><b>'+esc(r.watch)+'</b><p>'+esc(c.ready?c.say:c.say||'Need validated hourly history.')+'</p><small>'+esc('Hourly observation '+(o.barAt||'unavailable')+' · pivot confirmed '+(o.confirmedAt||'unavailable'))+'</small></section><section><label>Continuation evidence</label><b>'+esc(contLabel(r.continuation.code))+'</b><p>'+esc('Reference '+(r.continuation.trigger?priceGbp(r.continuation.trigger,4):'unavailable')+' · boundary '+(r.continuation.cap?priceGbp(r.continuation.cap,4):'unavailable')+'. No continuation GO.')+'</p></section><button type="button" data-action="pc-open" data-ticker="'+esc(r.pair.ticker)+'">Pattern context & history</button><section><label>Entry / draft audit</label><b>'+esc(r.mismatch?'Draft discrepancy · inspect before relying on gates':'Entry not evaluated in Scout')+'</b><p>'+esc(r.draftKnown?'Stored entry '+priceGbp(Number(d.entry)||0,4)+(r.gap!=null?' · '+num(r.gap,1)+'% from quote.':' · invalid value.'):'No stored draft entry. Opening a workspace may create its existing sample draft; verify before use.')+'</p><p>A gap above 15% is an audit flag, not a trade rule. A deliberate resting limit can trigger it. Stale quotes do not produce this comparison. No draft is rewritten.</p></section><button type="button" data-action="triage-refresh-one" data-ticker="'+esc(r.pair.ticker)+'"'+(!canCloud()||busy||scoutPeekCount()||scoutPeekQueue.length?' disabled':'')+'>Refresh this coin</button><div class="triage-inspector-actions"><button type="button" data-action="triage-open" data-page-target="sizer" data-ticker="'+esc(r.pair.ticker)+'">Open Sizer</button><button type="button" data-action="triage-open" data-page-target="market" data-ticker="'+esc(r.pair.ticker)+'">Open Market</button></div><small>Inspection is read-only. Open Sizer or Open Market above switches the active workspace to '+esc(r.pair.ticker)+'. No market request is sent by inspection.</small>';
   }
   function triageRenderInspector(){var host=document.getElementById('triage-inspector-host');if(!host)return;var row=triageCache.filter(function(r){return r.pair.ticker===triageSelected;})[0];var panel=document.getElementById('triage-inspector');if(!panel){host.innerHTML='<aside id="triage-inspector" class="triage-inspector"></aside>';panel=document.getElementById('triage-inspector');}var active=document.activeElement,was=panel.contains(active),action=was&&active.getAttribute('data-action'),scroll=panel.scrollTop;panel.innerHTML=triageInspectorHtml(row);panel.scrollTop=scroll;if(was){var focus=panel.querySelector('[data-action="'+action+'"]');if(focus)focus.focus({preventScroll:true});}if(triageSheet){panel.classList.add('sheet');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-labelledby','triage-inspector-title');['.triage-scanner','.triage-stats','.nav','#budget','.triage-head'].forEach(function(s){var el=document.querySelector(s);if(el)el.inert=true;});}}
   function triageInspect(ticker){triageSelected=ticker;triageUpdate(false);if(window.innerWidth<=1180){triageFocus=document.activeElement;triageOldOverflow=document.body.style.overflow;document.body.style.overflow='hidden';triageSheet=true;triageRenderInspector();document.getElementById('triage-scrim').hidden=false;document.querySelector('.triage-scanner').inert=true;document.querySelector('.triage-stats').inert=true;document.querySelector('.nav').inert=true;document.getElementById('budget').inert=true;document.querySelector('.triage-head').inert=true;document.getElementById('triage-inspector').querySelector('[data-action="triage-close"]').focus();}}
@@ -10653,7 +10676,7 @@
     else if(a==='triage-inspect')triageInspect(t);
     else if(a==='triage-close')triageClose();
     else if(a==='triage-star'){toggleWatchlistTicker(t);triageUpdate(false);var star=document.querySelector('#triage-inspector [data-action="triage-star"]');if(star)star.focus({preventScroll:true});}
-    else if(a==='triage-open'){triageClose();page=b.dataset.pageTarget;applyPair(t);render();}
+    else if(a==='triage-open'){var targetPage=b.getAttribute('data-page-target')||'sizer',targetTicker=b.getAttribute('data-ticker')||t;if(targetTicker){applyPair(targetTicker);}page=targetPage;triageClose();render();}
     else if(a==='triage-library'){triageClose();page='sizer';render();openWatchlist('library');}
     else if(a==='triage-refresh')triageStart('filtered');
     else if(a==='triage-all')triageStart('all');
@@ -11563,4 +11586,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4058350ce12cc9e',t:'MTc5MDI5MTk1NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4088ba16e84b334',t:'MTc5MDMyMzc1Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
