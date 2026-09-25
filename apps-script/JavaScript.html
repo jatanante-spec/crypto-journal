@@ -9,6 +9,25 @@
     electric: { label: "ELECTRIC BLUE + MINT" },
     graphite: { label: "GRAPHITE + CORAL" }
   };
+  /* Coin Desk layout is an account setting: all three approved minimal modes remain available,
+     while the chosen presentation follows the existing settings sync. It never changes the engine. */
+  var COIN_DESK_LAYOUTS = {
+    instrument: {
+      label: "Instrument strip",
+      short: "Balanced default",
+      detail: "Budget, route, active coin and evidence stay visible without competing."
+    },
+    lab: {
+      label: "Evidence lab",
+      short: "Method-forward",
+      detail: "Observe, test and feasibility context receive the strongest visual emphasis."
+    },
+    focus: {
+      label: "Focus deck",
+      short: "Compact phone view",
+      detail: "The same evidence and actions use the least chrome for fast repeated scanning."
+    }
+  };
   var colorTheme = "signal";
   try {
     var storedColorTheme = localStorage.getItem(COLOR_THEME_KEY);
@@ -970,6 +989,7 @@
         stopAfterLosses: 2, dailyLossCapPct: 2, profitTargetPct: 3,
         trainingMode: false, previewFlat: false, softHoldHours: 5, journalLaneCues: false,
         scoutMood: "ink",
+        coinDeskLayout: "instrument",
         watchlist: ["SOL", "ETH", "BTC"],
         coinLibrary: ["SOL", "ETH", "BTC", "XRP", "ADA", "LINK"],
         customCoins: []
@@ -8156,7 +8176,7 @@
   function coinSwitch() {
     var active=state.settings.coinTicker;
     var fav=watchlistPairs().filter(function(p){return p.ticker!==active;});
-    return '<div class="coin-navigation"><button type="button" class="tag coin-library-toggle" data-action="open-scout" aria-label="'+esc(active)+' active. Open unified Coin Desk">'+esc(active)+' · Coin Desk ▾</button><div class="coin-shortcuts" aria-label="Shortlist coin shortcuts">'+fav.map(function(p){return '<button type="button" class="tag coin-shortcut" data-action="switch-coin" data-ticker="'+esc(p.ticker)+'">'+esc(p.ticker)+'</button>';}).join('')+'<button type="button" class="tag coin-overflow" data-action="library-overflow" hidden aria-label="Quick switch among all saved coins" aria-haspopup="dialog" aria-controls="quick-switch-root">More</button></div></div>';
+    return '<div class="coin-navigation"><button type="button" class="tag coin-library-toggle" data-action="open-scout" aria-label="'+esc(active)+' active. Open unified Coin Desk"><span class="coin-library-symbol">'+esc(active)+'</span><span class="coin-library-label"> · Coin Desk</span><span class="coin-library-chevron">▾</span></button><div class="coin-shortcuts" aria-label="Shortlist coin shortcuts">'+fav.map(function(p){return '<button type="button" class="tag coin-shortcut" data-action="switch-coin" data-ticker="'+esc(p.ticker)+'">'+esc(p.ticker)+'</button>';}).join('')+'<button type="button" class="tag coin-overflow" data-action="library-overflow" hidden aria-label="Quick switch among all saved coins" aria-haspopup="dialog" aria-controls="quick-switch-root">More</button></div></div>';
   }
   function fitCoinNavigation() {
     document.querySelectorAll('.coin-shortcuts').forEach(function(row){
@@ -9993,6 +10013,7 @@
           '<label class="theme-setting" for="settings-theme"><span>Colour palette</span><select id="settings-theme" aria-label="Colour palette">'+colorThemeOptionsHtml()+'</select></label>' +
         '</section>' +
       '</div>' +
+      coinDeskLayoutSettingsHtml() +
       '<div class="grid two" style="margin-top:16px"><section class="card"><h3>Account & pair</h3>' +
         '<div class="cluster"><div class="cluster-row cols-2">' +
           field("Capital £", "settings.capitalGbp", state.settings.capitalGbp) +
@@ -10764,6 +10785,25 @@
       return '<option value="' + key + '"' + (key === colorTheme ? ' selected' : '') + '>' + esc(COLOR_THEMES[key].label) + '</option>';
     }).join('');
   }
+  function coinDeskLayoutValue() {
+    var value = state && state.settings ? String(state.settings.coinDeskLayout || "instrument") : "instrument";
+    return COIN_DESK_LAYOUTS[value] ? value : "instrument";
+  }
+  function coinDeskLayoutSettingsHtml() {
+    var current = coinDeskLayoutValue();
+    var order = ["instrument", "lab", "focus"];
+    return '<section class="card coin-desk-layout-settings"><header><div><h3>Coin Desk layout</h3><p class="muted">Switch the presentation without changing research, Sizer, Journal, Market, risk or Gates.</p></div><span class="layout-setting-badge">'+esc(COIN_DESK_LAYOUTS[current].short)+'</span></header>' +
+      '<div class="coin-desk-layout-options" role="group" aria-label="Coin Desk layout options">' +
+      order.map(function (key) {
+        var item = COIN_DESK_LAYOUTS[key], selected = key === current;
+        return '<button type="button" class="coin-desk-layout-option'+(selected?' selected':'')+'" data-action="set-coin-desk-layout" data-layout="'+key+'" aria-pressed="'+selected+'">' +
+          '<span class="layout-option-top"><b>'+esc(item.label)+'</b><i>'+ (selected ? 'Selected' : 'Use this') +'</i></span>' +
+          '<small>'+esc(item.detail)+'</small>' +
+          '<span class="layout-principles">observe · test · feasible · apply</span>' +
+        '</button>';
+      }).join('') +
+      '</div><p class="muted layout-setting-note">Saved with your account settings, so the chosen working surface can follow you to another signed-in device.</p></section>';
+  }
 
   function commandStripHtml() {
     return '<div class="cmd-strip" role="toolbar" aria-label="Main navigation">'+
@@ -10796,6 +10836,7 @@
       document.body.classList.toggle("page-market", page === "market");
       document.body.classList.add("command-strip-mode");
       document.body.setAttribute("data-color-theme", colorTheme);
+      document.body.setAttribute("data-coin-desk-layout", coinDeskLayoutValue());
       document.body.classList.toggle("page-scout", page === "scout");
       var tog = document.getElementById("train-toggle");
       if (tog) {
@@ -11119,6 +11160,15 @@
     }
     if (action === "set-journal-lane-cues") {
       state.settings.journalLaneCues = btn.getAttribute("data-on") === "1";
+      save();
+      render();
+      return;
+    }
+    if (action === "set-coin-desk-layout") {
+      var layout = btn.getAttribute("data-layout");
+      if (!COIN_DESK_LAYOUTS[layout]) return;
+      state.settings.coinDeskLayout = layout;
+      errorMsg = "";
       save();
       render();
       return;
@@ -11707,4 +11757,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40b239f2807732f',t:'MTc5MDM1MDk1MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40d079d4a737f11',t:'MTc5MDM3MDc3NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

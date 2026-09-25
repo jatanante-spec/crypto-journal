@@ -5052,5 +5052,123 @@ body.command-strip-mode[data-color-theme="signal"]{--bg:#0b1220;--panel:#151f35;
 @media(max-width:650px){body.page-scout #main{padding:12px 9px 75px}#main .triage-head h2{font-size:22px}#main .triage-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}#main .triage-stats button{min-height:60px;padding:9px}#main .triage-method{display:grid;gap:4px}#main .triage-columns{grid-template-columns:66px minmax(108px,1fr) 58px 72px 30px;padding:8px 7px;font-size:7px;gap:5px}#main .triage-unified-row{grid-template-columns:minmax(0,1fr) 28px 39px;padding:7px 6px;gap:4px}#main .triage-unified-main{grid-template-columns:66px minmax(108px,1fr) 58px 72px;gap:5px}#main .triage-unified-coin b,#main .triage-unified-watch b{font-size:10px}#main .triage-unified-coin small,#main .triage-unified-watch small,#main .triage-unified-change small{font-size:8px}#main .triage-unified-health{font-size:7px;padding:3px}#main .triage-scanbar span{min-width:100%;order:0}#main .triage-scanbar button{flex:1;min-width:0;font-size:8px;padding:5px 4px}#main .triage-filters select{width:100%;margin-left:0}#main .triage-filter-divider{display:none}#main .triage-inspector.sheet{display:block!important;padding:13px;max-height:88dvh}#main .triage-inspector.sheet .triage-inspector-close{display:block}#main .triage-inspector.sheet~*{display:none}}
 @media(max-width:390px){#main .triage-head{display:block}#main .triage-plans-button{margin-top:9px}#main .triage-mode-tabs button{font-size:10px;padding-left:5px;padding-right:5px}#main .triage-unified-main{grid-template-columns:58px minmax(95px,1fr) 52px 64px;gap:4px}#main .triage-columns{grid-template-columns:58px minmax(95px,1fr) 52px 64px 28px}#main .triage-unified-open{font-size:8px;min-width:39px}}
 #watchlist-root[hidden]{display:none!important}
+
+/* COIN DESK LAYOUT MODES — presentation only. The same evidence, actions, data engine,
+   ticket verdicts and Gates remain behind all three surfaces. */
+body.command-strip-mode[data-coin-desk-layout="instrument"] .cmd-strip{
+  min-height:44px;margin:0 0 14px;padding:6px 8px;border-radius:10px;background:rgba(21,31,53,.96);border-color:var(--line);gap:6px
+}
+body.command-strip-mode[data-coin-desk-layout="instrument"] .cmd-btn{
+  min-height:34px!important;height:34px!important;padding:7px 10px!important;border-radius:8px!important;font-size:11px
+}
+body.command-strip-mode[data-coin-desk-layout="instrument"] #budget .budget-bar{
+  min-height:34px!important;padding:5px 14px!important;background:rgba(11,18,32,.94)!important;gap:8px!important
+}
+body.command-strip-mode[data-coin-desk-layout="instrument"] #main .triage-head{
+  padding:0 0 13px;border-bottom:1px solid var(--line);margin-bottom:11px
+}
+body.command-strip-mode[data-coin-desk-layout="instrument"] #main .triage-method{
+  border-left:3px solid var(--cyan);background:rgba(23,50,76,.28);border-radius:0 8px 8px 0
+}
+body.command-strip-mode[data-coin-desk-layout="instrument"] .coin-library-toggle{
+  border-radius:10px;background:var(--panel-2);border-color:var(--line);color:var(--text)
+}
+
+body.command-strip-mode[data-coin-desk-layout="lab"] #budget .budget-bar{
+  min-height:43px!important;padding:7px 12px!important;border:1px solid var(--line)!important;border-radius:10px!important;background:var(--panel)!important;gap:9px!important;box-shadow:var(--shadow)!important
+}
+body.command-strip-mode[data-coin-desk-layout="lab"] #budget .budget-bar strong{font-size:12px!important;color:var(--green)}
+body.command-strip-mode[data-coin-desk-layout="lab"] #budget .budget-bar span{font-size:10px!important}
+body.command-strip-mode[data-coin-desk-layout="lab"] #budget .budget-track{flex-basis:54px;height:4px}
+body.command-strip-mode[data-coin-desk-layout="lab"] .cmd-strip{
+  min-height:40px;margin:8px 0 12px;padding:5px 7px;border-radius:999px;background:var(--panel);border-color:var(--line);box-shadow:none;gap:4px
+}
+body.command-strip-mode[data-coin-desk-layout="lab"] .cmd-btn{
+  min-height:30px!important;height:30px!important;padding:6px 11px!important;border-radius:999px!important;font-size:10px!important
+}
+body.command-strip-mode[data-coin-desk-layout="lab"] .cmd-btn.on{background:var(--green-bg);border-color:var(--green);color:var(--green);box-shadow:none}
+body.command-strip-mode[data-coin-desk-layout="lab"] #main .triage-head{
+  display:block;padding:15px 16px;margin-bottom:10px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(135deg,var(--panel),var(--input));box-shadow:var(--shadow)
+}
+body.command-strip-mode[data-coin-desk-layout="lab"] #main .triage-head h2{font-size:25px;letter-spacing:-.03em}
+body.command-strip-mode[data-coin-desk-layout="lab"] #main .triage-head p{max-width:760px}
+body.command-strip-mode[data-coin-desk-layout="lab"] #main .triage-head .triage-plans-button{margin-top:13px;background:var(--green-bg);border-color:var(--green);color:var(--green)}
+body.command-strip-mode[data-coin-desk-layout="lab"] #main .triage-method{
+  margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;background:var(--panel-2);gap:8px 16px;font-size:10px
+}
+body.command-strip-mode[data-coin-desk-layout="lab"] .coin-navigation .coin-library-toggle{
+  border-radius:999px;background:var(--panel);border-color:var(--accent);color:var(--text);padding:8px 13px
+}
+body.command-strip-mode[data-coin-desk-layout="lab"] .coin-library-symbol{color:var(--accent);font-weight:800}
+body.command-strip-mode[data-coin-desk-layout="lab"] .coin-library-chevron{color:var(--green);margin-left:4px}
+body.command-strip-mode[data-coin-desk-layout="lab"] .coin-shortcuts{height:36px}
+body.command-strip-mode[data-coin-desk-layout="lab"] .coin-shortcuts .tag{border-radius:999px;padding:6px 10px}
+
+body.command-strip-mode[data-coin-desk-layout="focus"] #budget .budget-bar{
+  min-height:29px!important;padding:4px 10px!important;background:transparent!important;gap:6px!important
+}
+body.command-strip-mode[data-coin-desk-layout="focus"] #budget .budget-bar *{font-size:10px!important}
+body.command-strip-mode[data-coin-desk-layout="focus"] #budget .budget-track{flex-basis:23px;height:2px}
+body.command-strip-mode[data-coin-desk-layout="focus"] .cmd-strip{
+  min-height:37px;margin:0 0 9px;padding:4px 5px;border-radius:8px;background:var(--panel);border-color:var(--line);box-shadow:none;gap:2px
+}
+body.command-strip-mode[data-coin-desk-layout="focus"] .cmd-btn{
+  min-height:29px!important;height:29px!important;padding:6px 8px!important;border-radius:6px!important;font-size:10px!important
+}
+body.command-strip-mode[data-coin-desk-layout="focus"] #main{padding:8px 12px 30px!important}
+body.command-strip-mode[data-coin-desk-layout="focus"] #main .triage-head{
+  gap:9px;margin-bottom:8px;padding:2px 0 10px;border-bottom:1px solid var(--line)
+}
+body.command-strip-mode[data-coin-desk-layout="focus"] #main .triage-head h2{font-size:20px;letter-spacing:-.02em}
+body.command-strip-mode[data-coin-desk-layout="focus"] #main .triage-head p{font-size:10px;line-height:1.35;max-width:560px}
+body.command-strip-mode[data-coin-desk-layout="focus"] #main .triage-plans-button{min-height:30px!important;padding:6px 8px!important;border-radius:8px!important;font-size:10px!important}
+body.command-strip-mode[data-coin-desk-layout="focus"] #main .triage-method{
+  gap:4px;margin:0 0 8px;padding:6px 8px;border-left-width:2px;border-radius:0 6px 6px 0;font-size:9px;line-height:1.25
+}
+body.command-strip-mode[data-coin-desk-layout="focus"] #main .triage-stats{gap:5px}
+body.command-strip-mode[data-coin-desk-layout="focus"] #main .triage-stats button{min-height:50px;padding:7px;font-size:10px}
+body.command-strip-mode[data-coin-desk-layout="focus"] .coin-navigation{gap:5px}
+body.command-strip-mode[data-coin-desk-layout="focus"] .coin-navigation .coin-library-toggle{
+  padding:6px 9px;border-radius:999px;background:var(--panel-2);border-color:var(--line);font-size:10px
+}
+body.command-strip-mode[data-coin-desk-layout="focus"] .coin-library-label{color:var(--muted)}
+body.command-strip-mode[data-coin-desk-layout="focus"] .coin-library-chevron{color:var(--accent);margin-left:2px}
+body.command-strip-mode[data-coin-desk-layout="focus"] .coin-shortcuts{height:32px;gap:4px}
+body.command-strip-mode[data-coin-desk-layout="focus"] .coin-shortcuts .tag{padding:5px 8px;border-radius:999px;font-size:10px}
+
+/* More → Settings → Coin Desk layout */
+body.command-strip-mode .coin-desk-layout-settings{margin-top:16px!important;padding:16px!important;border:1px solid var(--line)!important;background:var(--panel)!important}
+body.command-strip-mode .coin-desk-layout-settings>header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+body.command-strip-mode .coin-desk-layout-settings h3{margin:0!important;font-size:14px!important;letter-spacing:0!important}
+body.command-strip-mode .coin-desk-layout-settings header p{margin:5px 0 0;max-width:680px;font-size:11px;line-height:1.45}
+body.command-strip-mode .layout-setting-badge{flex:0 0 auto;padding:5px 8px;border:1px solid var(--green);border-radius:999px;background:var(--green-bg);color:var(--green);font-size:9px;font-weight:800;white-space:nowrap}
+body.command-strip-mode .coin-desk-layout-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+body.command-strip-mode #main .coin-desk-layout-option{min-width:0;min-height:110px!important;padding:11px!important;border:1px solid var(--line)!important;border-radius:10px!important;background:var(--input)!important;color:var(--text)!important;text-align:left!important;box-shadow:none!important}
+body.command-strip-mode #main .coin-desk-layout-option:hover{border-color:var(--accent)!important;background:var(--panel-2)!important}
+body.command-strip-mode #main .coin-desk-layout-option.selected{border-color:var(--accent)!important;background:var(--panel-2)!important;box-shadow:inset 0 0 0 1px var(--accent)!important}
+body.command-strip-mode .layout-option-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+body.command-strip-mode .layout-option-top b{font-size:11px}
+body.command-strip-mode .layout-option-top i{color:var(--green);font-size:8px;font-style:normal;font-weight:800;text-transform:uppercase;white-space:nowrap}
+body.command-strip-mode .coin-desk-layout-option small{display:block;margin-top:8px;color:var(--muted);font-size:10px;line-height:1.4}
+body.command-strip-mode .layout-principles{display:block;margin-top:9px;color:var(--accent);font-size:8px;letter-spacing:.04em;text-transform:uppercase}
+body.command-strip-mode .layout-setting-note{margin:10px 0 0;font-size:10px;line-height:1.4}
+body.command-strip-mode .coin-library-symbol{font-weight:800}
+body.command-strip-mode .coin-library-label{color:var(--muted)}
+body.command-strip-mode .coin-library-chevron{color:var(--accent);font-weight:800}
+
+@media(max-width:760px){
+  body.command-strip-mode[data-coin-desk-layout="lab"] #budget .budget-bar{min-height:39px!important;padding:6px 9px!important}
+  body.command-strip-mode[data-coin-desk-layout="lab"] #main .triage-head{padding:12px 12px}
+  body.command-strip-mode[data-coin-desk-layout="lab"] #main .triage-head h2{font-size:22px}
+  body.command-strip-mode .coin-desk-layout-options{grid-template-columns:1fr}
+  body.command-strip-mode #main .coin-desk-layout-option{min-height:84px!important}
+  body.command-strip-mode .coin-desk-layout-settings>header{display:block}
+  body.command-strip-mode .layout-setting-badge{display:inline-block;margin-top:8px}
+  body.command-strip-mode[data-coin-desk-layout="focus"] #main .triage-head{display:flex}
+}
+@media(max-width:390px){
+  body.command-strip-mode[data-coin-desk-layout="focus"] #main .triage-head{display:block}
+  body.command-strip-mode[data-coin-desk-layout="focus"] #main .triage-plans-button{margin-top:8px}
+}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40b23ad7cd6732f',t:'MTc5MDM1MDk1Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40d07b6d8847f11',t:'MTc5MDM3MDc3OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
