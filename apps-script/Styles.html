@@ -5189,5 +5189,51 @@ body.command-strip-mode #main .triage-lock-options button{min-height:30px!import
 body.command-strip-mode #main .triage-lock-options button:hover,body.command-strip-mode #main .triage-lock-options button.selected{border-color:var(--yellow)!important;background:var(--yellow-bg)!important;color:var(--yellow)!important}
 body.command-strip-mode #main .triage-unlock{min-height:30px!important;margin-top:8px;padding:5px 8px!important;border:1px solid var(--yellow)!important;border-radius:7px!important;background:transparent!important;color:var(--yellow)!important;font-size:9px!important}
 @media(max-width:650px){body.command-strip-mode #main .triage-unified-row:not(.triage-find-row){grid-template-columns:minmax(0,1fr) 28px 43px 50px;gap:4px}body.command-strip-mode #main .triage-unified-lock{min-width:43px!important;font-size:8px!important}body.command-strip-mode #main .triage-unified-open{min-width:43px!important;font-size:8px!important;padding-left:4px!important;padding-right:4px!important}body.command-strip-mode #main .triage-lock-options button{flex:1 1 auto}}
+
+/* Scout record layouts: A Scan cards and C Review deck. */
+body.command-strip-mode[data-scout-triage-layout="scan"] #main .triage-columns,
+body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-columns{display:none}
+body.command-strip-mode[data-scout-triage-layout="scan"] #main .triage-scan-row{
+  min-height:70px;padding:9px 8px;border:1px solid var(--line-soft);border-radius:9px;background:var(--panel);margin:4px 0;align-items:center
+}
+body.command-strip-mode[data-scout-triage-layout="scan"] #main .triage-scan-row:hover{background:var(--panel-2)}
+body.command-strip-mode[data-scout-triage-layout="scan"] #main .triage-scan-main{display:block;width:100%;padding:2px 3px;text-align:left}
+body.command-strip-mode[data-scout-triage-layout="scan"] #main .triage-scan-head{display:flex;align-items:start;justify-content:space-between;gap:8px;min-width:0}
+body.command-strip-mode[data-scout-triage-layout="scan"] #main .triage-scan-head .triage-unified-health{flex:0 0 auto;margin-top:1px}
+body.command-strip-mode[data-scout-triage-layout="scan"] #main .triage-scan-evidence{display:block;margin-top:5px;min-width:0}
+body.command-strip-mode[data-scout-triage-layout="scan"] #main .triage-scan-evidence .triage-unified-watch{display:flex;align-items:baseline;gap:6px;min-width:0}
+body.command-strip-mode[data-scout-triage-layout="scan"] #main .triage-scan-evidence .triage-unified-watch b{font-size:11px;flex:0 0 auto}
+body.command-strip-mode[data-scout-triage-layout="scan"] #main .triage-scan-evidence .triage-unified-watch small{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.command-strip-mode[data-scout-triage-layout="scan"] #main .triage-scan-meta{display:flex;align-items:center;gap:6px;margin-top:5px;color:var(--muted);font-size:9px}
+body.command-strip-mode[data-scout-triage-layout="scan"] #main .triage-scan-meta .triage-unified-change{display:flex;align-items:baseline;gap:4px}
+body.command-strip-mode[data-scout-triage-layout="scan"] #main .triage-scan-meta .triage-unified-change small{margin:0;font-size:8px}
+body.command-strip-mode[data-scout-triage-layout="scan"] #main .triage-scan-meta>small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-row{
+  min-height:102px;padding:11px 9px;border:1px solid var(--line);border-radius:11px;background:var(--panel);margin:7px 0;align-items:stretch
+}
+body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-row:hover{background:var(--panel-2)}
+body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-main{display:block;width:100%;padding:2px 3px;text-align:left}
+body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-head{display:flex;align-items:start;justify-content:space-between;gap:8px;min-width:0}
+body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-head .triage-unified-health{flex:0 0 auto}
+body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-observation{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 8px;margin-top:9px;padding-top:8px;border-top:1px solid var(--line-soft)}
+body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-observation small{grid-column:1 / -1;color:var(--cyan);font-size:8px;letter-spacing:.08em;text-transform:uppercase}
+body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-observation b{font-size:11px;white-space:nowrap}
+body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-observation span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:10px}
+body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-next{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:9px;color:var(--muted);font-size:9px}
+body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-next b{color:var(--mint)}
+body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-next strong{font-size:11px;white-space:nowrap}
+body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-row .triage-unified-lock,
+body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-row .triage-unified-open{align-self:start;margin-top:2px}
+@media(max-width:650px){
+  body.command-strip-mode[data-scout-triage-layout="scan"] #main .triage-scan-row{min-height:76px;margin:4px 0;padding:8px 6px}
+  body.command-strip-mode[data-scout-triage-layout="scan"] #main .triage-scan-evidence .triage-unified-watch b{font-size:10px}
+  body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-row{min-height:112px;margin:6px 0;padding:10px 7px}
+  body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-observation{grid-template-columns:1fr;gap:2px}
+  body.command-strip-mode[data-scout-triage-layout="deck"] #main .triage-review-observation span{white-space:nowrap}
+}
+body.command-strip-mode .scout-triage-layout-settings{margin-top:16px!important}
+body.command-strip-mode .scout-triage-layout-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:760px){body.command-strip-mode .scout-triage-layout-options{grid-template-columns:1fr}}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40d75bdfc91b3ba',t:'MTc5MDM3NTI4NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40db7016e801118',t:'MTc5MDM3Nzk1OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

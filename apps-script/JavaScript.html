@@ -28,6 +28,18 @@
       detail: "The same evidence and actions use the least chrome for fast repeated scanning."
     }
   };
+  var SCOUT_TRIAGE_LAYOUTS = {
+    scan: {
+      label: "A · Scan cards",
+      short: "Mobile scan",
+      detail: "Identity, evidence and the next action stay together in a compact card."
+    },
+    deck: {
+      label: "C · Review deck",
+      short: "Research-first",
+      detail: "Each record gets more breathing room for deliberate evidence review."
+    }
+  };
   var colorTheme = "signal";
   try {
     var storedColorTheme = localStorage.getItem(COLOR_THEME_KEY);
@@ -1038,6 +1050,7 @@
         trainingMode: false, previewFlat: false, softHoldHours: 5, journalLaneCues: false,
         scoutMood: "ink",
         coinDeskLayout: "instrument",
+        scoutTriageLayout: "scan",
         scoutLocks: {},
         watchlist: ["SOL", "ETH", "BTC"],
         coinLibrary: ["SOL", "ETH", "BTC", "XRP", "ADA", "LINK"],
@@ -1473,6 +1486,9 @@
       remoteSettings.customCoins = state.settings.customCoins.slice();
     }
     remoteSettings.scoutLocks = mergeScoutLocks(state.settings && state.settings.scoutLocks, remoteSettings.scoutLocks);
+    if (!remoteSettings.scoutTriageLayout && state.settings && state.settings.scoutTriageLayout) {
+      remoteSettings.scoutTriageLayout = state.settings.scoutTriageLayout;
+    }
     var mergedDeleted = mergeDeleted(state.deleted, remote.deleted);
     var mergedTrades = dropDeleted(
       mergeRemoteTrades(state.trades, remote.trades && remote.trades.length ? remote.trades : base.trades),
@@ -10064,6 +10080,7 @@
         '</section>' +
       '</div>' +
       coinDeskLayoutSettingsHtml() +
+      scoutTriageLayoutSettingsHtml() +
       '<div class="grid two" style="margin-top:16px"><section class="card"><h3>Account & pair</h3>' +
         '<div class="cluster"><div class="cluster-row cols-2">' +
           field("Capital £", "settings.capitalGbp", state.settings.capitalGbp) +
@@ -10856,6 +10873,24 @@
       }).join('') +
       '</div><p class="muted layout-setting-note">Saved with your account settings, so the chosen working surface can follow you to another signed-in device.</p></section>';
   }
+  function scoutTriageLayoutValue() {
+    var value = state && state.settings ? String(state.settings.scoutTriageLayout || "scan") : "scan";
+    return SCOUT_TRIAGE_LAYOUTS[value] ? value : "scan";
+  }
+  function scoutTriageLayoutSettingsHtml() {
+    var current = scoutTriageLayoutValue();
+    return '<section class="card scout-triage-layout-settings"><header><div><h3>Scout record layout</h3><p class="muted">Choose how saved coin rows are arranged. This changes density only; locks, evidence and actions stay the same.</p></div><span class="layout-setting-badge">'+esc(SCOUT_TRIAGE_LAYOUTS[current].short)+'</span></header>' +
+      '<div class="coin-desk-layout-options scout-triage-layout-options" role="group" aria-label="Scout record layout options">' +
+      ["scan", "deck"].map(function (key) {
+        var item = SCOUT_TRIAGE_LAYOUTS[key], selected = key === current;
+        return '<button type="button" class="coin-desk-layout-option'+(selected?' selected':'')+'" data-action="set-scout-triage-layout" data-layout="'+key+'" aria-pressed="'+selected+'">' +
+          '<span class="layout-option-top"><b>'+esc(item.label)+'</b><i>'+ (selected ? 'Selected' : 'Use this') +'</i></span>' +
+          '<small>'+esc(item.detail)+'</small>' +
+          '<span class="layout-principles">identity · evidence · action</span>' +
+        '</button>';
+      }).join('') +
+      '</div><p class="muted layout-setting-note">Account setting: the selected Scout row layout follows the signed-in user across devices.</p></section>';
+  }
 
   function commandStripHtml() {
     return '<div class="cmd-strip" role="toolbar" aria-label="Main navigation">'+
@@ -10889,6 +10924,7 @@
       document.body.classList.add("command-strip-mode");
       document.body.setAttribute("data-color-theme", colorTheme);
       document.body.setAttribute("data-coin-desk-layout", coinDeskLayoutValue());
+      document.body.setAttribute("data-scout-triage-layout", scoutTriageLayoutValue());
       document.body.classList.toggle("page-scout", page === "scout");
       var tog = document.getElementById("train-toggle");
       if (tog) {
@@ -11220,6 +11256,15 @@
       var layout = btn.getAttribute("data-layout");
       if (!COIN_DESK_LAYOUTS[layout]) return;
       state.settings.coinDeskLayout = layout;
+      errorMsg = "";
+      save();
+      render();
+      return;
+    }
+    if (action === "set-scout-triage-layout") {
+      var triageLayout = btn.getAttribute("data-layout");
+      if (!SCOUT_TRIAGE_LAYOUTS[triageLayout]) return;
+      state.settings.scoutTriageLayout = triageLayout;
       errorMsg = "";
       save();
       render();
@@ -11776,8 +11821,16 @@
   }
   function triageMatches(rows){return unifiedScoutMatches(rows||[]);}
   function unifiedScoutRowHtml(r){
-    var c=r.pair,scanPending=r.scanStatus&&r.scanStatus!=='done',scanFailed=r.scanStatus==='failed',lock=scoutLockFor(c.ticker),locked=!!lock,trend=scanFailed?'Outdated':scanPending?'Refreshing…':r.context.ready?(r.observation.trend||'Observed'):'Unknown',change=!scanPending&&!scanFailed&&r.change!=null?(r.change>=0?'+':'')+num(r.change,1)+'%':'—',star=state.settings.watchlist.indexOf(c.ticker)>=0,health=locked?'Locked':scanFailed?'Refresh incomplete':scanPending?'Pending':r.mismatch?'Check draft':r.context.ready?'Ready':'Needs data',healthClass=locked?'attention':r.context.ready&&!r.mismatch?'ready':r.mismatch?'attention':'unknown';
-    return '<article class="triage-unified-row '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+'" data-ticker="'+esc(c.ticker)+'"><button type="button" class="triage-unified-main" data-action="triage-inspect" data-ticker="'+esc(c.ticker)+'" aria-label="Inspect '+esc(c.name||c.ticker)+'"><span class="triage-unified-coin"><b>'+esc(c.ticker)+'</b><small>'+esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched')+'</small>'+(locked?'<small class="triage-lock-note">🔒 '+esc(lock.reason)+'</small>':'')+'</span><span class="triage-unified-watch"><b>'+esc(trend)+'</b><small>'+esc(r.watch||'No current watch')+'</small></span><span class="triage-unified-change '+(r.change>0?'up':r.change<0?'down':'')+'"><b>'+esc(change)+'</b><small>'+esc(r.pos&&r.pos.word||'not checked')+'</small></span><span class="triage-unified-health '+healthClass+'">'+esc(health)+'</span></button><button type="button" class="triage-unified-star '+(star?'on':'')+'" data-action="triage-star" data-ticker="'+esc(c.ticker)+'" aria-pressed="'+star+'" aria-label="'+(star?'Remove '+esc(c.ticker)+' from shortlist':'Add '+esc(c.ticker)+' to shortlist')+'">'+(star?'★':'☆')+'</button><button type="button" class="triage-unified-lock '+(locked?'on':'')+'" data-action="triage-lock" data-reason="HODL / existing exposure" data-ticker="'+esc(c.ticker)+'" aria-label="'+(locked?'Keep '+esc(c.ticker)+' locked':'Lock '+esc(c.ticker)+' in Scout')+'" title="'+(locked?esc(lock.reason):'Manual Scout lock')+'">'+(locked?'🔒':'Lock')+'</button><button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-open" data-page-target="sizer" data-ticker="'+esc(c.ticker)+'" aria-label="'+(locked?'Locked · open checks for '+esc(c.ticker):'Open '+esc(c.ticker)+' in Sizer')+'">'+(locked?'🔒 Locked':'Open')+'</button></article>';
+    var c=r.pair,scanPending=r.scanStatus&&r.scanStatus!=='done',scanFailed=r.scanStatus==='failed',lock=scoutLockFor(c.ticker),locked=!!lock,trend=scanFailed?'Outdated':scanPending?'Refreshing…':r.context.ready?(r.observation.trend||'Observed'):'Unknown',change=!scanPending&&!scanFailed&&r.change!=null?(r.change>=0?'+':'')+num(r.change,1)+'%':'—',star=state.settings.watchlist.indexOf(c.ticker)>=0,health=locked?'Locked':scanFailed?'Refresh incomplete':scanPending?'Pending':r.mismatch?'Check draft':r.context.ready?'Ready':'Needs data',healthClass=locked?'attention':r.context.ready&&!r.mismatch?'ready':r.mismatch?'attention':'unknown',ticker=esc(c.ticker),name=esc(c.name||c.ticker),price=esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched'),watch=esc(r.watch||'No current watch'),location=esc(r.pos&&r.pos.word||'not checked'),reason=locked?'<small class="triage-lock-note">🔒 '+esc(lock.reason)+'</small>':'',openClass=locked?'locked':'',openLabel=locked?'🔒 Locked':'Open';
+    var coin='<span class="triage-unified-coin"><b>'+ticker+'</b><small>'+price+'</small>'+reason+'</span>';
+    var evidence='<span class="triage-unified-watch"><b>'+esc(trend)+'</b><small>'+watch+'</small></span>';
+    var changeMarkup='<span class="triage-unified-change '+(r.change>0?'up':r.change<0?'down':'')+'"><b>'+esc(change)+'</b><small>'+location+'</small></span>';
+    var healthMarkup='<span class="triage-unified-health '+healthClass+'">'+esc(health)+'</span>';
+    var actions='<button type="button" class="triage-unified-star '+(star?'on':'')+'" data-action="triage-star" data-ticker="'+ticker+'" aria-pressed="'+star+'" aria-label="'+(star?'Remove '+ticker+' from shortlist':'Add '+ticker+' to shortlist')+'">'+(star?'★':'☆')+'</button><button type="button" class="triage-unified-lock '+(locked?'on':'')+'" data-action="triage-lock" data-reason="HODL / existing exposure" data-ticker="'+ticker+'" aria-label="'+(locked?'Keep '+ticker+' locked':'Lock '+ticker+' in Scout')+'" title="'+(locked?esc(lock.reason):'Manual Scout lock')+'">'+(locked?'🔒':'Lock')+'</button><button type="button" class="triage-unified-open '+openClass+'" data-action="triage-open" data-page-target="sizer" data-ticker="'+ticker+'" aria-label="'+(locked?'Locked · open checks for '+ticker:'Open '+ticker+' in Sizer')+'">'+openLabel+'</button>';
+    if(scoutTriageLayoutValue()==='deck'){
+      return '<article class="triage-unified-row triage-review-row '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-review-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-review-head">'+coin+healthMarkup+'</span><span class="triage-review-observation"><small>Observation / hypothesis</small><b>'+esc(trend)+'</b><span>'+watch+'</span></span><span class="triage-review-next"><span><b>Observe</b> → test evidence · '+location+'</span><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong></span></button>'+actions+'</article>';
+    }
+    return '<article class="triage-unified-row triage-scan-row '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-scan-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-scan-head">'+coin+healthMarkup+'</span><span class="triage-scan-evidence">'+evidence+'</span><span class="triage-scan-meta">'+changeMarkup+'<small>· '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button>'+actions+'</article>';
   }
   function unifiedScoutFindRowHtml(p){
     return '<article class="triage-unified-row triage-find-row" data-ticker="'+esc(p.ticker)+'"><div class="triage-unified-main"><span class="triage-unified-coin"><b>'+esc(p.ticker)+'</b><small>'+esc(p.name||p.ticker)+'</small></span><span class="triage-unified-watch"><b>Available to add</b><small>Quote research starts only after Save / Peek</small></span><span class="triage-unified-change">—<small>not saved</small></span><span class="triage-unified-health unknown">Not saved</span></div><button type="button" class="triage-unified-open add" data-action="triage-add" data-ticker="'+esc(p.ticker)+'">＋ Add</button></article>';
@@ -11809,4 +11862,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40d75a84e37b3ba',t:'MTc5MDM3NTI4MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40db6eacfdd1118',t:'MTc5MDM3Nzk1NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
