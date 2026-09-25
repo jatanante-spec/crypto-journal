@@ -4896,6 +4896,76 @@ body.command-strip-mode[data-color-theme="signal"]{--bg:#0b1220;--panel:#151f35;
 @media(max-width:900px){.cd-deck-toolbar{align-items:stretch}.cd-deck-view-switch{flex:1}.cd-deck-filter-switch{width:100%;overflow-x:auto;flex-wrap:nowrap}.cd-deck-filter-switch button{flex:0 0 auto}}
 @media(max-width:760px){#cd-dialog{width:calc(100vw - 12px);max-width:none;height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 12px);margin:6px auto;border-radius:16px}#cd-dialog-body{padding:10px 10px calc(18px + env(safe-area-inset-bottom))}.cd-deck-toolbar{gap:6px}.cd-deck-view-switch{overflow-x:auto;flex-wrap:nowrap}.cd-deck-view-switch button{flex:0 0 auto}.cd-check-row{grid-template-columns:17px minmax(0,1fr) auto 13px;gap:6px;min-height:46px;padding:7px 8px!important}.cd-check-status{font-size:8px}.cd-deck-footer{position:sticky;bottom:calc(-1 * env(safe-area-inset-bottom));background:linear-gradient(var(--panel),var(--panel));padding-bottom:calc(5px + env(safe-area-inset-bottom))}.cd-focus-card{padding:13px}.cd-focus-card h3{font-size:17px!important}.cd-rail-card{flex-basis:78vw}}
 @media(max-width:420px){.cd-deck-view-switch button,.cd-deck-filter-switch button{padding-left:8px;padding-right:8px}.cd-check-main b{font-size:11px}.cd-check-main small{font-size:9px}.cd-list-heading h3{font-size:12px!important}.cd-deck-summary{font-size:10px}}
+/* Market climate — a visible observation layer above the existing Gates. */
+.market-screen .market-climate{--climate-tone:var(--muted);--climate-bg:var(--input);padding:14px 15px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(145deg,rgba(21,31,53,.98),rgba(15,25,43,.98));min-width:0;box-shadow:0 8px 22px rgba(0,0,0,.14)}
+.market-screen .market-climate.climate-good{--climate-tone:var(--green);--climate-bg:var(--green-bg);border-color:#2f6d5a}
+.market-screen .market-climate.climate-mid{--climate-tone:var(--yellow);--climate-bg:var(--yellow-bg);border-color:#5a4d27}
+.market-screen .market-climate.climate-bad{--climate-tone:var(--red);--climate-bg:var(--red-bg);border-color:#6a3441}
+.market-screen .market-climate.climate-unknown{--climate-tone:var(--muted);--climate-bg:var(--input);border-color:var(--line)}
+.market-climate-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.market-climate-kicker{display:block;color:var(--cyan);font-size:10px!important;line-height:1.2!important;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.market-climate-head h2{margin:4px 0 2px!important;font-size:21px!important;line-height:1.1!important;letter-spacing:-.02em}
+.market-climate-head p{margin:0;color:var(--muted);font-size:10px!important;line-height:1.35!important}
+.market-climate-status{display:inline-flex;align-items:center;gap:6px;padding:7px 9px;border:1px solid color-mix(in srgb,var(--climate-tone),transparent 55%);border-radius:999px;background:var(--climate-bg);color:var(--climate-tone);font-size:10px!important;line-height:1!important;font-weight:800;letter-spacing:.04em;white-space:nowrap}
+.market-climate-status i{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 3px color-mix(in srgb,var(--climate-tone),transparent 82%)}
+.market-climate-subtitle{margin:9px 0 0!important;color:var(--muted);font-size:12px!important;line-height:1.45!important}
+.market-climate-track{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin:15px 0 7px;padding-top:1px}
+.market-climate-track:before{content:"";position:absolute;left:0;right:0;top:6px;height:4px;border-radius:99px;background:linear-gradient(90deg,var(--green),var(--yellow),#e49c67,var(--red));opacity:.78}
+.market-climate-track-point{position:relative;padding-top:16px;color:var(--muted);font-size:9px!important;line-height:1.2!important;text-transform:uppercase;letter-spacing:.06em}
+.market-climate-track-point:before{content:"";position:absolute;top:2px;left:0;width:9px;height:9px;border:2px solid var(--panel);border-radius:50%;background:var(--muted);box-shadow:0 0 0 1px rgba(255,255,255,.15)}
+.market-climate-track-point.active{color:var(--text);font-weight:800}
+.market-climate-track-point.active:before{width:13px;height:13px;top:0;background:var(--climate-tone);box-shadow:0 0 0 3px color-mix(in srgb,var(--climate-tone),transparent 78%),0 0 0 1px rgba(255,255,255,.3)}
+.market-climate-readout{display:flex;align-items:flex-start;gap:9px;padding:9px 10px;border:1px solid color-mix(in srgb,var(--climate-tone),transparent 68%);border-radius:9px;background:color-mix(in srgb,var(--climate-bg),transparent 34%);font-size:11px!important;line-height:1.45!important}
+.market-climate-readout b{flex:0 0 auto;color:var(--climate-tone);font-size:10px!important;letter-spacing:.04em;text-transform:uppercase}
+.market-climate-readout span{color:var(--text)}
+.market-climate-meta{display:flex;flex-wrap:wrap;gap:4px 12px;margin:8px 0 0;color:var(--muted);font-size:9px!important;line-height:1.35!important}
+.market-climate-meta span+span:before{content:"·";margin-right:7px;color:var(--blue)}
+.market-climate-glance{margin-top:13px;padding-top:11px;border-top:1px solid var(--line)}
+.market-climate-glance-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:7px}
+.market-climate-glance-head h3{margin:0!important;font-size:12px!important;line-height:1.2!important;letter-spacing:0!important;text-transform:none!important;color:var(--text)!important}
+.market-climate-glance-head small{color:var(--muted);font-size:9px!important;line-height:1.3!important;text-align:right}
+.market-climate-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.market-climate-reading{min-width:0;border:1px solid var(--line);border-top:2px solid var(--climate-tone);border-radius:8px;background:rgba(9,17,29,.34);overflow:hidden}
+.market-climate-reading>summary{display:flex;align-items:flex-start;justify-content:space-between;gap:5px;padding:8px;cursor:pointer;list-style:none;min-height:73px}
+.market-climate-reading>summary::-webkit-details-marker{display:none}
+.market-climate-reading>summary:hover{background:rgba(70,100,150,.12)}
+.market-climate-reading-head{display:flex;gap:6px;min-width:0}
+.market-climate-reading-head>span:last-child{min-width:0}
+.market-climate-reading-dot{flex:0 0 7px;width:7px;height:7px;margin-top:3px;border-radius:50%;background:var(--climate-tone)}
+.market-climate-reading summary small{display:block;color:var(--muted);font-size:9px!important;line-height:1.2!important;text-transform:uppercase;letter-spacing:.06em}
+.market-climate-reading summary b{display:block;margin-top:4px;color:var(--climate-tone);font-size:12px!important;line-height:1.2!important;overflow-wrap:anywhere}
+.market-climate-reading summary em{display:block;margin-top:4px;color:var(--muted);font-style:normal;font-size:9px!important;line-height:1.3!important;overflow-wrap:anywhere}
+.market-climate-info{display:grid;place-items:center;flex:0 0 15px;width:15px;height:15px;border:1px solid var(--line);border-radius:50%;color:var(--blue);font-size:9px!important}
+.market-climate-reading-body{padding:0 8px 8px;border-top:1px solid var(--line);font-size:10px!important;line-height:1.45!important;color:var(--muted)}
+.market-climate-reading-body p{margin:7px 0!important;font-size:10px!important;line-height:1.45!important}
+.market-climate-data-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.market-climate-data{padding:6px;border:1px solid var(--line);border-radius:6px;background:rgba(11,23,42,.55);min-width:0}
+.market-climate-data small{display:block;color:var(--muted);font-size:8px!important;line-height:1.2!important;text-transform:uppercase;letter-spacing:.05em}
+.market-climate-data b{display:block;margin-top:3px;color:var(--text);font-size:10px!important;line-height:1.25!important;overflow-wrap:anywhere}
+.market-climate-boundary{color:var(--muted)!important;font-size:9px!important}
+.market-climate-change{display:grid;grid-template-columns:25px minmax(0,1fr);gap:8px;align-items:start;margin-top:10px;padding:8px 9px;border:1px solid #5a4d27;border-radius:8px;background:rgba(59,48,23,.48)}
+.market-climate-change>span{display:grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--yellow-bg);color:var(--yellow);font-weight:800}
+.market-climate-change small{display:block;color:var(--yellow);font-size:9px!important;line-height:1.2!important;text-transform:uppercase;letter-spacing:.06em}
+.market-climate-change b{display:block;margin-top:3px;font-size:11px!important;line-height:1.3!important}
+.market-climate-change p{margin:2px 0 0!important;color:var(--muted);font-size:9px!important;line-height:1.35!important}
+.market-climate-method{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:9px}
+.market-climate-method>div{padding:8px;border:1px solid var(--line);border-radius:7px;background:rgba(21,31,53,.62)}
+.market-climate-method small{display:block;color:var(--cyan);font-size:8px!important;line-height:1.2!important;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.market-climate-method b{display:block;margin-top:3px;font-size:10px!important;line-height:1.25!important}
+.market-climate-method p{margin:4px 0 0!important;color:var(--muted);font-size:9px!important;line-height:1.35!important}
+.market-climate-evidence{margin-top:9px;border:1px solid var(--line);border-radius:8px;background:rgba(13,24,42,.48);overflow:hidden}
+.market-climate-evidence>summary{padding:8px 9px;cursor:pointer;color:var(--text);font-size:10px!important;line-height:1.3!important;list-style:none}
+.market-climate-evidence>summary::-webkit-details-marker{display:none}
+.market-climate-evidence>summary:after{content:"+";float:right;color:var(--blue);font-size:16px;line-height:10px}
+.market-climate-evidence[open]>summary:after{content:"−"}
+.market-climate-evidence>summary small{display:block;margin-top:3px;margin-left:0;color:var(--muted);font-size:9px!important;font-weight:400}
+.market-climate-evidence>div{padding:0 9px 8px}
+.market-climate-footnote{margin:7px 0 0!important;color:var(--muted);font-size:9px!important;line-height:1.4!important}
+.market-climate-actions{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:9px;padding-top:9px;border-top:1px solid var(--line)}
+.market-climate-actions .btn{min-height:32px;padding:6px 9px;font-size:10px}
+.market-climate-actions>span{color:var(--muted);font-size:9px!important;line-height:1.3!important}
+@media(max-width:620px){.market-screen .market-climate{padding:12px 10px}.market-climate-head{gap:8px}.market-climate-head h2{font-size:18px!important}.market-climate-status{padding:6px 7px;font-size:9px!important}.market-climate-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.market-climate-reading>summary{min-height:70px}.market-climate-method{grid-template-columns:1fr;gap:5px}.market-climate-method>div{padding:7px}.market-climate-data-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:390px){.market-climate-head{display:block}.market-climate-status{margin-top:8px}.market-climate-track-point{font-size:8px!important}.market-climate-readout{display:block}.market-climate-readout b{display:block;margin-bottom:3px}.market-climate-meta{gap:3px 7px}.market-climate-meta span+span:before{margin-right:4px}.market-climate-glance-head{display:block}.market-climate-glance-head small{display:block;margin-top:3px;text-align:left}.market-climate-reading>summary{padding:7px}.market-climate-reading summary b{font-size:11px!important}.market-climate-reading summary em{font-size:8px!important}.market-climate-data-grid{grid-template-columns:1fr 1fr}.market-climate-data:last-child{grid-column:span 2}}
 </style>
 
   </head>
@@ -5304,6 +5374,33 @@ body.command-strip-mode[data-color-theme="signal"]{--bg:#0b1220;--panel:#151f35;
     return out;
   }
 
+  var TRADE_DELETED_KEEP = 500;
+
+  function tradeDeletedMap(raw) {
+    var out = {};
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+    Object.keys(raw).slice(-TRADE_DELETED_KEEP).forEach(function (id) {
+      var key = String(id).slice(0, 120);
+      if (!key || key === '__n') return;
+      var value = raw[id];
+      out[key] = { at: value && value.at ? String(value.at).slice(0, 40) : '' };
+    });
+    return out;
+  }
+
+  function mergeDeletedTrades(a, b) {
+    var out = tradeDeletedMap(a), right = tradeDeletedMap(b);
+    Object.keys(right).forEach(function (id) { out[id] = right[id]; });
+    var ids = Object.keys(out);
+    if (ids.length > TRADE_DELETED_KEEP) {
+      ids.sort(function (x, y) { return String(out[y].at || '').localeCompare(String(out[x].at || '')); });
+      var keep = {};
+      ids.slice(0, TRADE_DELETED_KEEP).forEach(function (id) { keep[id] = out[id]; });
+      out = keep;
+    }
+    return out;
+  }
+
   var PLAN_DELETED_KEEP = 500;
 
   function planDeletedMap(raw) {
@@ -5389,13 +5486,13 @@ body.command-strip-mode[data-color-theme="signal"]{--bg:#0b1220;--panel:#151f35;
       request('/rest/v1/saved_plans?select=*&user_id=' + eq(userId) + '&order=' + inOrder('created_at.asc'))
     ]);
     var settings = results[0] && results[0][0] ? results[0][0] : {};
-    var legacy = objectOrEmpty(settings.legacy_state),deletedPlans=planDeletedMap(legacy.deletedPlans);
+    var legacy = objectOrEmpty(settings.legacy_state),deletedPlans=planDeletedMap(legacy.deletedPlans),deletedTrades=tradeDeletedMap(legacy.deleted);
     return {
       updatedAt: settings.app_state_updated_at || null,
       settings: clone(objectOrEmpty(settings.settings)),
       sizer: clone(objectOrEmpty(legacy.sizer)),
       market: clone(objectOrEmpty(legacy.market)),
-      trades: arrayOrEmpty(results[1]).map(tradeFromRow),
+      trades: arrayOrEmpty(results[1]).map(tradeFromRow).filter(function (trade) { return !deletedTrades[String(trade.id)]; }),
       plans: dropDeletedPlanRows(arrayOrEmpty(results[2]).map(planFromRow),deletedPlans),
       deletedPlans: deletedPlans,
       closes: clone(arrayOrEmpty(legacy.closes)),
@@ -5412,8 +5509,11 @@ body.command-strip-mode[data-color-theme="signal"]{--bg:#0b1220;--panel:#151f35;
     payload = payload || {};
     var existingSettings = await request('/rest/v1/user_settings?select=legacy_state&user_id=' + eq(userId));
     var existingLegacy = existingSettings && existingSettings[0] ? objectOrEmpty(existingSettings[0].legacy_state) : {};
+    // Trade tombstones must be merged server-side. A stale tab/device must
+    // never be able to write an empty deleted map and resurrect a Journal row.
+    var deletedTrades = mergeDeletedTrades(existingLegacy.deleted, payload.deleted);
     var deletedPlans = mergeDeletedPlans(existingLegacy.deletedPlans, payload.deletedPlans);
-    var safePayload = Object.assign({}, payload, { deletedPlans: deletedPlans });
+    var safePayload = Object.assign({}, payload, { deleted: deletedTrades, deletedPlans: deletedPlans });
 
     await request('/rest/v1/user_settings?on_conflict=user_id', {
       method: 'POST',
@@ -5449,6 +5549,19 @@ body.command-strip-mode[data-color-theme="signal"]{--bg:#0b1220;--panel:#151f35;
     if (deletedIds.length) {
       await Promise.all(deletedIds.map(function (id) {
         return request('/rest/v1/saved_plans?user_id=' + eq(userId) + '&source_id=' + eq(id), {
+          method: 'DELETE',
+          headers: { Prefer: 'return=minimal' }
+        });
+      }));
+    }
+
+    // Journal deletion is separate from Saved Plan deletion. Only explicit
+    // Journal tombstones reach this loop; linked trades are never touched by
+    // deleting a Saved Plan.
+    var deletedTradeIds = Object.keys(tradeDeletedMap(deletedTrades));
+    if (deletedTradeIds.length) {
+      await Promise.all(deletedTradeIds.map(function (id) {
+        return request('/rest/v1/journal_trades?user_id=' + eq(userId) + '&source_id=' + eq(id), {
           method: 'DELETE',
           headers: { Prefer: 'return=minimal' }
         });
@@ -11380,6 +11493,66 @@ body.command-strip-mode[data-color-theme="signal"]{--bg:#0b1220;--panel:#151f35;
   function cdStrip(f){var cues=cdCues(f),groups=[['Ticket',['Ticket','R:R','Reach']],['Timing',['Tide','Hour','Spot','Score','RSI','Tape']],['Account',['In','Day']],['Plan / data',['Fetch','ATR','Plan','Source']]];return '<div class="cd-strip" aria-label="Cue groups">'+groups.map(function(g){var rows=cues.filter(function(c){return g[1].indexOf(c.id)>=0;}),status=cdStatus(rows),first=rows.filter(function(c){return c.status===status;})[0]||rows[0];return '<button type="button" class="cd-'+status+'" data-action="cd-deck" data-cue="'+first.id+'"><span>● '+cdStatusWord(status)+'</span><b>'+g[0]+'</b></button>';}).join('')+'</div>'+(lrSeen('hint')?'':'<p class="cd-small">Tap a group to inspect the checks. A proposed plan is not buying approval.</p>');}
   function cdDecision(f){var master=cdMaster(f),tone=master==='BUY'?'pass':(master==='SELL'||master==='NO-GO')?'block':'wait',reason=cdDecisionReason(f,master),sub=cdDecisionSubline(f,master);return '<section class="cd-decision"><b class="cd-verdict cd-'+tone+'">'+esc(master)+'</b><div><strong>'+esc(reason)+'</strong><small>'+esc(sub)+'</small></div><button type="button" class="text-link" data-action="cd-why">Why? / Gates</button></section>'+cdStrip(f);}
   function cdHeader(f){var quoteKnown=f.fresh.kind!=='sample'&&!f.fresh.stale;return '<header class="cd-header"><div class="cd-header-row">'+coinSwitch()+'<div><b>'+esc(quoteKnown?priceGbp(f.t.price,5):'Quote needs Fetch')+'</b><small>'+esc(f.fresh.label)+'</small></div><button type="button" class="btn secondary" data-action="fetch-market"'+(busy?' disabled':'')+'>'+(busy?'Fetching…':'Fetch')+'</button></div></header>';}
+  function climateToneClass(tone){return tone==='good'?'good':tone==='bad'?'bad':tone==='mid'?'mid':'unknown';}
+  function climateDataCell(label,value){return '<div class="market-climate-data"><small>'+esc(label)+'</small><b>'+esc(value==null||value===''?'Unknown':String(value))+'</b></div>';}
+  function marketClimateReading(id,label,value,detail,tone,body){
+    tone=climateToneClass(tone);
+    return '<details class="market-climate-reading climate-'+tone+'"><summary><span class="market-climate-reading-head"><span class="market-climate-reading-dot" aria-hidden="true"></span><span><small>'+esc(label)+'</small><b>'+esc(value)+'</b><em>'+esc(detail)+'</em></span></span><span class="market-climate-info" aria-hidden="true">i</span></summary><div class="market-climate-reading-body">'+body+'<p class="market-climate-boundary">Observation only · '+esc(id)+' does not change entry Gates, sizing or ticket state.</p></div></details>';
+  }
+  function marketClimateHtml(f){
+    var t=f.t||{},c=f.c||{},o=f.observation||{},fresh=f.fresh||marketFreshness();
+    var usable=fresh.kind!=='sample'&&!fresh.stale&&!!c.ready;
+    var invalid=!!(c.broken||o.code==='INVALIDATED');
+    var pressured=!!(t.tideDown||t.hourTrend==='DOWN'||o.code==='PRESSURE');
+    var supportive=!!(usable&&!invalid&&!pressured&&c.hl&&c.ema&&c.prices&&c.prices.length&&Number(c.prices[c.prices.length-1])>Number(c.ema[c.ema.length-1]));
+    var status=!usable?'UNKNOWN':invalid||pressured?'FRAGILE':supportive?'SUPPORTIVE':'BALANCED';
+    var tone=status==='SUPPORTIVE'?'good':status==='FRAGILE'?'bad':status==='BALANCED'?'mid':'unknown';
+    var statusWord=status==='UNKNOWN'?'DATA GAP':status==='SUPPORTIVE'?'READABLE':status==='FRAGILE'?'OBSERVE':'OBSERVE';
+    var subtitle,readout;
+    if(status==='UNKNOWN'){
+      subtitle='The climate layer is withholding an interpretation until the completed hourly evidence is usable.';
+      readout='No structural conclusion is drawn. Fetch a fresh, consecutive hourly series; missing evidence is not treated as favourable or neutral.';
+    }else if(status==='FRAGILE'){
+      subtitle='Structure has weakened or directional pressure is still present; participation is checked separately.';
+      readout=invalid?'The latest completed hourly close broke the tracked structure reference. Any earlier watch remains in history; no new continuation confirmation is present.':'Directional pressure is present in the validated readings. A cool or oversold reading does not, by itself, confirm a reversal.';
+    }else if(status==='SUPPORTIVE'){
+      subtitle='The latest confirmed hourly structure is holding above EMA20; this describes conditions, not a buy signal.';
+      readout='A higher low and completed close above EMA20 are visible. Check location, participation and the existing entry Gates before interpreting a ticket.';
+    }else{
+      subtitle='The market is readable, but the independent readings do not form a strong climate claim.';
+      readout='Structure is not currently broken, but confirmation is mixed. Keep the next completed observation separate from an entry decision.';
+    }
+    var lastClose=c.prices&&c.prices.length?Number(c.prices[c.prices.length-1]):null;
+    var ema=c.ema&&c.ema.length?Number(c.ema[c.ema.length-1]):null;
+    var ref=c.low&&c.low.px>0?priceGbp(c.low.px,5):'unavailable';
+    var barAt=o.barAt||(c.ats&&c.ats.length?c.ats[c.ats.length-1]:null);
+    var barLabel=barAt?formatPivotWhen(barAt):'completed hour unavailable';
+    var structureValue=!usable?'Unknown':invalid?'Weakening':c.hl?'Holding':'Watch';
+    var structureDetail=!usable?'Hourly evidence unavailable':invalid?'Completed close below reference':c.hl?'Higher low / structure intact':'No confirmed higher low';
+    var structureBody='<p>'+esc(invalid?'The completed price broke the latest confirmed reference. The reference is informational, not a stop order.':c.hl?'The latest confirmed higher low is being retained as context. It needs completed-hour evidence; it does not unlock a ticket.':'No confirmed higher low is available in the validated window.')+'</p><div class="market-climate-data-grid">'+climateDataCell('Last close',lastClose?priceGbp(lastClose,5):'Unknown')+climateDataCell('Reference',ref)+climateDataCell('Observed',barLabel)+'</div>';
+    var momentumValue=!usable||t.hourRsi==null?'Unknown':t.hourRsi>=70?'Hot / late':t.hourRsi<=30?'Stretched':t.hourTrend==='DOWN'?'Cooling':t.hourTrend==='UP'?'Improving':'Mixed';
+    var momentumTone=momentumValue==='Improving'?'good':momentumValue==='Cooling'||momentumValue==='Hot / late'?'mid':'unknown';
+    var momentumDetail=!usable||t.hourRsi==null?'Validated hourly RSI unavailable':(t.hourTrend||'mixed')+' · RSI '+num(t.hourRsi,1);
+    var momentumBody='<p>Momentum is descriptive here. RSI and hourly direction are not stand-alone triggers and do not override the existing verdict.</p><div class="market-climate-data-grid">'+climateDataCell('Hourly RSI',t.hourRsi==null?'Unknown':num(t.hourRsi,1))+climateDataCell('Hourly direction',t.hourTrend||'Unknown')+climateDataCell('EMA20',ema?priceGbp(ema,5):'Unknown')+'</div>';
+    var ratio=t.volRatio!=null&&isFinite(Number(t.volRatio))?Number(t.volRatio):null;
+    var participationValue=!usable||!t.volReady?'Unknown':ratio!=null&&ratio<.85?'Quiet':ratio!=null&&ratio>1.2?'Confirming':'Normal';
+    var participationTone=participationValue==='Confirming'?'good':participationValue==='Quiet'?'mid':'unknown';
+    var participationDetail=!usable||!t.volReady?'Validated hourly volume unavailable':ratio==null?'Volume state available · ratio unknown':(num(ratio,1)+'× recent median');
+    var participationBody='<p>Participation tests whether activity is confirming the move. A quiet move is not automatically bearish; it is simply weaker confirmation.</p><div class="market-climate-data-grid">'+climateDataCell('State',t.volEvidenceLabel||t.volState||'Unknown')+climateDataCell('Ratio',ratio==null?'Unknown':num(ratio,1)+'× median')+climateDataCell('Bar',t.volBarAt?formatPivotWhen(t.volBarAt):'Unknown')+'</div>';
+    var rangeKnown=Number(t.high)>Number(t.low)&&Number(t.price)>0;
+    var locationValue=!usable||!rangeKnown?'Unknown':t.nearHigh?'Near high':t.nearLow?'Near low':t.locPct<50?'Lower half':'Upper half';
+    var locationTone=locationValue==='Lower half'||locationValue==='Near low'?'good':locationValue==='Near high'?'mid':'unknown';
+    var locationDetail=!usable||!rangeKnown?'Provider day range unavailable':(num(t.locPct,1)+'% of provider day range');
+    var locationBody='<p>Location tells us where price sits inside the observed provider range. It is context, not a buy-the-dip instruction or a forecast.</p><div class="market-climate-data-grid">'+climateDataCell('Price',t.price?priceGbp(t.price,5):'Unknown')+climateDataCell('Range',rangeKnown?priceGbp(t.low,5)+' – '+priceGbp(t.high,5):'Unknown')+climateDataCell('Position',rangeKnown?num(t.locPct,1)+'%':'Unknown')+'</div>';
+    var track=['SUPPORTIVE','BALANCED','FRAGILE','UNKNOWN'].indexOf(status);if(track<0)track=1;
+    var trackLabels=['Supportive','Balanced','Fragile','Unknown'];
+    var trackHtml=trackLabels.map(function(label,i){return '<span class="market-climate-track-point '+(i===track?'active':'')+'">'+label+'</span>';}).join('');
+    var c1=contLabel(f.continuation&&f.continuation.code),obsLabel=o.trend||'Hourly observation unavailable';
+    var methodObserved=invalid?'Completed close broke the latest structure reference.':c.hl?'A higher low and completed close are retained as hourly observations.':'The current validated hourly series does not establish a confirmed turn.';
+    var methodInterpreted=invalid?'The earlier watch is invalidated; no new continuation confirmation exists.':c1==='Watch invalidated'?'The continuation watch is invalidated; no new entry is inferred.':c1||'No continuation conclusion is available.';
+    var methodPractical=invalid?'Re-observe the next completed hour. Do not promote this layer into a new plan.':'Use the climate as context, then read the existing Gates and ticket independently.';
+    return '<section class="market-climate climate-'+tone+'" aria-labelledby="market-climate-title"><header class="market-climate-head"><div><small class="market-climate-kicker">Coin climate · observation layer</small><h2 id="market-climate-title">Market climate</h2><p>'+esc(fresh.label||'Freshness unavailable')+' · '+esc(String(f.coin||state.settings.coinTicker).toUpperCase())+' / '+esc(String(state.settings.vsCurrency||'gbp').toUpperCase())+'</p></div><span class="market-climate-status climate-'+tone+'"><i></i>'+esc(status+' · '+statusWord)+'</span></header><p class="market-climate-subtitle">'+esc(subtitle)+'</p><div class="market-climate-track" aria-label="Climate continuum">'+trackHtml+'</div><div class="market-climate-readout"><b>What the data says</b><span>'+esc(readout)+'</span></div><div class="market-climate-meta"><span>Completed hour · '+esc(barLabel)+'</span><span>Freshness · '+esc(fresh.label||'unknown')+'</span><span>T1 / C1 · observation only</span></div><div class="market-climate-glance"><div class="market-climate-glance-head"><h3>Four independent readings</h3><small>No magic composite · inspect each dimension</small></div><div class="market-climate-grid">'+marketClimateReading('Structure','Structure',structureValue,structureDetail,invalid?'bad':c.hl?'good':'mid',structureBody)+marketClimateReading('Momentum','Momentum',momentumValue,momentumDetail,momentumTone,momentumBody)+marketClimateReading('Participation','Participation',participationValue,participationDetail,participationTone,participationBody)+marketClimateReading('Location','Location',locationValue,locationDetail,locationTone,locationBody)+'</div></div><div class="market-climate-change"><span>!</span><div><small>Latest observed change</small><b>'+esc(invalid?'Structure weakened during the completed hour':obsLabel)+'</b><p>'+esc(invalid?'Earlier watch evidence remains in history; it is not rewritten.':'This is a descriptive observation, not an automatic entry instruction.')+'</p></div></div><div class="market-climate-method"><div><small>1 · Observed</small><b>What happened?</b><p>'+esc(methodObserved)+'</p></div><div><small>2 · Interpreted</small><b>What does it imply?</b><p>'+esc(methodInterpreted)+'</p></div><div><small>3 · Practical</small><b>What changes now?</b><p>'+esc(methodPractical)+'</p></div></div><details class="market-climate-evidence"><summary>Evidence behind the climate<small>Reference levels · continuation watch · feed health</small></summary><div class="market-climate-evidence-grid">'+climateDataCell('Structure reference',ref)+climateDataCell('Continuation',c1)+climateDataCell('Feed',t.volReady?'Hourly volume usable':'Check hourly feed')+'</div><p class="market-climate-footnote">Climate is a transparent descriptive layer. It does not change the existing engine, risk, sizing, plan, Journal or order behaviour. If evidence is stale or incomplete, the correct state is Unknown.</p></details><div class="market-climate-actions"><button type="button" class="btn secondary" data-action="cd-why">Open entry Gates separately</button><span>Climate explains the environment · Gates evaluate the ticket</span></div></section>';
+  }
   function cdMismatch(f){var entry=Number(state.sizer.entry),quote=Number(f.t.price);return f.fresh.kind!=='sample'&&!f.fresh.stale&&entry>0&&quote>0&&Math.abs(entry/quote-1)>.15;}
   function cdChartOptions(c,ticket,include){var low=Math.min.apply(null,c.prices),high=Math.max.apply(null,c.prices),all=[];['entry','stop','target'].forEach(function(k){var v=Number(ticket[k]);if(v>0&&isFinite(v))all.push({v:v,label:k,col:k==='stop'?'#f397a5':k==='target'?'#b6d68e':'#d8dfe8'});});return {levels:include?all:all.filter(function(l){return l.v>=low&&l.v<=high;}),excluded:include?[]:all.filter(function(l){return l.v<low||l.v>high;})};}
   function cdChartHtml(f){var c=f.c;if(!c.ready)return '<p class="cd-unavailable">'+esc(c.say)+'</p>';
@@ -15568,7 +15741,7 @@ body.command-strip-mode[data-color-theme="signal"]{--bg:#0b1220;--panel:#151f35;
 
   function renderMarket(){
     var f=cdFrame(true),t=f.t,known=f.fresh.kind!=='sample'&&!f.fresh.stale,exit=exitClimate(t,openDirection(primaryOpenTrade()||{coin:state.settings.coinTicker}));
-    return '<div class="market-screen cd-workspace">'+cdHeader(f)+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')+'<section class="cd-card"><header><h3>'+esc(f.c.title)+'</h3><button type="button" class="text-link" data-action="cd-learn">Learn</button></header>'+crLeadHtml(f)+cdChartHtml(f)+cdVolumeEvidenceHtml(f)+pcSummary(f)+cdTimeframes(f)+(known&&t.high>t.low?'<div class="range-meter"><div class="track"><i class="dot" style="left:'+clamp(t.locPct,0,100)+'%"></i></div><div class="cap"><span>'+esc(priceGbp(t.low,5))+'</span><span>'+esc(num(t.locPct,1)+'% · '+t.locLabel)+'</span><span>'+esc(priceGbp(t.high,5))+'</span></div></div>':'<p class="cd-small">Fresh provider range unavailable.</p>')+'<div class="cd-watch"><div><small>Continuation · observation only</small><b>'+esc(contLabel(f.continuation.code))+'</b></div><button type="button" class="text-link" data-action="cd-deck" data-cue="Continuation">Details</button></div><button type="button" class="btn secondary" data-page="sizer">Review ticket in Sizer →</button></section><details class="cd-fold" data-cd-fold="market-indicators"><summary>Evidence & indicators<small>Full cue deck · structure · market readings</small></summary><div><button type="button" class="btn secondary" data-action="cd-deck">All 24 instruments</button>'+contextWhyHtml()+'<p>'+esc('Daily RSI '+(t.rsi==null?'unknown':num(t.rsi,1))+' · hourly RSI '+(t.hourRsi==null?'unknown':num(t.hourRsi,1))+' · composite '+num(t.composite,1))+'</p></div></details>'+cdDataHtml(f)+'<details class="cd-fold" data-cd-fold="backdrop"><summary>Longer-term backdrop & exit climate<small>Month / week / day · separate legacy swing map</small></summary><div>'+horizonsBlockHtml(t)+'<p class="cd-small">Legacy prominence-ranked hourly swing map: comparison only, not the P1 proposal source.</p>'+swingMapLineHtml(t)+'<details class="cd-fold" data-cd-fold="legacy-chart"><summary>Legacy swing chart</summary><div>'+swingSparkSvg(state.hourly,t.swingLowIdx,t.swingHighIdx,640,180,'Legacy hourly map',t.swingMicroPivots,seriesBarAts(state.hourly,true),{})+'</div></details><p><b>Exit lens · if already long: '+esc(exit.stance)+'</b></p><p>'+esc(exit.say)+'</p><small>Not a short entry or buying approval.</small></div></details>'+cdMarketAdjust(t)+'<details class="cd-fold" data-cd-fold="legacy-send"><summary>Manual quote-based ticket tool</summary><div><p>This existing tool overwrites the draft using the current quote, manual stop percentage and 2R target. It is separate from P1 and does not approve a buy or change an open order.</p><button type="button" class="btn secondary" data-action="use-sizer"'+(!known||busy?' disabled':'')+'>Overwrite draft and open Sizer</button></div></details><div class="cd-actions"><button type="button" class="btn secondary" data-action="cd-learn">Learn this screen</button><button type="button" class="text-link" data-page="manual">Open the manual</button></div></div>';
+    return '<div class="market-screen cd-workspace">'+cdHeader(f)+marketClimateHtml(f)+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')+'<section class="cd-card"><header><h3>'+esc(f.c.title)+'</h3><button type="button" class="text-link" data-action="cd-learn">Learn</button></header>'+crLeadHtml(f)+cdChartHtml(f)+cdVolumeEvidenceHtml(f)+pcSummary(f)+cdTimeframes(f)+(known&&t.high>t.low?'<div class="range-meter"><div class="track"><i class="dot" style="left:'+clamp(t.locPct,0,100)+'%"></i></div><div class="cap"><span>'+esc(priceGbp(t.low,5))+'</span><span>'+esc(num(t.locPct,1)+'% · '+t.locLabel)+'</span><span>'+esc(priceGbp(t.high,5))+'</span></div></div>':'<p class="cd-small">Fresh provider range unavailable.</p>')+'<div class="cd-watch"><div><small>Continuation · observation only</small><b>'+esc(contLabel(f.continuation.code))+'</b></div><button type="button" class="text-link" data-action="cd-deck" data-cue="Continuation">Details</button></div><button type="button" class="btn secondary" data-page="sizer">Review ticket in Sizer →</button></section><details class="cd-fold" data-cd-fold="market-indicators"><summary>Evidence & indicators<small>Full cue deck · structure · market readings</small></summary><div><button type="button" class="btn secondary" data-action="cd-deck">All 24 instruments</button>'+contextWhyHtml()+'<p>'+esc('Daily RSI '+(t.rsi==null?'unknown':num(t.rsi,1))+' · hourly RSI '+(t.hourRsi==null?'unknown':num(t.hourRsi,1))+' · composite '+num(t.composite,1))+'</p></div></details>'+cdDataHtml(f)+'<details class="cd-fold" data-cd-fold="backdrop"><summary>Longer-term backdrop & exit climate<small>Month / week / day · separate legacy swing map</small></summary><div>'+horizonsBlockHtml(t)+'<p class="cd-small">Legacy prominence-ranked hourly swing map: comparison only, not the P1 proposal source.</p>'+swingMapLineHtml(t)+'<details class="cd-fold" data-cd-fold="legacy-chart"><summary>Legacy swing chart</summary><div>'+swingSparkSvg(state.hourly,t.swingLowIdx,t.swingHighIdx,640,180,'Legacy hourly map',t.swingMicroPivots,seriesBarAts(state.hourly,true),{})+'</div></details><p><b>Exit lens · if already long: '+esc(exit.stance)+'</b></p><p>'+esc(exit.say)+'</p><small>Not a short entry or buying approval.</small></div></details>'+cdMarketAdjust(t)+'<details class="cd-fold" data-cd-fold="legacy-send"><summary>Manual quote-based ticket tool</summary><div><p>This existing tool overwrites the draft using the current quote, manual stop percentage and 2R target. It is separate from P1 and does not approve a buy or change an open order.</p><button type="button" class="btn secondary" data-action="use-sizer"'+(!known||busy?' disabled':'')+'>Overwrite draft and open Sizer</button></div></details><div class="cd-actions"><button type="button" class="btn secondary" data-action="cd-learn">Learn this screen</button><button type="button" class="text-link" data-page="manual">Open the manual</button></div></div>';
   }
 
   function renderTrend() {
@@ -17285,5 +17458,5 @@ body.command-strip-mode[data-color-theme="signal"]{--bg:#0b1220;--panel:#151f35;
 })();
 </script>
 
-  <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a407fd6beade26aa',t:'MTc5MDMxNzkyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a409c6bb78acb36d',t:'MTc5MDMzNjY1OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
