@@ -310,6 +310,33 @@
     return out;
   }
 
+  var TRADE_DELETED_KEEP = 500;
+
+  function tradeDeletedMap(raw) {
+    var out = {};
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+    Object.keys(raw).slice(-TRADE_DELETED_KEEP).forEach(function (id) {
+      var key = String(id).slice(0, 120);
+      if (!key || key === '__n') return;
+      var value = raw[id];
+      out[key] = { at: value && value.at ? String(value.at).slice(0, 40) : '' };
+    });
+    return out;
+  }
+
+  function mergeDeletedTrades(a, b) {
+    var out = tradeDeletedMap(a), right = tradeDeletedMap(b);
+    Object.keys(right).forEach(function (id) { out[id] = right[id]; });
+    var ids = Object.keys(out);
+    if (ids.length > TRADE_DELETED_KEEP) {
+      ids.sort(function (x, y) { return String(out[y].at || '').localeCompare(String(out[x].at || '')); });
+      var keep = {};
+      ids.slice(0, TRADE_DELETED_KEEP).forEach(function (id) { keep[id] = out[id]; });
+      out = keep;
+    }
+    return out;
+  }
+
   var PLAN_DELETED_KEEP = 500;
 
   function planDeletedMap(raw) {
@@ -395,13 +422,13 @@
       request('/rest/v1/saved_plans?select=*&user_id=' + eq(userId) + '&order=' + inOrder('created_at.asc'))
     ]);
     var settings = results[0] && results[0][0] ? results[0][0] : {};
-    var legacy = objectOrEmpty(settings.legacy_state),deletedPlans=planDeletedMap(legacy.deletedPlans);
+    var legacy = objectOrEmpty(settings.legacy_state),deletedPlans=planDeletedMap(legacy.deletedPlans),deletedTrades=tradeDeletedMap(legacy.deleted);
     return {
       updatedAt: settings.app_state_updated_at || null,
       settings: clone(objectOrEmpty(settings.settings)),
       sizer: clone(objectOrEmpty(legacy.sizer)),
       market: clone(objectOrEmpty(legacy.market)),
-      trades: arrayOrEmpty(results[1]).map(tradeFromRow),
+      trades: arrayOrEmpty(results[1]).map(tradeFromRow).filter(function (trade) { return !deletedTrades[String(trade.id)]; }),
       plans: dropDeletedPlanRows(arrayOrEmpty(results[2]).map(planFromRow),deletedPlans),
       deletedPlans: deletedPlans,
       closes: clone(arrayOrEmpty(legacy.closes)),
@@ -418,8 +445,11 @@
     payload = payload || {};
     var existingSettings = await request('/rest/v1/user_settings?select=legacy_state&user_id=' + eq(userId));
     var existingLegacy = existingSettings && existingSettings[0] ? objectOrEmpty(existingSettings[0].legacy_state) : {};
+    // Trade tombstones must be merged server-side. A stale tab/device must
+    // never be able to write an empty deleted map and resurrect a Journal row.
+    var deletedTrades = mergeDeletedTrades(existingLegacy.deleted, payload.deleted);
     var deletedPlans = mergeDeletedPlans(existingLegacy.deletedPlans, payload.deletedPlans);
-    var safePayload = Object.assign({}, payload, { deletedPlans: deletedPlans });
+    var safePayload = Object.assign({}, payload, { deleted: deletedTrades, deletedPlans: deletedPlans });
 
     await request('/rest/v1/user_settings?on_conflict=user_id', {
       method: 'POST',
@@ -455,6 +485,19 @@
     if (deletedIds.length) {
       await Promise.all(deletedIds.map(function (id) {
         return request('/rest/v1/saved_plans?user_id=' + eq(userId) + '&source_id=' + eq(id), {
+          method: 'DELETE',
+          headers: { Prefer: 'return=minimal' }
+        });
+      }));
+    }
+
+    // Journal deletion is separate from Saved Plan deletion. Only explicit
+    // Journal tombstones reach this loop; linked trades are never touched by
+    // deleting a Saved Plan.
+    var deletedTradeIds = Object.keys(tradeDeletedMap(deletedTrades));
+    if (deletedTradeIds.length) {
+      await Promise.all(deletedTradeIds.map(function (id) {
+        return request('/rest/v1/journal_trades?user_id=' + eq(userId) + '&source_id=' + eq(id), {
           method: 'DELETE',
           headers: { Prefer: 'return=minimal' }
         });
