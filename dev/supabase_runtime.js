@@ -26,7 +26,7 @@
    * RLS and Auth protect the data. The local-storage fallback keeps older
    * development builds working until this file is updated.
    */
-  var CONFIGURED_PUBLIC_KEY = '';
+  var CONFIGURED_PUBLIC_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2d2RlZ2V6b3JteHhoc2tvam1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxOTYzODIsImV4cCI6MjEwNTc3MjM4Mn0.5XKLt5zbmBs8_TZvToO0mO3qx4pk_uMgjVCnuu_109s';
   var session = loadJson(SESSION_STORAGE);
   var anonKey = CONFIGURED_PUBLIC_KEY || localStorage.getItem(KEY_STORAGE) || '';
   if (CONFIGURED_PUBLIC_KEY && localStorage.getItem(KEY_STORAGE) !== CONFIGURED_PUBLIC_KEY) {
