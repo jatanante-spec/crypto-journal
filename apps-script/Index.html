@@ -84,6 +84,32 @@
         </details>
       </div>
     </div>
+    <div id="quick-switch-root" hidden>
+      <div class="quick-switch-backdrop" data-action="quick-close"></div>
+      <section class="quick-switch-panel" id="quick-switch-panel" role="dialog" aria-modal="true" aria-labelledby="quick-switch-title">
+        <div class="quick-switch-handle" aria-hidden="true"></div>
+        <header class="quick-switch-head">
+          <div class="quick-switch-heading">
+            <div>
+              <h2 id="quick-switch-title">Switch coin</h2>
+              <p id="quick-switch-destination">Open in the current screen · no Fetch required</p>
+            </div>
+            <button type="button" id="quick-switch-close" data-action="quick-close" aria-label="Close coin switcher">×</button>
+          </div>
+          <input id="quick-switch-search" type="search" placeholder="Search saved coins…" aria-label="Search saved coins" autocomplete="off">
+          <div class="quick-switch-filters" role="group" aria-label="Coin switcher filter">
+            <button type="button" id="quick-switch-all" data-action="quick-filter" data-filter="all" aria-pressed="true">All saved</button>
+            <button type="button" id="quick-switch-favourites" data-action="quick-filter" data-filter="favourites" aria-pressed="false">★ Favourites</button>
+          </div>
+        </header>
+        <div id="quick-switch-list" tabindex="0" role="listbox" aria-label="Saved coins"></div>
+        <footer class="quick-switch-foot">
+          <span id="quick-switch-count">0 of 0 results</span>
+          <button type="button" id="quick-switch-more" data-action="quick-more" hidden>Show more</button>
+          <button type="button" data-action="quick-library">Manage library</button>
+        </footer>
+      </section>
+    </div>
     <div id="trend-dialog-root" hidden>
       <div class="trend-dialog-backdrop" data-action="trend-close"></div>
       <section class="trend-dialog" id="trend-dialog" role="dialog" aria-modal="true" aria-labelledby="trend-dialog-title">
@@ -102,5 +128,5 @@
       <div id="cd-dialog-body"></div>
     </dialog>
     <?!= include('JavaScript'); ?>
-  <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a405651839b4db2b',t:'MTc5MDI5MDcxNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40cc606deffb396',t:'MTc5MDM2ODA4OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
