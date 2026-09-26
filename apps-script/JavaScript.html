@@ -1,6 +1,13 @@
 <script>
 (function () {
   var KEY = "crypto-scalping-journal-v1";
+  /* Startup surface is a device-local presentation preference. It remembers only the
+     four primary tabs; transient More/manual/training/modal views never become the launch tab. */
+  var PRIMARY_PAGES = {scout:true,sizer:true,journal:true,market:true};
+  var LAST_PRIMARY_PAGE_KEY = KEY + "-last-primary-page-v1";
+  function startupFallbackPage(){return typeof window !== 'undefined' && window.innerWidth <= 650 ? 'scout' : 'sizer';}
+  function readLastPrimaryPage(){try{var saved=localStorage.getItem(LAST_PRIMARY_PAGE_KEY);return PRIMARY_PAGES[saved]?saved:startupFallbackPage();}catch(e){return startupFallbackPage();}}
+  function rememberPrimaryPage(next){if(!PRIMARY_PAGES[next])return;try{localStorage.setItem(LAST_PRIMARY_PAGE_KEY,next);}catch(e){}}
   /* Colour is a device-local presentation preference. It is intentionally kept outside state/settings so
      changing a palette cannot alter a journal payload or propagate a visual choice to another device. */
   var COLOR_THEME_KEY = KEY + "-color-theme-v1";
@@ -49,7 +56,7 @@
   var activeCoinIntent="";
   var activeCoinIntentAt=0;
   try{coinHadLocal=!!localStorage.getItem(KEY);}catch(e){}
-  var page = "sizer";
+  var page = readLastPrimaryPage();
   var editingId = null;
   var fixingId = null;
   var busy = false;
@@ -10971,6 +10978,7 @@
 
   function render() {
     if(triageFocusMode)triageFocusClose();
+    rememberPrimaryPage(page);
     var trendTip=document.getElementById('triage-trend-popover');if(trendTip)trendTip.remove();
     var oldTriage=document.getElementById("triage-rows");if(oldTriage)triageScroll=oldTriage.scrollTop;
     var main = document.getElementById("main");
@@ -11997,4 +12005,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4137908cc85946f',t:'MTc5MDQzODMzNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a41388477d241b54',t:'MTc5MDQzODk1OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
