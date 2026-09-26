@@ -5533,3 +5533,156 @@ body.command-strip-mode .scout-triage-layout-options{grid-template-columns:repea
 #main .triage-compact-page .triage-combined-status-actions .triage-focus-open{border-color:#4c83dc;background:#173762;color:#dceaff;font-weight:800}
 @media(max-width:650px){#main .triage-compact-page .triage-combined-status-actions{gap:4px}#main .triage-compact-page .triage-combined-status-actions button{padding-left:5px;padding-right:5px;font-size:8px}}
 </style>
+
+/* =====================================================================================
+   DENSITY-APPROVED-1 — preview-approved build
+   Budget bar: micro strip. Main toolbar: ultra command strip. Spacing: tight tokens.
+   Density: compact. Presentation only — no trading, sizing, risk, verdict, Journal,
+   Scout, persistence, navigation-destination or identity behaviour is changed here.
+   Accessibility carried across from the preview: 40px hit areas are kept behind the thin
+   visuals, focus rings stay visible, semantic state colours (green/yellow/red) are
+   untouched, and the budget detail hidden on very small screens is still exposed to
+   assistive tech through the bar's aria-label and title.
+   ===================================================================================== */
+
+/* --- shared density tokens (per Coin Desk layout so each keeps its own character) --- */
+body.command-strip-mode{
+  --dense-gap:4px;
+  --dense-radius:9px;
+  --dense-budget-h:22px;
+  --dense-strip-h:30px;
+  --dense-btn-h:25px;
+  --dense-strip-pad:2px 5px;
+  --dense-strip-gap:3px;
+  --dense-strip-margin:0 0 7px;
+  --dense-sticky-top:26px;
+  --dense-edge-l:0 0 0 rgba(0,0,0,0);
+  --dense-edge-r:0 0 0 rgba(0,0,0,0);
+  --dense-drop:0 0 0 rgba(0,0,0,0);
+}
+body.command-strip-mode[data-coin-desk-layout="lab"]{
+  --dense-radius:999px;
+  --dense-budget-h:30px;
+  --dense-strip-h:34px;
+  --dense-btn-h:29px;
+  --dense-strip-pad:3px 7px;
+  --dense-strip-gap:4px;
+  --dense-strip-margin:0 0 9px;
+}
+body.command-strip-mode[data-coin-desk-layout="focus"]{
+  --dense-radius:8px;
+  --dense-budget-h:24px;
+  --dense-strip-h:32px;
+  --dense-btn-h:27px;
+  --dense-strip-pad:3px 5px;
+  --dense-strip-gap:2px;
+  --dense-strip-margin:0 0 8px;
+}
+
+/* --- budget bar: micro strip (ideas 02, 03, 04, 06, 13) --- */
+body.command-strip-mode #budget{background:var(--bg);border-bottom:0}
+body.command-strip-mode[data-coin-desk-layout] #budget .budget-bar{
+  position:relative;
+  min-height:var(--dense-budget-h)!important;
+  padding:2px 10px!important;
+  gap:6px!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+body.command-strip-mode[data-coin-desk-layout] #budget .budget-bar *{font-size:9px!important;line-height:1.35}
+body.command-strip-mode[data-coin-desk-layout] #budget .budget-bar strong{font-size:10px!important}
+/* a 2px rule along the bottom edge replaces the inline track block */
+body.command-strip-mode[data-coin-desk-layout="instrument"] #budget .budget-track,
+body.command-strip-mode[data-coin-desk-layout="focus"] #budget .budget-track{
+  position:absolute!important;left:0;right:0;bottom:0;height:2px;width:auto!important;
+  flex:0 0 auto!important;flex-basis:auto!important;border-radius:0!important;opacity:1;
+}
+body.command-strip-mode[data-coin-desk-layout="lab"] #budget .budget-track{flex:0 0 44px!important;height:3px!important}
+/* Lab keeps its own budget card; only its height tightens. */
+body.command-strip-mode[data-coin-desk-layout="lab"] #budget .budget-bar{
+  min-height:var(--dense-budget-h)!important;padding:4px 10px!important;gap:7px!important;
+  border:1px solid var(--line)!important;border-radius:10px!important;
+  background:var(--panel)!important;box-shadow:var(--shadow)!important;
+}
+/* thin visuals, 40px hit areas kept (idea 18) */
+body.command-strip-mode #budget .budget-bar .train-mini{
+  min-height:0!important;height:auto!important;font-size:9px!important;padding:0 6px!important;position:relative;
+}
+body.command-strip-mode #budget .budget-bar .train-mini::after{
+  content:"";position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:40px;
+}
+body.command-strip-mode #budget .budget-bar .tip-btn{
+  position:relative!important;top:auto!important;right:auto!important;
+  width:16px!important;height:16px!important;min-width:16px!important;min-height:16px!important;
+  font-size:8px!important;line-height:14px!important;transform:none;
+}
+body.command-strip-mode #budget .budget-bar .tip-btn::after{
+  content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:40px;height:40px;
+}
+/* idea 04: below 390px the secondary wording drops out of the strip, but it stays
+   in the bar's aria-label and title so the information is never lost. */
+@media(max-width:390px){
+  body.command-strip-mode #budget .budget-bar>span,
+  body.command-strip-mode #budget .budget-bar>b{display:none!important}
+}
+
+/* --- command strip: ultra toolbar (ideas 08, 09, 11, 12, 13, 14, 18, 19, 22) --- */
+body.command-strip-mode[data-coin-desk-layout] .cmd-strip{
+  position:sticky;top:var(--dense-sticky-top);z-index:13;
+  min-height:var(--dense-strip-h)!important;
+  margin:var(--dense-strip-margin)!important;
+  padding:var(--dense-strip-pad)!important;
+  gap:var(--dense-strip-gap)!important;
+  border-radius:var(--dense-radius)!important;
+  align-items:center;overflow-x:auto;overflow-y:hidden;white-space:nowrap;
+  scrollbar-width:none;-ms-overflow-style:none;
+  box-shadow:var(--dense-edge-l),var(--dense-edge-r),var(--dense-drop);
+}
+body.command-strip-mode[data-coin-desk-layout] .cmd-strip::-webkit-scrollbar{display:none}
+body.command-strip-mode .cmd-strip.overflow-l{--dense-edge-l:inset 12px 0 8px -10px rgba(0,0,0,.85)}
+body.command-strip-mode .cmd-strip.overflow-r{--dense-edge-r:inset -12px 0 8px -10px rgba(0,0,0,.85)}
+body.command-strip-mode.dense-scrolled .cmd-strip{--dense-drop:0 6px 12px rgba(0,0,0,.34)}
+body.command-strip-mode[data-coin-desk-layout] .cmd-btn{
+  position:relative;
+  min-height:var(--dense-btn-h)!important;height:var(--dense-btn-h)!important;
+  padding:2px 8px!important;font-size:9px!important;
+  border-radius:calc(var(--dense-radius) - 5px)!important;
+}
+/* The rail is a horizontal scroll container, so the hit area is grown inside the rail
+   instead of past its edges: expanding beyond them would create a phantom vertical scroll. */
+body.command-strip-mode[data-coin-desk-layout] .cmd-btn::after{
+  content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px;
+}
+/* Touch devices get a slightly taller rail so the same chrome stays thumb-friendly. */
+@media(pointer:coarse){
+  body.command-strip-mode{--dense-strip-h:34px;--dense-btn-h:28px;--dense-budget-h:24px}
+  body.command-strip-mode[data-coin-desk-layout="lab"]{--dense-strip-h:37px;--dense-btn-h:31px;--dense-budget-h:31px}
+  body.command-strip-mode[data-coin-desk-layout="focus"]{--dense-strip-h:36px;--dense-btn-h:30px;--dense-budget-h:26px}
+}
+body.command-strip-mode[data-coin-desk-layout] .cmd-btn[data-page]{flex:1 1 0;min-width:46px}
+body.command-strip-mode[data-coin-desk-layout] .cmd-input{min-height:20px!important;height:20px!important;font-size:9px!important}
+body.command-strip-mode[data-coin-desk-layout] .cmd-pair{font-size:9px!important}
+/* focus ring that never shifts layout (idea 19) */
+body.command-strip-mode[data-coin-desk-layout] .cmd-btn:focus-visible,
+body.command-strip-mode #budget .budget-bar button:focus-visible{
+  outline:2px solid var(--accent);outline-offset:1px;
+}
+body.command-strip-mode[data-coin-desk-layout="lab"] .cmd-btn.on{
+  background:var(--green-bg);border-color:var(--green);color:var(--green);box-shadow:none;
+}
+
+/* --- tight spacing tokens (idea 15, 16, 17) --- */
+body.command-strip-mode:not(.page-scout) main{padding:7px 10px 30px!important}
+@media(min-width:1180px){body.command-strip-mode:not(.page-scout) main{padding:10px 20px 32px!important}}
+body.command-strip-mode .page-head{gap:8px;margin:0 0 6px!important}
+body.command-strip-mode .page-head h2{font-size:16px!important;margin:0 0 3px!important}
+body.command-strip-mode .page-head p{font-size:10px!important;line-height:1.35}
+body.command-strip-mode .grid{gap:var(--dense-gap)!important}
+body.command-strip-mode .card{padding:8px!important}
+body.command-strip-mode .card h3{margin:0 0 5px!important}
+body.command-strip-mode .row{gap:4px!important}
+body.command-strip-mode .results{gap:4px!important}
+body.command-strip-mode .result{padding:6px 7px!important}
+body.command-strip-mode .stat{padding:7px!important}
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a41572eddc37cc9a',t:'MTc5MDQ1OTA1Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

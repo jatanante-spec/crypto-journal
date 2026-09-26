@@ -7579,7 +7579,11 @@
     }
     var showLabel = tone === "STOP" || tone === "BANK";
     var hasTour = !!(trainingOn() && TOURS[page] && TOURS[page].length);
-    return '<div class="budget-bar ' + tone + (trainingOn() ? " teach" : "") + '" data-tip="budget">' +
+    /* DENSITY-APPROVED-1: the strip can hide its secondary wording on very small screens,
+       so the full sentence also lives on the bar itself for hover and assistive tech. */
+    var denseLabel = esc(hero + " · " + sub);
+    return '<div class="budget-bar ' + tone + (trainingOn() ? " teach" : "") + '" data-tip="budget"' +
+      ' aria-label="' + denseLabel + '" title="' + denseLabel + '">' +
       "<strong>" + esc(hero) + "</strong>" +
       (showLabel ? "<b>" + esc(session.label) + "</b>" : "") +
       '<div class="budget-track" aria-hidden="true"><i style="width:' + (session.haltLoss ? 100 : session.usedPct) + '%"></i></div>' +
@@ -12030,8 +12034,44 @@
   function triageRenderInspector(){var host=document.getElementById('triage-inspector-host');if(!host)return;var row=unifiedScoutScope==='find'?null:triageCache.filter(function(r){return r.pair.ticker===triageSelected;})[0],panel=document.getElementById('triage-inspector');if(!panel){host.innerHTML='<aside id="triage-inspector" class="triage-inspector"></aside>';panel=document.getElementById('triage-inspector');}var scroll=panel.scrollTop;panel.innerHTML=triageInspectorHtml(row);panel.scrollTop=scroll;if(triageSheet){panel.classList.add('sheet');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-labelledby','triage-inspector-title');['.triage-scanner','.triage-stats','.nav','#budget','.triage-head'].forEach(function(s){var el=document.querySelector(s);if(el)el.inert=true;});}}
   TOURS.sizer=['budget','entry','stop','target'];TOURS.market=['budget'];
   window.addEventListener('online',syncCoinsNow);
+
+  /* DENSITY-APPROVED-1 — presentation helpers for the approved micro/ultra chrome.
+     Visual only: measures the sticky budget height, marks side overflow on the command
+     strip and toggles one scrolled flag. Nothing here reads or writes trading state. */
+  function denseChromeMeasure(){
+    try{
+      var bar=document.querySelector('#budget .budget-bar');
+      if(bar){
+        var h=Math.round(bar.getBoundingClientRect().height);
+        if(h>0)document.body.style.setProperty('--dense-sticky-top',h+'px');
+      }
+      var strip=document.querySelector('.cmd-strip');
+      if(strip){
+        if(!strip.__denseBound){
+          strip.__denseBound=true;
+          strip.addEventListener('scroll',denseChromeMeasure,{passive:true});
+        }
+        var over=Math.max(0,strip.scrollWidth-strip.clientWidth);
+        strip.classList.toggle('overflow-l',over>2&&strip.scrollLeft>2);
+        strip.classList.toggle('overflow-r',over>2&&strip.scrollLeft<over-2);
+      }
+    }catch(e){}
+  }
+  function denseScrollFlag(){
+    try{
+      var y=window.pageYOffset||document.documentElement.scrollTop||0;
+      document.body.classList.toggle('dense-scrolled',y>4);
+    }catch(e){}
+    denseChromeMeasure();
+  }
+  window.addEventListener('scroll',denseScrollFlag,{passive:true});
+  window.addEventListener('resize',denseScrollFlag,{passive:true});
+  var __denseRender=render;
+  render=function(){var out=__denseRender.apply(this,arguments);denseScrollFlag();return out;};
+
   render();
   syncCoinsNow();
   pullCloud();
 })();
 </script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a41572af4dfccc9a',t:'MTc5MDQ1OTA0Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
