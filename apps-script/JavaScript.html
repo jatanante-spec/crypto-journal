@@ -121,6 +121,8 @@
   var findSearchSeq = 0;
   /** Tickers currently Peeking (google.script.run in flight). */
   var scoutPeekInflight = {};
+  var scoutPeekRetryCounts = {};
+  var scoutPeekStarted = {};
   /** Queued Peek tickers — drained with limited concurrency. */
   var scoutPeekQueue = [];
   var SCOUT_PEEK_MAX = 2;
@@ -451,9 +453,11 @@
   function runScoutPeekAllVisible() {
     if(!canCloud()){watchlistToast='Refresh needs the deployed Apps Script app.';syncWatchlistUi();return;}
     if(scoutPeekCount()||scoutPeekQueue.length){watchlistToast='Wait for this batch or cancel its queue first.';syncWatchlistUi();return;}
-    var list=libraryPageCoins().filter(function(c){return state.settings.coinLibrary.indexOf(c.ticker)>=0;}).slice(0,10);
+    var list=libraryPageCoins().filter(function(c){return state.settings.coinLibrary.indexOf(c.ticker)>=0;});
+    if(list.length>10&&!window.confirm('Refresh all '+list.length+' saved coins? The queue continues automatically and verifies each response. Continue?'))return;
+    scoutPeekRetryCounts={};
     list.forEach(function(c){ensureCoinBook(c.ticker);scoutPeekQueue.push(c.ticker);});
-    watchlistToast='Refreshing '+list.length+' saved coins from this page; max 10 per batch. No whole-library auto refresh.';
+    watchlistToast='Refreshing all '+list.length+' saved coins. The queue will continue automatically and verify each returned update.';
     drainScoutPeekQueue();syncWatchlistUi();
   }
 
@@ -473,6 +477,7 @@
     }
     var pair = pairByTicker(want);
     ensureCoinBook(want);
+    scoutPeekStarted[want]={startedAt:new Date().toISOString(),beforeFetchedAt:state.books[pair.ticker].market.lastFetchedAt||''};
     state.books[pair.ticker].market.scoutPeekStatus='pending';
     state.books[pair.ticker].market.scoutPeekStatusAt=new Date().toISOString();
     scoutPeekInflight[want] = true;
@@ -486,12 +491,16 @@
           drainScoutPeekQueue();
           return;
         }
+        var peekMeta=scoutPeekStarted[want]||{},book=state.books[want];
         applyPeekToBook(want, live);
-        triageJobOutcome(want,triageContext(triageBook(want)).ready,'Incomplete validated hourly data');
-        var cl = scoutClimateFromBook(state.books[want]);
+        var verified=verifyScoutPeek(live,book,peekMeta.beforeFetchedAt);
+        delete scoutPeekStarted[want];delete scoutPeekRetryCounts[want];
+        if(!verified.ok){book.market.scoutPeekStatus='failed';book.market.scoutPeekStatusAt=new Date().toISOString();}
+        triageJobOutcome(want,verified.ok,verified.reason);
+        var cl = scoutClimateFromBook(book);
         var left = scoutPeekCount() + scoutPeekQueue.length;
-        watchlistToast = want + " · " + (cl ? cl.bias : "updated") +
-          (left ? " · " + left + " Peek left" : " · climate only (not active coin)");
+        watchlistToast = want + " · " + (verified.ok ? "updated and verified" : "update not verified") +
+          (cl ? " · " + cl.bias : "") + (left ? " · " + left + " Peek left" : "");
         save();
         syncWatchlistUi();
 
@@ -502,10 +511,11 @@
         ensureCoinBook(want);
         state.books[want].market.scoutPeekStatus='failed';
         state.books[want].market.scoutPeekStatusAt=new Date().toISOString();
+        var errorText=err&&err.message?err.message:String(err||'');
+        if(retryRateLimitedScout(want,errorText))return;
         var left = scoutPeekCount() + scoutPeekQueue.length;
-        triageJobOutcome(want,false,err&&err.message?err.message:String(err||''));
-        watchlistToast = "Peek " + want + " failed: " +
-          (err && err.message ? err.message : String(err || "")) +
+        triageJobOutcome(want,false,errorText);
+        watchlistToast = "Peek " + want + " failed: " + errorText +
           (left ? " · " + left + " left" : "");
         syncWatchlistUi();
         drainScoutPeekQueue();
@@ -803,6 +813,13 @@
     }
   }
 
+  function verifyScoutPeek(live,book,beforeFetchedAt){
+    var payload=live&&typeof live==='object'?live:null,market=payload&&payload.market&&typeof payload.market==='object'?payload.market:payload||{},price=Number(market.price!=null?market.price:payload&&payload.price),hasQuote=price>0,hasCloses=!!(payload&&Array.isArray(payload.closes)&&payload.closes.length>=14),hasHourly=!!(payload&&Array.isArray(payload.hourly)&&payload.hourly.length>=15),after=book&&book.market&&book.market.lastFetchedAt||'',advanced=!!after&&after!==String(beforeFetchedAt||'');
+    if(!advanced)return {ok:false,reason:'Fetched response did not advance the coin timestamp.'};
+    if(!(hasQuote||hasCloses||hasHourly))return {ok:false,reason:'Fetched response contained no usable quote or candle payload.'};
+    return {ok:true,reason:'Verified fresh response and saved coin update.'};
+  }
+
   function scoutMakeActive(ticker) {
     var want=String(ticker||'').toUpperCase();
     var hit=allPairsList(state.settings).filter(function(p){return p.ticker===want;})[0];
@@ -863,8 +880,8 @@
     document.getElementById('library-page').textContent=rows.length+' '+(watchlistMode==='find'?'results':watchlistMode==='scout'?'coins · Scout':'coins');
     document.getElementById('library-sort').value=librarySort;
     var n=rows.filter(function(c){return state.settings.coinLibrary.indexOf(c.ticker)>=0;}).length;
-    var batch=document.getElementById('wl-peek-all');batch.hidden=watchlistMode==='find';batch.disabled=!n||!canCloud()||!!(scoutPeekCount()+scoutPeekQueue.length);batch.textContent='Refresh list · first '+Math.min(10,n);
-    var scoutBatch=document.getElementById('scout-restored-batch');scoutBatch.disabled=batch.disabled;scoutBatch.textContent='Peek first '+Math.min(10,n);
+    var batch=document.getElementById('wl-peek-all');batch.hidden=watchlistMode==='find';batch.disabled=!n||!canCloud()||!!(scoutPeekCount()+scoutPeekQueue.length);batch.textContent='Refresh all saved · '+n;
+    var scoutBatch=document.getElementById('scout-restored-batch');scoutBatch.disabled=batch.disabled;scoutBatch.textContent='Refresh all · '+n;
     document.getElementById('library-cancel').disabled=!scoutPeekQueue.length;
     document.getElementById('library-tools-status').textContent=(scoutPeekCount()+scoutPeekQueue.length)?' · '+scoutPeekCount()+' running / '+scoutPeekQueue.length+' queued':'';
     document.getElementById('library-queue').textContent=scoutPeekCount()+' running · '+scoutPeekQueue.length+' queued · saving / starring sends no market requests';
@@ -10824,7 +10841,7 @@
     var refresh=document.getElementById('triage-refresh');refresh.disabled=locked||!rows.length;refresh.textContent='Refresh filtered · '+rows.length;
     var all=document.getElementById('triage-all');all.disabled=locked||!triageCache.length;all.textContent='Refresh all saved · '+triageCache.length;
     var retry=document.getElementById('triage-retry');retry.disabled=locked||!counts.failed;retry.textContent='Retry failed · '+counts.failed;
-    var resume=document.getElementById('triage-resume');resume.hidden=!triagePaused;resume.disabled=Date.now()<triagePauseUntil||!scoutPeekQueue.length;
+    var resume=document.getElementById('triage-resume');resume.hidden=true;resume.disabled=true;resume.textContent='Continuing automatically';
     document.getElementById('triage-cancel').disabled=!scoutPeekQueue.length;
     if(!triageSelected&&rows.length)triageSelected=rows[0].pair.ticker;triageRenderInspector();
   }
@@ -10836,26 +10853,35 @@
   function triageClose(){if(triageSheet)document.body.style.overflow=triageOldOverflow;triageSheet=false;var panel=document.getElementById('triage-inspector');if(panel){panel.classList.remove('sheet');panel.removeAttribute('role');panel.removeAttribute('aria-modal');}document.getElementById('triage-scrim').hidden=true;['.triage-scanner','.triage-stats','.nav','#budget','.triage-head'].forEach(function(s){var el=document.querySelector(s);if(el)el.inert=false;});if(triageFocus&&triageFocus.isConnected)triageFocus.focus();else {var search=document.getElementById('triage-search');if(search)search.focus();}}
 
   var triageJob=null,triagePaused=false,triagePauseUntil=0,triagePauseTimer=null;
+  function armScoutQueueResume(){
+    clearTimeout(triagePauseTimer);
+    var wait=Math.max(1000,triagePauseUntil-Date.now()+50);
+    triagePauseTimer=setTimeout(function(){
+      if(triagePaused&&Date.now()>=triagePauseUntil){triagePaused=false;triagePauseUntil=0;watchlistToast='Provider cooldown ended · continuing the refresh queue automatically.';drainScoutPeekQueue();}
+      else if(triagePaused)armScoutQueueResume();
+      else syncWatchlistUi();
+    },wait);
+  }
+  function retryRateLimitedScout(ticker,error){
+    if(!/429|rate.?limit|too many requests|quota/i.test(String(error||'')))return false;
+    var key=String(ticker||'').toUpperCase(),attempt=Number(scoutPeekRetryCounts[key]||0);
+    if(attempt>=4)return false;
+    scoutPeekRetryCounts[key]=attempt+1;
+    if(triageJob&&triageJob.items&&Object.prototype.hasOwnProperty.call(triageJob.items,key))triageJob.items[key]='retrying';
+    if(scoutPeekQueue.indexOf(key)<0)scoutPeekQueue.unshift(key);
+    triagePaused=true;triagePauseUntil=Date.now()+Math.min(120000,30000*Math.pow(2,attempt));
+    watchlistToast='Provider rate limit · '+key+' will retry automatically ('+(attempt+1)+'/4). The remaining queue is saved.';
+    armScoutQueueResume();syncWatchlistUi();return true;
+  }
   function triageJobOutcome(ticker,ok,error){
     if(!triageJob||!Object.prototype.hasOwnProperty.call(triageJob.items,ticker))return;
     if(triageJob.items[ticker]==='cancelled')return;
+    if(!ok&&retryRateLimitedScout(ticker,error))return;
     triageJob.items[ticker]=ok?'done':'failed';
-    /* Missing/incomplete hourly evidence is an advisory result, not a reason to
-       stop the whole scan. Only an actual provider throttle pauses the queue. */
-    if(!ok&&scoutPeekQueue.length&&/429|rate.?limit|too many requests/i.test(String(error||''))){
-      triagePaused=true;triagePauseUntil=Date.now()+60000;
-      clearTimeout(triagePauseTimer);
-      triagePauseTimer=setTimeout(function(){
-        if(triagePaused&&Date.now()>=triagePauseUntil){
-          triagePaused=false;triagePauseUntil=0;
-          watchlistToast='Provider cooldown ended · resuming queue…';
-          drainScoutPeekQueue();
-        } else syncWatchlistUi();
-      },60000);
-    }
   }
-  function triageJobCounts(){var c={total:0,done:0,failed:0,cancelled:0};if(triageJob)Object.keys(triageJob.items).forEach(function(t){c.total++;var status=triageJob.items[t];if(c[status]!=null)c[status]++;});return c;}
-  function triageQueueText(){var c=triageJobCounts();return (c.total?c.done+c.failed+' / '+c.total+' finished · '+c.done+' successful · '+c.failed+' failed / incomplete · '+c.cancelled+' cancelled · ':'')+scoutPeekCount()+' active · '+scoutPeekQueue.length+' queued'+(triagePaused?' · PAUSED: provider rate limit; auto-resumes after '+Math.max(0,Math.ceil((triagePauseUntil-Date.now())/1000))+'s':'')+(watchlistToast?' · '+watchlistToast:'');}
+  function triageJobCounts(){var c={total:0,done:0,failed:0,cancelled:0,queued:0,active:0,retrying:0};if(triageJob)Object.keys(triageJob.items).forEach(function(t){c.total++;var status=triageJob.items[t];if(c[status]!=null)c[status]++;});return c;}
+  function triageProgressLabel(){var c=triageJobCounts();if(!c.total)return '';var finished=c.done+c.failed+c.cancelled,live=scoutPeekCount()+scoutPeekQueue.length;if(finished<c.total||live){return 'Refreshing coins · '+c.done+' / '+c.total+' verified'+(c.retrying?' · '+c.retrying+' retrying':'')+(c.queued?' · '+c.queued+' queued':'');}return 'Refresh complete · '+c.done+' updated'+(c.failed?' · '+c.failed+' incomplete':'')+(c.cancelled?' · '+c.cancelled+' cancelled':'');}
+  function triageQueueText(){var c=triageJobCounts();return (c.total?triageProgressLabel()+' · ':'')+scoutPeekCount()+' active · '+scoutPeekQueue.length+' queued'+(triagePaused?' · waiting for provider cooldown; continuing automatically':'')+(watchlistToast?' · '+watchlistToast:'');}
   function triageCancelQueue(){
     if(triageJob)scoutPeekQueue.forEach(function(t){if(Object.prototype.hasOwnProperty.call(triageJob.items,t))triageJob.items[t]='cancelled';});
     scoutPeekQueue=[];triagePaused=false;triagePauseUntil=0;clearTimeout(triagePauseTimer);watchlistToast='Queued refreshes cancelled. In-flight operations may still finish.';syncWatchlistUi();
@@ -10866,8 +10892,8 @@
     var list=mode==='all'?libraryPairs().map(function(p){return p.ticker;}):mode==='one'?[ticker]:mode==='retry'&&triageJob?Object.keys(triageJob.items).filter(function(t){return triageJob.items[t]==='failed';}):triageMatches(triageCache).map(function(r){return r.pair.ticker;});
     list=list.filter(function(t,i){return list.indexOf(t)===i&&state.settings.coinLibrary.indexOf(t)>=0;});
     if(!list.length)return;
-    if(list.length>10&&!window.confirm('Refresh '+list.length+' saved coins? Each coin can make several provider requests. Two coin operations run at once; rate limits may pause the queue. Continue?'))return;
-    triageBatch=list.slice();triageJob={startedAt:new Date().toISOString(),items:{}};triagePaused=false;triagePauseUntil=0;clearTimeout(triagePauseTimer);
+    if(list.length>10&&!window.confirm('Refresh '+list.length+' saved coins? Each coin can make several provider requests. The queue continues automatically with verified retries if the provider slows down. Continue?'))return;
+    triageBatch=list.slice();triageJob={startedAt:new Date().toISOString(),items:{},retries:{}};scoutPeekRetryCounts={};triagePaused=false;triagePauseUntil=0;clearTimeout(triagePauseTimer);
     list.forEach(function(t){triageJob.items[t]='queued';ensureCoinBook(t);scoutPeekQueue.push(t);});
     watchlistToast='Refreshing selected snapshot: '+list.length+' coins. Filters do not change this queued list.';drainScoutPeekQueue();triageUpdate(false);
   }
@@ -11986,10 +12012,10 @@
     var html=unifiedScoutScope==='find'?findRows.map(unifiedScoutFindRowHtml).join(''):rows.map(unifiedScoutRowHtml).join('');el.innerHTML=html||'<p class="triage-empty"><b>No records match this view.</b><br>Change the scope, search or filter. No result is also useful information.</p>';el.scrollTop=oldScroll;
     document.getElementById('triage-result-count').textContent=scoutPhoneLayout()?'Research is read-only · Scout locks do not create Journal rows':unifiedScoutScope==='find'?findRows.length+' available to add · saved records are not duplicated':rows.length+' shown · '+triageCache.length+' saved records · select to inspect';
     var combinedSummary=document.getElementById('triage-combined-summary');
-    if(combinedSummary){var readyCount=triageCache.filter(function(r){return r.context.ready&&!r.mismatch&&!scoutLockFor(r.pair.ticker);}).length,attentionCount=triageCache.filter(function(r){return !r.context.ready||r.mismatch||!!scoutLockFor(r.pair.ticker);}).length;combinedSummary.textContent=(unifiedScoutScope==='find'?findRows.length:rows.length)+' shown · '+readyCount+' research ready · '+attentionCount+' need attention';}
+    if(combinedSummary){var readyCount=triageCache.filter(function(r){return r.context.ready&&!r.mismatch&&!scoutLockFor(r.pair.ticker);}).length,attentionCount=triageCache.filter(function(r){return !r.context.ready||r.mismatch||!!scoutLockFor(r.pair.ticker);}).length,progress=triageProgressLabel()||(scoutPeekCount()+scoutPeekQueue.length?'Refreshing coins · '+scoutPeekCount()+' active · '+scoutPeekQueue.length+' queued':'');combinedSummary.textContent=progress||((unifiedScoutScope==='find'?findRows.length:rows.length)+' shown · '+readyCount+' research ready · '+attentionCount+' need attention');}
     document.getElementById('triage-scan-status').textContent=triageQueueText();
     var locked=!canCloud()||busy||!!(scoutPeekCount()+scoutPeekQueue.length),counts=triageJobCounts(),refresh=document.getElementById('triage-refresh'),all=document.getElementById('triage-all'),retry=document.getElementById('triage-retry'),resume=document.getElementById('triage-resume'),cancel=document.getElementById('triage-cancel');
-    [refresh,all,retry,resume,cancel].forEach(function(b){if(b)b.hidden=unifiedScoutScope==='find'&&(b!==cancel);});if(refresh){refresh.disabled=locked||!rows.length;refresh.textContent=(scoutPhoneLayout()?'Refresh visible · ':'Refresh filtered · ')+rows.length;}if(all){all.disabled=locked||!triageCache.length;all.textContent='Refresh all saved · '+triageCache.length;}if(retry){retry.disabled=locked||!counts.failed;retry.textContent='Retry failed · '+counts.failed;}if(resume){resume.hidden=unifiedScoutScope==='find'||!triagePaused;resume.disabled=Date.now()<triagePauseUntil||!scoutPeekQueue.length;}if(cancel)cancel.disabled=!scoutPeekQueue.length;
+    [refresh,all,retry,resume,cancel].forEach(function(b){if(b)b.hidden=unifiedScoutScope==='find'&&(b!==cancel);});if(refresh){refresh.disabled=locked||!rows.length;refresh.textContent=(scoutPhoneLayout()?(unifiedScoutScope==='all'&&triageFilter==='all'?'Refresh all · ':'Refresh visible · '):'Refresh filtered · ')+rows.length;}if(all){all.disabled=locked||!triageCache.length;all.textContent='Refresh all saved · '+triageCache.length;}if(retry){retry.disabled=locked||!counts.failed;retry.textContent='Retry failed · '+counts.failed;}if(resume){resume.hidden=true;resume.disabled=true;resume.textContent='Continuing automatically';}if(cancel)cancel.disabled=!scoutPeekQueue.length;
     if(unifiedScoutScope!=='find'&&(!triageSelected||!triageCache.some(function(r){return r.pair.ticker===triageSelected;})))triageSelected=rows.length?rows[0].pair.ticker:'';triageRenderInspector();triageFocusUpdate(rows,findRows);
   }
   function triageInspectorHtml(r){
@@ -12005,4 +12031,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a41388477d241b54',t:'MTc5MDQzODk1OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a413b5c83b2e3545',t:'MTc5MDQ0MDgyMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
