@@ -5391,5 +5391,39 @@ body.command-strip-mode .scout-triage-layout-options{grid-template-columns:repea
 #triage-trend-popover .triage-trend-popover-actions{display:flex;gap:6px;margin-top:11px}
 #triage-trend-popover .triage-trend-popover-actions button{flex:1;border:1px solid #365b91;border-radius:9px;background:#173663;color:#dce9ff;padding:8px;font-size:10px}
 #triage-trend-popover .triage-trend-popover-actions .primary{border-color:#3fbf8e;background:#15513e;color:#a5f4d2}
+
+/* Concept 2 + 3: cue emphasis plus a quiet state rail/tint. The text remains explicit;
+   colour reinforces the state instead of carrying the meaning alone. */
+#main .triage-compact-page .triage-unified-row.signal-improving:not(.locked){
+  background:linear-gradient(90deg,rgba(43,121,166,.22),rgba(17,31,53,.98) 34%);
+  box-shadow:inset 3px 0 #62d9ff;
+}
+#main .triage-compact-page .triage-unified-row.signal-stabilising:not(.locked){
+  background:linear-gradient(90deg,rgba(45,132,102,.22),rgba(17,31,53,.98) 34%);
+  box-shadow:inset 3px 0 #43d69d;
+}
+#main .triage-compact-page .triage-unified-row.signal-pressure:not(.locked){
+  background:linear-gradient(90deg,rgba(155,113,32,.24),rgba(29,34,53,.98) 34%);
+  box-shadow:inset 3px 0 #f6cf68;
+}
+#main .triage-compact-page .triage-unified-row.signal-invalidated:not(.locked){
+  background:linear-gradient(90deg,rgba(145,54,76,.24),rgba(35,27,46,.98) 34%);
+  box-shadow:inset 3px 0 #ff718e;
+}
+#main .triage-compact-page .triage-unified-row.signal-unknown:not(.locked){
+  box-shadow:inset 3px 0 #7185a4;
+}
+#main .triage-compact-page .triage-unified-row.signal-improving:hover:not(.locked){background:linear-gradient(90deg,rgba(43,121,166,.3),rgba(22,39,65,.98) 34%)}
+#main .triage-compact-page .triage-unified-row.signal-stabilising:hover:not(.locked){background:linear-gradient(90deg,rgba(45,132,102,.3),rgba(22,39,65,.98) 34%)}
+#main .triage-compact-page .triage-unified-row.signal-pressure:hover:not(.locked){background:linear-gradient(90deg,rgba(155,113,32,.32),rgba(34,40,60,.98) 34%)}
+#main .triage-compact-page .triage-unified-row.signal-invalidated:hover:not(.locked){background:linear-gradient(90deg,rgba(145,54,76,.32),rgba(41,31,52,.98) 34%)}
+#main .triage-compact-page .triage-unified-row.locked{box-shadow:inset 3px 0 var(--yellow)!important}
+#main .triage-compact-page .triage-cue-accent{font-weight:800}
+#main .triage-compact-page .signal-improving .triage-cue-accent{color:#62d9ff}
+#main .triage-compact-page .signal-stabilising .triage-cue-accent{color:#43d69d}
+#main .triage-compact-page .signal-pressure .triage-cue-accent{color:#f6cf68}
+#main .triage-compact-page .signal-invalidated .triage-cue-accent{color:#ff718e}
+#main .triage-compact-page .signal-unknown .triage-cue-accent{color:#c2cee0}
+#main .triage-compact-page .triage-combined-observation em .triage-cue-accent,
+#main .triage-compact-page .triage-ledger-signal small .triage-cue-accent{font-style:normal}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4124b29282ca122',t:'MTc5MDQyNTk3MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
