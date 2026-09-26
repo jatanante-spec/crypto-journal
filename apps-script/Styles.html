@@ -5359,5 +5359,17 @@ body.command-strip-mode .scout-triage-layout-options{grid-template-columns:repea
   #main .triage-compact-page .triage-ledger-actions .triage-unified-lock{font-size:8px;padding-left:5px!important;padding-right:5px!important}
   #main .triage-compact-page .triage-ledger-actions .triage-unified-open{font-size:8px;padding-left:5px!important;padding-right:5px!important}
 }
+
+/* Ledger action rail fix: reserve a stable column so labels never collapse into the card border. */
+#main .triage-compact-page .triage-ledger-actions{flex:0 0 138px;min-width:138px;justify-content:flex-end;white-space:nowrap}
+#main .triage-compact-page .triage-ledger-actions button{flex:0 0 auto;box-sizing:border-box;white-space:nowrap;overflow:hidden;text-overflow:clip}
+#main .triage-compact-page .triage-ledger-actions .triage-unified-star{width:31px}
+#main .triage-compact-page .triage-ledger-actions .triage-unified-lock{width:43px}
+#main .triage-compact-page .triage-ledger-actions .triage-unified-open{width:56px}
+@media(max-width:650px){
+  #main .triage-compact-page .triage-ledger-actions{flex-basis:132px;min-width:132px}
+  #main .triage-compact-page .triage-ledger-actions .triage-unified-star{width:29px}
+  #main .triage-compact-page .triage-ledger-actions .triage-unified-lock{width:42px}
+  #main .triage-compact-page .triage-ledger-actions .triage-unified-open{width:54px}
+}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40e69e70f9bb399',t:'MTc5MDM4NTI4Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
