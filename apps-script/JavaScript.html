@@ -1002,6 +1002,9 @@
     }
     next.books = books;
     next.deleted = mergeDeleted(parsed.deleted, next.deleted);
+    /* Preserve an intentional empty Journal and apply tombstones during local reload too.
+       Without this, deleting the last/example row fell back to defaultState() and resurrected it. */
+    next.trades = dropDeleted(next.trades, next.deleted);
     next.deletedPlans = mergeDeletedPlans(parsed.deletedPlans, next.deletedPlans);
     next.plans = dropDeletedPlans(next.plans, next.deletedPlans);
     var book = books[pair.ticker];
@@ -1117,7 +1120,7 @@
         settings: Object.assign({}, base.settings, parsed.settings || {}),
         sizer: Object.assign({}, base.sizer, parsed.sizer || {}),
         market: Object.assign({}, base.market, parsed.market || {}),
-        trades: parsed.trades && parsed.trades.length ? parsed.trades : base.trades,
+        trades: Array.isArray(parsed.trades) ? parsed.trades : base.trades,
         plans: normalisePlans(parsed.plans),
         closes: closesOk(parsed.closes) ? normalizeCloses(parsed.closes) : base.closes,
         hourly: parsed.hourly && parsed.hourly.length ? parsed.hourly.slice() : [],
@@ -1519,6 +1522,7 @@
       remoteSettings.scoutTriageLayout = state.settings.scoutTriageLayout;
     }
     var mergedDeleted = mergeDeleted(state.deleted, remote.deleted);
+    var localDeletedMap=deletedMap(state.deleted),remoteDeletedMap=deletedMap(remote.deleted),localDeletesNeedPush=Object.keys(localDeletedMap).some(function(id){return !Object.prototype.hasOwnProperty.call(remoteDeletedMap,id);});
     var mergedTrades = dropDeleted(
       mergeRemoteTrades(state.trades, remote.trades && remote.trades.length ? remote.trades : base.trades),
       mergedDeleted);
@@ -1604,7 +1608,7 @@
       state.updatedAt=new Date().toISOString();
       localStorage.setItem(KEY, JSON.stringify(state));
     }
-    if (keptLocalClose || activeSelectionKept || mergedScoutBooks.preserved) queueCloudSave();
+    if (keptLocalClose || activeSelectionKept || mergedScoutBooks.preserved || localDeletesNeedPush) queueCloudSave();
   }
 
   function save() {
@@ -12031,4 +12035,3 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a413b5c83b2e3545',t:'MTc5MDQ0MDgyMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
