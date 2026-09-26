@@ -11868,13 +11868,17 @@
      The row rail/tint carries the broader state; words remain available for non-colour users. */
   function scoutCueMarkup(raw){
     var safe=esc(String(raw||'No current watch'));
-    return safe.replace(/(Retest|Recovery|Downward pressure|Earlier cue no longer current|No upward-turn cue|No confirmed upward turn|Watch invalidated|Structure broken)/gi,'<strong class="triage-cue-accent">$1</strong>');
+    return safe
+      .replace(/(Retest)/gi,'<strong class="triage-cue-accent triage-cue-retest">$1</strong>')
+      .replace(/(Recovery)/gi,'<strong class="triage-cue-accent triage-cue-recovery">$1</strong>')
+      .replace(/(Downward pressure|No upward-turn cue|No confirmed upward turn)/gi,'<strong class="triage-cue-accent triage-cue-caution">$1</strong>')
+      .replace(/(Earlier cue no longer current|Watch invalidated|Structure broken)/gi,'<strong class="triage-cue-accent triage-cue-invalidated">$1</strong>');
   }
   function scoutSignalClass(r,trend){
     var code=String(r&&r.observation&&r.observation.code||'').toUpperCase(),label=String(trend||'');
     if(code==='TURN'||code==='UP'||/improv|upward structure|reclaim/i.test(label))return 'signal-improving';
     if(code==='STABILISING'||/stabilis|recover/i.test(label))return 'signal-stabilising';
-    if(code==='PRESSURE'||/pressure|downward/i.test(label))return 'signal-pressure';
+    if(code==='PRESSURE'||/pressure|downward|hourly down/i.test(label))return 'signal-pressure';
     if(code==='INVALIDATED'||/invalid|outdated|broken|weakened/i.test(label))return 'signal-invalidated';
     return 'signal-unknown';
   }
@@ -11942,3 +11946,4 @@
   pullCloud();
 })();
 </script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4128b9a494435fb',t:'MTc5MDQyODYwOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

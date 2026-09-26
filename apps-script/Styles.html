@@ -5424,6 +5424,29 @@ body.command-strip-mode .scout-triage-layout-options{grid-template-columns:repea
 #main .triage-compact-page .signal-pressure .triage-cue-accent{color:#f6cf68}
 #main .triage-compact-page .signal-invalidated .triage-cue-accent{color:#ff718e}
 #main .triage-compact-page .signal-unknown .triage-cue-accent{color:#c2cee0}
+/* Make the cue itself visible even when the row is Unknown or stale. */
+#main .triage-compact-page .triage-cue-retest{color:#f6cf68!important}
+#main .triage-compact-page .triage-cue-recovery{color:#43d69d!important}
+#main .triage-compact-page .triage-cue-caution{color:#f6cf68!important}
+#main .triage-compact-page .triage-cue-invalidated{color:#ff718e!important}
+/* The screenshot data exposes this as “Hourly down”, not only “Downward pressure”. */
+#main .triage-compact-page .signal-improving .triage-combined-observation>b,
+#main .triage-compact-page .signal-improving .triage-ledger-signal>b,
+#main .triage-compact-page .signal-improving .triage-scan-evidence>b{color:#62d9ff}
+#main .triage-compact-page .signal-stabilising .triage-combined-observation>b,
+#main .triage-compact-page .signal-stabilising .triage-ledger-signal>b,
+#main .triage-compact-page .signal-stabilising .triage-scan-evidence>b{color:#43d69d}
+#main .triage-compact-page .signal-pressure .triage-combined-observation>b,
+#main .triage-compact-page .signal-pressure .triage-ledger-signal>b,
+#main .triage-compact-page .signal-pressure .triage-scan-evidence>b{color:#f6cf68}
+#main .triage-compact-page .signal-invalidated .triage-combined-observation>b,
+#main .triage-compact-page .signal-invalidated .triage-ledger-signal>b,
+#main .triage-compact-page .signal-invalidated .triage-scan-evidence>b{color:#ff718e}
+#main .triage-compact-page .signal-improving .triage-trend-help{border-color:#62d9ff;color:#62d9ff}
+#main .triage-compact-page .signal-stabilising .triage-trend-help{border-color:#43d69d;color:#43d69d}
+#main .triage-compact-page .signal-pressure .triage-trend-help{border-color:#f6cf68;color:#f6cf68}
+#main .triage-compact-page .signal-invalidated .triage-trend-help{border-color:#ff718e;color:#ff718e}
 #main .triage-compact-page .triage-combined-observation em .triage-cue-accent,
 #main .triage-compact-page .triage-ledger-signal small .triage-cue-accent{font-style:normal}
 </style>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4128be67d8335fb',t:'MTc5MDQyODYyMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
