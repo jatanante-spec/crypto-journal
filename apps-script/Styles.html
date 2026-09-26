@@ -5310,5 +5310,19 @@ body[data-scout-triage-layout="combined"] #main .triage-combined-status>span:fir
 body[data-scout-triage-layout="combined"] #main .triage-combined-status button{border:0;background:transparent;color:#77a7ff;padding:3px 0;font-size:9px;white-space:nowrap}
 body[data-scout-triage-layout="combined"] #main .triage-combined-status #triage-scan-status{display:none!important}
 body[data-scout-triage-layout="combined"] #main .triage-compact-page>.triage-footnote{display:none}
+
+/* Palette bridge: the standalone preview used cyan/mint/line-soft tokens that the
+   production stylesheet does not define. Scope the exact preview palette to the
+   combined Scout surface rather than changing the rest of the application. */
+body[data-scout-triage-layout="combined"] #main .triage-compact-page{--cyan:#62d9ff;--mint:#43d69d;--line-soft:#243c60;--muted:#a6b5cc;--green:#43d69d;--red:#ff718e}
+body[data-scout-triage-layout="combined"] #main .triage-combined-controls{background:#0f1d32}
+body[data-scout-triage-layout="combined"] #main .triage-combined-row{background:#111f35}
+body[data-scout-triage-layout="combined"] #main .triage-combined-row .triage-unified-coin small{color:#a6b5cc}
+body[data-scout-triage-layout="combined"] #main .triage-combined-observation em{color:#a6b5cc}
+body[data-scout-triage-layout="combined"] #main .triage-combined-next{color:#8fa2c0}
+body[data-scout-triage-layout="combined"] #main .triage-combined-next strong.up{color:#43d69d!important}
+body[data-scout-triage-layout="combined"] #main .triage-combined-next strong.down{color:#ff718e!important}
+body[data-scout-triage-layout="combined"] #main .triage-combined-actions{border-top-color:#243c60}
+body[data-scout-triage-layout="combined"] #main .triage-combined-status{color:#879ab9}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40e0e508aca8049',t:'MTc5MDM4MTUzNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a40e221abc510ce6',t:'MTc5MDM4MjM0NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
