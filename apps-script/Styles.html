@@ -5372,4 +5372,24 @@ body.command-strip-mode .scout-triage-layout-options{grid-template-columns:repea
   #main .triage-compact-page .triage-ledger-actions .triage-unified-lock{width:42px}
   #main .triage-compact-page .triage-ledger-actions .triage-unified-open{width:54px}
 }
+
+/* Trend meaning help: a tiny inline affordance with a full explanation on demand. */
+#main .triage-trend-help{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:14px;height:14px;margin-left:2px;border:1px solid #6d86ad;border-radius:50%;background:#142541;color:#cfe0ff;font-size:9px;font-weight:800;line-height:1;cursor:pointer;vertical-align:middle}
+#main .triage-trend-help:hover,#main .triage-trend-help:focus-visible{border-color:var(--accent);background:#1b3d73;color:#fff}
+#main .triage-ledger-signal .triage-trend-help{width:13px;height:13px;font-size:8px}
+#triage-trend-popover{position:fixed;z-index:10000;left:50%;bottom:18px;transform:translateX(-50%);width:min(380px,calc(100vw - 24px));border:1px solid #45699e;border-radius:16px;background:#102038;color:var(--text);padding:14px;box-shadow:0 20px 70px rgba(0,0,0,.5)}
+#triage-trend-popover .triage-trend-popover-head{display:flex;align-items:start;justify-content:space-between;gap:12px}
+#triage-trend-popover .triage-trend-popover-head small{color:#62d9ff;font-size:8px;letter-spacing:.1em}
+#triage-trend-popover h3{margin:2px 0 0;font-size:20px}
+#triage-trend-popover .triage-trend-popover-head button{border:0;background:transparent;color:var(--muted);font-size:20px;line-height:1;padding:0 2px}
+#triage-trend-popover>p{margin:11px 0;color:#c1d0e6;font-size:11px;line-height:1.45}
+#triage-trend-popover .triage-trend-facts{display:grid;gap:6px;margin:9px 0}
+#triage-trend-popover .triage-trend-facts div{border:1px solid var(--line);border-radius:9px;background:var(--panel-2);padding:8px}
+#triage-trend-popover .triage-trend-facts small{display:block;color:#62d9ff;font-size:8px;letter-spacing:.08em;text-transform:uppercase}
+#triage-trend-popover .triage-trend-facts b{display:block;margin-top:2px;font-size:10px}
+#triage-trend-popover .triage-trend-note{border-left:3px solid #62d9ff;background:#132946;color:var(--muted);padding:7px 8px;font-size:9px;line-height:1.35}
+#triage-trend-popover .triage-trend-popover-actions{display:flex;gap:6px;margin-top:11px}
+#triage-trend-popover .triage-trend-popover-actions button{flex:1;border:1px solid #365b91;border-radius:9px;background:#173663;color:#dce9ff;padding:8px;font-size:10px}
+#triage-trend-popover .triage-trend-popover-actions .primary{border-color:#3fbf8e;background:#15513e;color:#a5f4d2}
 </style>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4124b29282ca122',t:'MTc5MDQyNTk3MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

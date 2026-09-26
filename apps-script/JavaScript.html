@@ -10835,6 +10835,8 @@
     else if(a==='triage-kind'){triageKind=b.dataset.kind;triageUpdate(false);}
     else if(a==='triage-fav'){triageFav=!triageFav;triageUpdate(false);}
     else if(a==='triage-clear'){triageQuery='';document.getElementById('triage-search').value='';triageUpdate(false);document.getElementById('triage-search').focus();}
+    else if(a==='triage-trend-help')triageTrendHelp(t);
+    else if(a==='triage-trend-help-close'){var trendTip=document.getElementById('triage-trend-popover');if(trendTip)trendTip.remove();}
     else if(a==='triage-inspect')triageInspect(t);
     else if(a==='triage-close')triageClose();
     else if(a==='triage-star'){toggleWatchlistTicker(t);triageUpdate(false);var star=document.querySelector('#triage-inspector [data-action="triage-star"]');if(star)star.focus({preventScroll:true});}
@@ -10850,6 +10852,7 @@
     else if(a==='triage-cancel')triageCancelQueue();
     else if(a==='triage-go'){closeWatchlist();page='scout';render();}
   },true);
+  document.addEventListener('keydown',function(e){var help=e.target.closest&&e.target.closest('[data-action="triage-trend-help"]');if(help&&(e.key==='Enter'||e.key===' ')){e.preventDefault();help.click();}},true);
   document.addEventListener('input',function(e){if(e.target.id==='triage-search'){triageQuery=e.target.value;triageUpdate(false);if(unifiedScoutScope==='find'){watchlistQuery=triageQuery;watchlistMode='find';scheduleFindSearch();}document.getElementById('triage-rows').scrollTop=0;}});
   document.addEventListener('change',function(e){if(e.target.id==='triage-sort'){triageSort=e.target.value;triageUpdate(false);}});
   document.addEventListener('keydown',function(e){if(!triageSheet)return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();triageClose();}else if(e.key==='Tab'){var list=Array.prototype.slice.call(document.querySelectorAll('#triage-inspector button:not([disabled])')),first=list[0],last=list[list.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}},true);
@@ -10917,6 +10920,7 @@
   });
 
   function render() {
+    var trendTip=document.getElementById('triage-trend-popover');if(trendTip)trendTip.remove();
     var oldTriage=document.getElementById("triage-rows");if(oldTriage)triageScroll=oldTriage.scrollTop;
     var main = document.getElementById("main");
     var budget = document.getElementById("budget");
@@ -11832,6 +11836,28 @@
     });
   }
   function triageMatches(rows){return unifiedScoutMatches(rows||[]);}
+  var SCOUT_TREND_MEANINGS={
+    TURN:{meaning:'A higher-low or reclaim condition was observed above the EMA. This suggests a possible upward turn, but it is not confirmed.',evidence:'Higher-low or completed reclaim',next:'Inspect the hourly evidence and wait for confirmation.'},
+    UP:{meaning:'Stronger upward structure is present: higher-low structure, EMA reclaim and an upward hourly direction.',evidence:'Higher-low + EMA reclaim + hourly direction up',next:'Treat this as an observation, not entry approval; inspect the evidence.'},
+    STABILISING:{meaning:'Price is recovering above the EMA, but the stronger structure needed for an upward-turn cue is not confirmed.',evidence:'Close above EMA without full confirmation',next:'Watch stabilisation and refresh completed hourly data.'},
+    PRESSURE:{meaning:'The available context is cautionary and does not support an upward-turn interpretation.',evidence:'Directional pressure or caution context',next:'Do not infer an upward turn; inspect the reason and wait for new evidence.'},
+    INVALIDATED:{meaning:'The recorded structure or reference was broken. The earlier cue should not be treated as current.',evidence:'Close below the observation reference',next:'Treat the previous observation as invalidated and wait for a fresh episode.'},
+    UNCONFIRMED:{meaning:'The hourly data does not confirm an upward turn. The direction may be down or mixed.',evidence:'No completed reclaim confirmation',next:'Refresh or inspect the next completed hourly observation.'},
+    UNKNOWN:{meaning:'Validated hourly evidence is unavailable, stale or incomplete. Scout will not guess the trend.',evidence:'Hourly evidence unavailable',next:'Refresh the coin before interpreting the signal.'}
+  };
+  function scoutTrendMeaning(row){
+    var o=row&&row.observation||{},code=String(o.code||'UNKNOWN'),base=SCOUT_TREND_MEANINGS[code]||SCOUT_TREND_MEANINGS.UNKNOWN;
+    var label=String(o.trend||'Unknown');
+    return {label:label,meaning:base.meaning,evidence:base.evidence,next:base.next,code:code};
+  }
+  function triageTrendHelp(ticker){
+    var row=(triageCache||[]).filter(function(r){return r.pair.ticker===ticker;})[0];
+    if(!row)return;
+    var old=document.getElementById('triage-trend-popover');if(old)old.remove();
+    var m=scoutTrendMeaning(row),box=document.createElement('section');box.id='triage-trend-popover';box.className='triage-trend-popover';box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');box.setAttribute('aria-labelledby','triage-trend-title');
+    box.innerHTML='<div class="triage-trend-popover-head"><div><small>SCOUT TREND MEANING</small><h3 id="triage-trend-title">'+esc(m.label)+'</h3></div><button type="button" data-action="triage-trend-help-close" aria-label="Close trend meaning">×</button></div><p>'+esc(m.meaning)+'</p><div class="triage-trend-facts"><div><small>Observed cue</small><b>'+esc(m.evidence)+'</b></div><div><small>What to do next</small><b>'+esc(m.next)+'</b></div></div><div class="triage-trend-note">This is research evidence, not entry approval. Ready means the evidence is usable; it does not mean Buy.</div><div class="triage-trend-popover-actions"><button type="button" class="primary" data-action="set-training" data-on="1">Open Train</button><button type="button" data-action="triage-trend-help-close">Close</button></div>';
+    document.body.appendChild(box);var close=box.querySelector('[data-action="triage-trend-help-close"]');if(close)close.focus();
+  }
   function unifiedScoutCompactWatch(r){
     var raw=String(r&&r.watch||'No current watch');
     var retest=raw.search(/\s*·\s*Retest:/i);
@@ -11850,10 +11876,10 @@
     var actions=starAction+lockAction+'<button type="button" class="triage-unified-open '+openClass+'" data-action="triage-open" data-page-target="sizer" data-ticker="'+ticker+'" aria-label="'+(locked?'Locked · open checks for '+ticker:'Open '+ticker+' in Sizer')+'">'+openLabel+'</button>';
     var reviewActions=starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+ticker:'Inspect '+ticker)+'">'+(locked?'Research':'Inspect')+'</button>';
     if(scoutTriageLayoutValue()==='glance'){
-      return '<article class="triage-unified-row triage-combined-row '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-combined-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-combined-head">'+combinedCoin+healthMarkup+'</span><span class="triage-combined-observation"><span><b>'+esc(trend)+'</b><em>'+watch+'</em></span></span><span class="triage-combined-next"><span><b>Observe</b> → test evidence · '+location+'</span><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</strong></span></button><div class="triage-combined-actions">'+reviewActions+'</div></article>';
+      return '<article class="triage-unified-row triage-combined-row '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-combined-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-combined-head">'+combinedCoin+healthMarkup+'</span><span class="triage-combined-observation"><span><b>'+esc(trend)+'</b><span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span><em>'+watch+'</em></span></span><span class="triage-combined-next"><span><b>Observe</b> → test evidence · '+location+'</span><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</strong></span></button><div class="triage-combined-actions">'+reviewActions+'</div></article>';
     }
     if(scoutTriageLayoutValue()==='ledger'){
-      return '<article class="triage-unified-row triage-ledger-row '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-ledger-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-ledger-identity">'+combinedCoin+'</span><span class="triage-ledger-signal"><b>'+esc(trend)+'</b><small>'+watch+'</small></span><span class="triage-ledger-health">'+healthMarkup+'</span><span class="triage-ledger-meta"><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong><small>'+location+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button><div class="triage-ledger-actions">'+reviewActions+'</div></article>';
+      return '<article class="triage-unified-row triage-ledger-row '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-ledger-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-ledger-identity">'+combinedCoin+'</span><span class="triage-ledger-signal"><b>'+esc(trend)+' <span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span></b><small>'+watch+'</small></span><span class="triage-ledger-health">'+healthMarkup+'</span><span class="triage-ledger-meta"><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong><small>'+location+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button><div class="triage-ledger-actions">'+reviewActions+'</div></article>';
     }
     return '<article class="triage-unified-row triage-scan-row '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-scan-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-scan-head">'+coin+healthMarkup+'</span><span class="triage-scan-evidence">'+evidence+'</span><span class="triage-scan-meta">'+changeMarkup+'<small>· '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button>'+actions+'</article>';
   }
@@ -11902,4 +11928,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a411d7ca08d763b6',t:'MTc5MDQyMTI0NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4124af63d93a122',t:'MTc5MDQyNTk2MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
