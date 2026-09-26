@@ -1,0 +1,53 @@
+name: Deploy Journal frontend to Cloudflare Pages
+
+# Same model as the Supabase frontend workflow you already had:
+# upload files to GitHub  ->  this Action builds the page  ->  the app updates.
+on:
+  push:
+    branches:
+      - supabase-development
+    paths:
+      - 'apps-script/Index.html'
+      - 'apps-script/Styles.html'
+      - 'apps-script/JavaScript.html'
+      - 'dev/supabase_runtime.js'
+      - 'build_frontend.mjs'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-journal-frontend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and publish the Journal frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build the static page
+        run: node build_frontend.mjs
+
+      - name: Confirm the page was built
+        run: |
+          test -s dist/index.html
+          echo "Built $(wc -c < dist/index.html) bytes"
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=crypto-journal-dev
