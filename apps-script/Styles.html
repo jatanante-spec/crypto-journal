@@ -5848,5 +5848,102 @@ body.command-strip-mode #main .triage-unified-row.triage-focus-row,
   }
   #main .triage-compact-page .triage-focus-actions .triage-unified-open{padding:0 8px!important}
 }
+
+/* =====================================================================================
+   ACTION-CLUSTER-WIN-1 - restore the approved segmented geometry.
+   A shared button rule, body.command-strip-mode #main button:not(...)... (specificity
+   1,7,2), declares min-height:38px, padding:8px 12px, border-radius:10px and
+   font-size:12px with !important. It never mentions the action classes, so it quietly
+   out-ranked the cluster rules (1,1,1): rounded pills instead of one segmented control,
+   and an 8px content box inside the 32px squares. These rules mirror that :not() chain
+   so the cluster wins the cascade again. Presentation only - no behaviour changes.
+   ===================================================================================== */
+body.command-strip-mode #main .triage-ledger-actions{
+  display:inline-flex!important;align-items:stretch;flex:0 0 auto!important;min-width:0!important;
+  gap:0!important;padding:0!important;border:1px solid #2b456d!important;border-radius:9px!important;
+  background:#142541!important;justify-content:flex-end;
+}
+body.command-strip-mode #main .triage-ledger-actions button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  position:relative;display:inline-flex!important;align-items:center;justify-content:center;
+  box-sizing:border-box;white-space:nowrap;overflow:visible!important;text-overflow:clip;
+  min-height:32px!important;height:auto!important;padding:0 9px!important;
+  border:0!important;border-radius:0!important;background:transparent!important;
+  color:#a7b8d4;font-size:9px!important;line-height:1!important;
+}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow),
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  width:32px!important;min-width:32px!important;max-width:32px!important;padding:0!important;font-size:14px!important;
+}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  border-left:1px solid #2b456d!important;border-right:1px solid #2b456d!important;
+}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){border-radius:8px 0 0 8px!important}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  padding:0 10px!important;font-weight:750;color:var(--accent);
+  background:rgba(61,125,255,.10)!important;border-radius:0 8px 8px 0!important;
+}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-star.on:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){color:var(--yellow)!important}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock.on:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  color:#ffe17b!important;background:rgba(230,195,92,.14)!important;
+}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-open.locked:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  color:#ffdd72!important;background:rgba(230,195,92,.14)!important;
+}
+body.command-strip-mode #main .triage-ledger-actions button::after{content:"";position:absolute;left:0;right:0;top:-4px;bottom:-4px;}
+body.command-strip-mode #main .triage-focus-actions{
+  display:inline-flex!important;align-items:stretch;flex:0 0 auto!important;min-width:0!important;
+  gap:0!important;padding:0!important;border:1px solid #2b456d!important;border-radius:9px!important;
+  background:#142541!important;justify-content:flex-end;
+}
+body.command-strip-mode #main .triage-focus-actions button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  position:relative;display:inline-flex!important;align-items:center;justify-content:center;
+  box-sizing:border-box;white-space:nowrap;overflow:visible!important;text-overflow:clip;
+  min-height:32px!important;height:auto!important;padding:0 9px!important;
+  border:0!important;border-radius:0!important;background:transparent!important;
+  color:#a7b8d4;font-size:9px!important;line-height:1!important;
+}
+body.command-strip-mode #main .triage-focus-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow),
+body.command-strip-mode #main .triage-focus-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  width:32px!important;min-width:32px!important;max-width:32px!important;padding:0!important;font-size:14px!important;
+}
+body.command-strip-mode #main .triage-focus-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  border-left:1px solid #2b456d!important;border-right:1px solid #2b456d!important;
+}
+body.command-strip-mode #main .triage-focus-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){border-radius:8px 0 0 8px!important}
+body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  padding:0 10px!important;font-weight:750;color:var(--accent);
+  background:rgba(61,125,255,.10)!important;border-radius:0 8px 8px 0!important;
+}
+body.command-strip-mode #main .triage-focus-actions .triage-unified-star.on:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){color:var(--yellow)!important}
+body.command-strip-mode #main .triage-focus-actions .triage-unified-lock.on:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  color:#ffe17b!important;background:rgba(230,195,92,.14)!important;
+}
+body.command-strip-mode #main .triage-focus-actions .triage-unified-open.locked:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  color:#ffdd72!important;background:rgba(230,195,92,.14)!important;
+}
+body.command-strip-mode #main .triage-focus-actions button::after{content:"";position:absolute;left:0;right:0;top:-4px;bottom:-4px;}
+
+/* Focus compact variant must not shrink or re-round the cluster */
+body.command-strip-mode #main .triage-focus-rows.compact .triage-focus-actions{gap:0!important}
+body.command-strip-mode #main .triage-focus-rows.compact .triage-focus-actions button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  min-height:32px!important;height:auto!important;padding:0 8px!important;border-radius:0!important;font-size:9px!important;
+}
+body.command-strip-mode #main .triage-focus-rows.compact .triage-focus-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow),
+body.command-strip-mode #main .triage-focus-rows.compact .triage-focus-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  width:30px!important;min-width:30px!important;max-width:30px!important;padding:0!important;font-size:14px!important;
+}
+body.command-strip-mode #main .triage-focus-rows.compact .triage-focus-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){border-radius:8px 0 0 8px!important}
+body.command-strip-mode #main .triage-focus-rows.compact .triage-focus-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  padding:0 8px!important;border-radius:0 8px 8px 0!important;
+}
+
+@media(max-width:650px){
+  body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow),
+  body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){width:30px!important;min-width:30px!important;max-width:30px!important;}
+  body.command-strip-mode #main .triage-ledger-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){padding:0 8px!important}
+  body.command-strip-mode #main .triage-focus-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow),
+  body.command-strip-mode #main .triage-focus-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){width:30px!important;min-width:30px!important;max-width:30px!important;}
+  body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){padding:0 8px!important}
+}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a419ee814d9134ff',t:'MTc5MDUwNjA2MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a41a1a45699b3628',t:'MTc5MDUwNzg1Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
