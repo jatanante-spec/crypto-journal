@@ -5684,5 +5684,72 @@ body.command-strip-mode .row{gap:4px!important}
 body.command-strip-mode .results{gap:4px!important}
 body.command-strip-mode .result{padding:6px 7px!important}
 body.command-strip-mode .stat{padding:7px!important}
+
+/* =====================================================================================
+   LEDGER-ACTION-SEGMENT-1 — Signal Ledger action cluster as one segmented control.
+   Preview-approved design D. Presentation only: the same three controls in the same
+   order with the same actions and destinations (shortlist toggle, Scout safety lock,
+   inspect / research). No logic, no persistence and no Scout behaviour changes.
+   Fixes: clipped labels (text-overflow:clip plus fixed pixel widths), off-centre star
+   and lock glyphs (no flex centring inside the button), and "Research" escaping its
+   border because it is a longer word than "Inspect" but was given the same fixed box.
+   ===================================================================================== */
+#main .triage-ledger-actions,
+#main .triage-compact-page .triage-ledger-actions{
+  display:inline-flex!important;align-items:stretch;flex:0 0 auto!important;min-width:0!important;
+  gap:0!important;padding:0!important;border:1px solid #2b456d!important;border-radius:9px!important;
+  background:#142541!important;justify-content:flex-end;
+}
+#main .triage-ledger-actions button,
+#main .triage-compact-page .triage-ledger-actions button{
+  position:relative;display:inline-flex!important;align-items:center;justify-content:center;
+  box-sizing:border-box;white-space:nowrap;overflow:visible!important;text-overflow:clip;
+  min-height:32px!important;height:auto!important;padding:0 9px!important;
+  border:0!important;border-radius:0!important;background:transparent!important;
+  color:#a7b8d4;font-size:9px!important;line-height:1!important;
+}
+#main .triage-ledger-actions .triage-unified-star,
+#main .triage-compact-page .triage-ledger-actions .triage-unified-star,
+#main .triage-ledger-actions .triage-unified-lock,
+#main .triage-compact-page .triage-ledger-actions .triage-unified-lock{
+  width:32px!important;min-width:32px!important;max-width:32px!important;padding:0!important;font-size:14px!important;
+}
+#main .triage-ledger-actions .triage-unified-lock,
+#main .triage-compact-page .triage-ledger-actions .triage-unified-lock{
+  border-left:1px solid #2b456d!important;border-right:1px solid #2b456d!important;
+}
+#main .triage-ledger-actions .triage-unified-star,
+#main .triage-compact-page .triage-ledger-actions .triage-unified-star{border-radius:8px 0 0 8px!important}
+#main .triage-ledger-actions .triage-unified-open,
+#main .triage-compact-page .triage-ledger-actions .triage-unified-open{
+  padding:0 10px!important;font-weight:750;color:var(--accent);
+  background:rgba(61,125,255,.10)!important;border-radius:0 8px 8px 0!important;
+}
+#main .triage-ledger-actions .triage-unified-star.on,
+#main .triage-compact-page .triage-ledger-actions .triage-unified-star.on{color:var(--yellow)!important}
+#main .triage-ledger-actions .triage-unified-lock.on,
+#main .triage-compact-page .triage-ledger-actions .triage-unified-lock.on{
+  color:#ffe17b!important;background:rgba(230,195,92,.14)!important;
+}
+#main .triage-ledger-actions .triage-unified-open.locked,
+#main .triage-compact-page .triage-ledger-actions .triage-unified-open.locked{
+  color:#ffdd72!important;background:rgba(230,195,92,.14)!important;
+}
+/* 40px tap targets behind the 32px visuals. The cluster is deliberately not
+   clipped, so the expanded area is not cut off at the container edge. */
+#main .triage-ledger-actions button::after,
+#main .triage-compact-page .triage-ledger-actions button::after{
+  content:"";position:absolute;left:0;right:0;top:-4px;bottom:-4px;
+}
+@media(max-width:650px){
+  #main .triage-ledger-actions .triage-unified-star,
+  #main .triage-compact-page .triage-ledger-actions .triage-unified-star,
+  #main .triage-ledger-actions .triage-unified-lock,
+  #main .triage-compact-page .triage-ledger-actions .triage-unified-lock{
+    width:30px!important;min-width:30px!important;max-width:30px!important;
+  }
+  #main .triage-ledger-actions .triage-unified-open,
+  #main .triage-compact-page .triage-ledger-actions .triage-unified-open{padding:0 8px!important}
+}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a415c6512abeb122',t:'MTc5MDQ2MjQ3MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a419818cb8decca1',t:'MTc5MDUwMTU5OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
