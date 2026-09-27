@@ -10275,6 +10275,18 @@
     e.preventDefault(); e.stopImmediatePropagation();
     if (a === "more-filter") { moreSetFilter(b.getAttribute("data-filter")); return; }
     if (a === "more-theme") { setColorTheme(b.getAttribute("data-theme")); return; }
+    if (a === "more-preview-screen") {
+      morePreviewScreen = b.getAttribute("data-screen") === "sizer" ? "sizer" : "scout";
+      morePreviewSyncScreen();
+      return;
+    }
+    if (a === "more-preview-toggle") {
+      var target = b.getAttribute("data-target");
+      if (!Object.prototype.hasOwnProperty.call(morePreviewOn, target)) return;
+      morePreviewOn[target] = !morePreviewOn[target];
+      render();
+      return;
+    }
     if (a === "more-info") {
       var key = b.getAttribute("data-info") || "";
       moreInfo[key] = !moreInfo[key];
@@ -10287,6 +10299,173 @@
     }
   }, true);
   window.addEventListener("resize", moreSyncRailTop);
+
+  /* =====================================================================================
+     MORE-LAYOUT-PREVIEW-1 - what the two Look pickers actually look like.
+
+     The three Coin Desk layouts and the two Scout row shapes were described only in
+     prose, so choosing one meant leaving the page to find out. This draws them:
+
+       - one shared panel at the top of the Look group, showing the COMBINATION you have
+         picked, because the Coin Desk chrome wraps the Scout rows and they compose;
+       - a thumbnail on each option card, so the three (or two) can be compared at once
+         without tapping anything.
+
+     Honesty rules the miniature follows:
+       - the coin row and the budget bar are LIVE (real active coin, real price, real
+         change, real day-left and cap) because those are free to read;
+       - the three record rows are ILLUSTRATIVE. Real per-coin trend words would mean
+         rebuilding the whole Scout row model on the settings page on every render, so
+         the rows are drawn once from fixed content and the panel says so in words;
+       - the picture is built from spans, not buttons, and carries role="img". It is not
+         focusable, it is not in the tab order, and it cannot be confused with a control.
+
+     No layout, no setting, no action and no destination changes. This is a picture of
+     the presentation that already exists.
+     ===================================================================================== */
+  var morePreviewScreen = "scout";
+  var morePreviewOn = { panel: true, coinDesk: true, scout: true };
+  var MORE_PREVIEW_ROWS = [
+    { t: "XRP", p: "XRP / GBP", trend: "Up trend",   watch: "Above EMA · Tide up",
+      loc: "1.87 – 1.92",   ch: "+1.4%", dir: "up",   age: "4m",  health: "Ready",   hc: "ok",   act: "Inspect" },
+    { t: "BTC", p: "BTC / GBP", trend: "Range",      watch: "Below EMA · Tide flat",
+      loc: "52.1k – 54.8k", ch: "−0.6%", dir: "down", age: "9m",  health: "Observe", hc: "warn", act: "Inspect" },
+    { t: "ETH", p: "ETH / GBP", trend: "Down trend", watch: "Under EMA · Tide down",
+      loc: "2.10k – 2.26k", ch: "+0.2%", dir: "up",   age: "12m", health: "Locked",  hc: "lock", act: "Research" }
+  ];
+  function morePreviewCoin() {
+    var ticker = state.settings.coinTicker;
+    var ctx = coinDeskContext(ticker);
+    var st = COIN_DESK_STATE[ctx.kind] || COIN_DESK_STATE.ready;
+    return {
+      ticker: ticker,
+      price: ctx.price ? priceGbp(ctx.price, 4) : "Not fetched",
+      chg: ctx.change == null ? "" : (ctx.change >= 0 ? "+" : "") + ctx.change.toFixed(1) + "%",
+      dir: ctx.change == null ? "" : (ctx.change >= 0 ? "up" : "down"),
+      state: st.label,
+      tone: st.cls
+    };
+  }
+  function morePreviewBudget() {
+    var s = computeSession(state.trades, state.settings);
+    var hero = s.haltLoss ? "£0 day left" : gbp(s.leftLoss) + " day left";
+    var sub = "cap " + gbp(s.dailyLoss) + " · −" + pct(s.lossPct, 0);
+    var used = Math.max(0, Math.min(100, Number(s.usedPct) || 0));
+    return { hero: hero, sub: sub, used: used };
+  }
+  function mpStrip() {
+    return '<span class="mp-strip">' +
+      '<span class="mp-sbtn on">SCOUT</span><span class="mp-sbtn">SIZER</span>' +
+      '<span class="mp-sbtn">JOURNAL</span><span class="mp-sbtn">MARKET</span>' +
+      '<span class="mp-sbtn">MORE</span><span class="mp-sprompt">Pair, size, plan</span></span>';
+  }
+  function mpBudget() {
+    var b = morePreviewBudget();
+    return '<span class="mp-budget"><b>' + esc(b.hero) + '</b>' +
+      '<span class="mp-track"><i style="width:' + b.used + '%"></i></span>' +
+      '<span class="mp-bsub">' + esc(b.sub) + '</span><span class="mp-train">Train</span></span>';
+  }
+  function mpCoinRow() {
+    var c = morePreviewCoin();
+    return '<span class="mp-coinrow"><span class="mp-chip">' + esc(c.ticker) + ' &#9662;</span>' +
+      '<span class="mp-tag">BTC</span><span class="mp-tag">ETH</span><span class="mp-tag">+3</span>' +
+      '<span class="mp-res">Research &#8594;</span></span>' +
+      '<span class="mp-ctx ' + esc(c.tone) + '"><span class="mp-lamp"></span><b>' + esc(c.price) + '</b>' +
+      '<span class="' + esc(c.dir) + '">' + esc(c.chg) + '</span>' +
+      '<span class="mp-state">' + esc(c.state) + '</span></span>';
+  }
+  function mpMethod() {
+    return '<span class="mp-method"><b>Observe</b> &#8594; test evidence · the tape is read before a ticket is sized.</span>';
+  }
+  function mpHead(title, sub) {
+    return '<span class="mp-h2">' + esc(title) + '</span><span class="mp-h2sub">' + esc(sub) + '</span>';
+  }
+  function mpRowGlance(r) {
+    return '<span class="mp-row mp-glance' + (r.hc === "lock" ? " locked" : "") + '">' +
+      '<span class="mp-coin"><b>' + esc(r.t) + '</b><small>' + esc(r.p) + '</small>' +
+        '<span class="mp-health ' + r.hc + '">' + esc(r.health) + '</span></span>' +
+      '<span class="mp-obs"><b>' + esc(r.trend) + '</b><em>' + esc(r.watch) + '</em></span>' +
+      '<span class="mp-next"><span>Observe &#8594; test evidence · ' + esc(r.loc) + '</span>' +
+        '<strong class="' + r.dir + '">' + esc(r.ch) + ' · ' + esc(r.age) + '</strong></span>' +
+      '<span class="mp-acts"><span class="mp-star">&#9733;</span><span>Lock</span>' +
+        '<span class="mp-go">' + esc(r.act) + '</span></span></span>';
+  }
+  function mpRowLedger(r) {
+    return '<span class="mp-row mp-ledger' + (r.hc === "lock" ? " locked" : "") + '">' +
+      '<span class="mp-lid"><b>' + esc(r.t) + '</b><small>' + esc(r.p) + '</small></span>' +
+      '<span class="mp-lsig"><b>' + esc(r.trend) + '</b><small>' + esc(r.watch) + '</small></span>' +
+      '<span class="mp-lhealth"><span class="mp-health ' + r.hc + '">' + esc(r.health) + '</span></span>' +
+      '<span class="mp-lmeta"><strong class="' + r.dir + '">' + esc(r.ch) + '</strong>' +
+        '<small>' + esc(r.loc) + ' · ' + esc(r.age) + '</small></span>' +
+      '<span class="mp-lacts"><span>&#9733;</span><span>Lock</span><span>' + esc(r.act) + '</span></span></span>';
+  }
+  function mpDecision() {
+    return '<span class="mp-dec"><span class="mp-lamp"></span><b>READY</b><small>Tide up · above EMA · stop 1.6%</small></span>';
+  }
+  function mpTicket() {
+    return '<span class="mp-ticket"><span class="mp-th">Your ticket</span>' +
+      '<span class="mp-fields"><span><small>Entry</small><b>1.8740</b></span>' +
+      '<span><small>Stop</small><b>1.8439</b></span><span><small>Target</small><b>1.9342</b></span></span>' +
+      '<span class="mp-metrics"><span><small>If stop hits</small><b>£0.15</b></span>' +
+      '<span><small>Reward / risk</small><b>2.0R</b></span><span><small>Position</small><b>£9.40</b></span></span></span>';
+  }
+  /* mode: "full" for the shared panel, "chrome" for the Coin Desk thumbnails,
+     "rows" for the Scout thumbnails. */
+  function mpPic(cd, scout, screen, mode) {
+    var parts = [], label;
+    if (mode === "chrome") {
+      parts = [mpStrip(), mpBudget(), mpCoinRow()];
+      label = "Coin Desk " + COIN_DESK_LAYOUTS[cd].label + " — command strip, budget bar and coin row";
+    } else if (mode === "rows") {
+      parts = [MORE_PREVIEW_ROWS.slice(0, 2).map(scout === "ledger" ? mpRowLedger : mpRowGlance).join("")];
+      label = "Scout " + (scout === "ledger" ? "ledger" : "glance") + " rows — two record rows";
+    } else if (screen === "sizer") {
+      parts = [mpStrip(), mpBudget(), mpHead("Your ticket", "Sized from the numbers you type."),
+        mpCoinRow(), mpDecision(), mpTicket()];
+      label = "Preview of " + COIN_DESK_LAYOUTS[cd].label + " on the Sizer screen";
+    } else {
+      parts = [mpStrip(), mpBudget(), mpHead("Scout", "Saved coins, newest signal first."),
+        mpCoinRow(), mpMethod(), MORE_PREVIEW_ROWS.map(scout === "ledger" ? mpRowLedger : mpRowGlance).join("")];
+      label = "Preview of " + COIN_DESK_LAYOUTS[cd].label + " on the Scout screen, using " +
+        (scout === "ledger" ? "ledger" : "glance") + " rows";
+    }
+    return '<span class="mp-pic mp-' + cd + (mode === "chrome" || mode === "rows" ? " mp-thumbpic" : "") +
+      '" role="img" aria-label="' + esc(label) + '">' + parts.join("") + '</span>';
+  }
+  function morePreviewToggle(target) {
+    var on = !!morePreviewOn[target];
+    return '<button type="button" class="mp-btn mp-toggle" data-action="more-preview-toggle" data-target="' + target +
+      '" aria-pressed="' + on + '">' + (on ? "Hide" : "Show") + '</button>';
+  }
+  function morePreviewPanel() {
+    var cd = coinDeskLayoutValue(), scout = scoutTriageLayoutValue();
+    if (!morePreviewOn.panel) {
+      return '<div class="mp-panel mp-collapsed"><span class="mp-bar">' +
+        '<span class="mp-bar-title">Preview</span>' + morePreviewToggle("panel") + '</span></div>';
+    }
+    return '<div class="mp-panel"><span class="mp-bar">' +
+        '<span class="mp-bar-title">Preview · ' + (morePreviewScreen === "sizer" ? "Sizer" : "Scout") + '</span>' +
+        '<span class="mp-seg">' +
+          '<button type="button" class="mp-btn' + (morePreviewScreen === "scout" ? " on" : "") +
+            '" data-action="more-preview-screen" data-screen="scout">Scout</button>' +
+          '<button type="button" class="mp-btn' + (morePreviewScreen === "sizer" ? " on" : "") +
+            '" data-action="more-preview-screen" data-screen="sizer">Sizer</button>' +
+        '</span>' + morePreviewToggle("panel") +
+      '</span>' +
+      '<span class="mp-stage">' + mpPic(cd, scout, morePreviewScreen, "full") + '</span>' +
+      '<span class="mp-note">Live coin and budget. The rows show shape only.</span></div>';
+  }
+  function morePreviewSyncScreen() {
+    var stage = document.querySelector(".mp-panel .mp-stage");
+    if (!stage) return;
+    stage.innerHTML = mpPic(coinDeskLayoutValue(), scoutTriageLayoutValue(), morePreviewScreen, "full");
+    Array.prototype.forEach.call(document.querySelectorAll('[data-action="more-preview-screen"]'), function (b) {
+      b.classList.toggle("on", b.getAttribute("data-screen") === morePreviewScreen);
+    });
+    var title = document.querySelector(".mp-panel .mp-bar-title");
+    if (title) title.textContent = "Preview · " + (morePreviewScreen === "sizer" ? "Sizer" : "Scout");
+    moreSyncRailTop();
+  }
 
   function moreAccountSum() {
     return esc(gbp(state.settings.capitalGbp) + " · " + num(state.settings.riskPct, 2) + "%");
@@ -10357,7 +10536,8 @@
       (MORE_SCOUT_SHORT[scoutTriageLayoutValue()] || ""));
   }
   function moreLookBody() {
-    return moreTagged("palette", "Colour palette") +
+    return morePreviewPanel() +
+      moreTagged("palette", "Colour palette") +
       '<div class="more-palette" role="group" aria-label="Colour palette">' +
         Object.keys(COLOR_THEMES).map(function (k) {
           var on = k === colorTheme;
@@ -10366,8 +10546,8 @@
             "<b>" + esc(MORE_THEME_SHORT[k] || k) + "</b><small>" + esc(COLOR_THEMES[k].label) + "</small></button>";
         }).join("") +
       "</div>" +
-      coinDeskLayoutSettingsHtml() +
-      scoutTriageLayoutSettingsHtml();
+      coinDeskLayoutSettingsHtml(true) +
+      scoutTriageLayoutSettingsHtml(true);
   }
   function moreToolsSum(planCount) {
     return esc(planCount + " plan" + (planCount === 1 ? "" : "s"));
@@ -11209,14 +11389,18 @@
     var value = state && state.settings ? String(state.settings.coinDeskLayout || "instrument") : "instrument";
     return COIN_DESK_LAYOUTS[value] ? value : "instrument";
   }
-  function coinDeskLayoutSettingsHtml() {
+  function coinDeskLayoutSettingsHtml(withThumbs) {
     var current = coinDeskLayoutValue();
     var order = ["instrument", "lab", "focus"];
-    return '<section class="card coin-desk-layout-settings"><header><div><h3>Coin Desk layout</h3><p class="muted">Switch the presentation without changing research, Sizer, Journal, Market, risk or Gates.</p></div><span class="layout-setting-badge">'+esc(COIN_DESK_LAYOUTS[current].short)+'</span></header>' +
+    var thumbs = withThumbs && morePreviewOn.coinDesk;
+    return '<section class="card coin-desk-layout-settings"><header><div><h3>Coin Desk layout</h3><p class="muted">Switch the presentation without changing research, Sizer, Journal, Market, risk or Gates.</p></div><span class="mp-head-tools"><span class="layout-setting-badge">'+esc(COIN_DESK_LAYOUTS[current].short)+'</span>'+
+      (withThumbs?'<span class="mp-thumb-toggle"><span>Thumbnails</span>'+morePreviewToggle("coinDesk")+'</span>':'')+
+      '</span></header>' +
       '<div class="coin-desk-layout-options" role="group" aria-label="Coin Desk layout options">' +
       order.map(function (key) {
         var item = COIN_DESK_LAYOUTS[key], selected = key === current;
         return '<button type="button" class="coin-desk-layout-option'+(selected?' selected':'')+'" data-action="set-coin-desk-layout" data-layout="'+key+'" aria-pressed="'+selected+'">' +
+          (thumbs ? '<span class="mp-thumb">'+mpPic(key, scoutTriageLayoutValue(), "scout", "chrome")+'</span>' : '') +
           '<span class="layout-option-top"><b>'+esc(item.label)+'</b><i>'+ (selected ? 'Selected' : 'Use this') +'</i></span>' +
           '<small>'+esc(item.detail)+'</small>' +
         '</button>';
@@ -11228,13 +11412,17 @@
     return SCOUT_TRIAGE_LAYOUTS[value] ? value : "glance";
   }
   function scoutPhoneLayout(){return ['glance','ledger'].indexOf(scoutTriageLayoutValue())>=0;}
-  function scoutTriageLayoutSettingsHtml() {
+  function scoutTriageLayoutSettingsHtml(withThumbs) {
     var current = scoutTriageLayoutValue();
-    return '<section class="card scout-triage-layout-settings"><header><div><h3>Scout record layout</h3><p class="muted">Choose how saved coin rows are arranged. This changes density only; locks, evidence and actions stay the same.</p></div><span class="layout-setting-badge">'+esc(SCOUT_TRIAGE_LAYOUTS[current].short)+'</span></header>' +
+    var thumbs = withThumbs && morePreviewOn.scout;
+    return '<section class="card scout-triage-layout-settings"><header><div><h3>Scout record layout</h3><p class="muted">Choose how saved coin rows are arranged. This changes density only; locks, evidence and actions stay the same.</p></div><span class="mp-head-tools"><span class="layout-setting-badge">'+esc(SCOUT_TRIAGE_LAYOUTS[current].short)+'</span>'+
+      (withThumbs?'<span class="mp-thumb-toggle"><span>Thumbnails</span>'+morePreviewToggle("scout")+'</span>':'')+
+      '</span></header>' +
       '<div class="coin-desk-layout-options scout-triage-layout-options" role="group" aria-label="Scout record layout options">' +
       ["glance", "ledger"].map(function (key) {
         var item = SCOUT_TRIAGE_LAYOUTS[key], selected = key === current;
         return '<button type="button" class="coin-desk-layout-option'+(selected?' selected':'')+'" data-action="set-scout-triage-layout" data-layout="'+key+'" aria-pressed="'+selected+'">' +
+          (thumbs ? '<span class="mp-thumb">'+mpPic(coinDeskLayoutValue(), key, "scout", "rows")+'</span>' : '') +
           '<span class="layout-option-top"><b>'+esc(item.label)+'</b><i>'+ (selected ? 'Selected' : 'Use this') +'</i></span>' +
           '<small>'+esc(item.detail)+'</small>' +
         '</button>';
@@ -12350,4 +12538,3 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a41de8c1ccaaeb19',t:'MTc5MDU0Nzc2OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

@@ -4291,7 +4291,7 @@ body.page-scout #watchlist-root{display:none!important}body.page-scout .stage{ma
    The exclusions are chart annotations, not controls, and each one is measured: the swing dots sit
    15px apart at their closest on a phone (40px squares would overlap and make a tap ambiguous), and the
    journal's now-marker is a 12px point on a bar. Everything you can actually press is on the floor. --- */
-#main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.more-info):not(.more-palette-option),
+#main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option),
 #main summary, .train-mini, .stepper button, .rr-btn, .horizon-pill {min-height:40px;height:auto}
 details > summary{display:flex;align-items:center;gap:6px}
 .horizon-pill{padding:8px 10px}
@@ -4436,7 +4436,7 @@ body:not(.training) .p1-training,body:not(.training) .p1-feed,body:not(.training
 body:not(.training) .p1-training summary,body:not(.training) .p1-feed summary,body:not(.training) .p1-evidence summary{min-height:30px!important;font-size:10px!important}
 body:not(.training) .p1-actions{gap:5px!important;margin-top:6px!important}
 body:not(.training) .p1-actions button{min-height:34px!important;padding:6px 8px!important;font-size:10px!important}
-body:not(.training) #main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.more-info):not(.more-palette-option){min-height:32px!important;height:auto!important;padding:5px 8px!important;font-size:11px!important}
+body:not(.training) #main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option){min-height:32px!important;height:auto!important;padding:5px 8px!important;font-size:11px!important}
 body:not(.training) #main summary{min-height:32px!important;padding:6px 8px!important}
 body:not(.training) .rr-btn{min-height:32px!important;padding:5px 7px!important}
 body:not(.training) .cch .cch-bar button,body:not(.training) .cch .cch-ctl button{min-height:34px!important;padding:5px 8px!important;font-size:11px!important}
@@ -4551,7 +4551,7 @@ body.command-strip-mode .field input,body.command-strip-mode .field select{paddi
 body.command-strip-mode .row{gap:4px!important}
 body.command-strip-mode .btn,body.command-strip-mode .btn.secondary,body.command-strip-mode .btn.danger{min-height:28px!important;height:auto!important;padding:4px 7px!important;border-radius:3px!important;font-size:10px!important;line-height:1.15}
 body.command-strip-mode .text-link{min-height:28px!important;padding:4px 7px!important;font-size:10px!important}
-body.command-strip-mode #main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.more-info):not(.more-palette-option){min-height:28px!important;height:auto!important;padding:4px 7px!important;border-radius:3px!important;font-size:10px!important;line-height:1.15}
+body.command-strip-mode #main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option){min-height:28px!important;height:auto!important;padding:4px 7px!important;border-radius:3px!important;font-size:10px!important;line-height:1.15}
 body.command-strip-mode #main summary{min-height:28px!important;height:auto!important;padding:5px 7px!important;font-size:10px!important}
 body.command-strip-mode .results{gap:4px!important}
 body.command-strip-mode .result{padding:6px 7px!important;border-radius:3px!important}
@@ -4794,7 +4794,7 @@ body.command-strip-mode .card,body.command-strip-mode .cd-card,body.command-stri
 body.command-strip-mode .card{padding:16px!important}
 body.command-strip-mode .cd-card{padding:16px!important;margin:0 0 12px!important;background:var(--panel)!important;border:1px solid var(--line)!important}
 body.command-strip-mode .btn,body.command-strip-mode .btn.secondary,body.command-strip-mode .btn.danger{min-height:38px!important;padding:8px 12px!important;border-radius:10px!important;font-size:12px!important;line-height:1.25}
-body.command-strip-mode #main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.more-info):not(.more-palette-option){min-height:38px!important;padding:8px 12px!important;border-radius:10px!important;font-size:12px!important}
+body.command-strip-mode #main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option){min-height:38px!important;padding:8px 12px!important;border-radius:10px!important;font-size:12px!important}
 body.command-strip-mode #main summary{min-height:40px!important;padding:10px 12px!important;border-radius:10px!important;font-size:12px!important}
 body.command-strip-mode .cd-fold{margin:10px 0 0!important;border:1px solid var(--line)!important;border-radius:12px!important;background:var(--panel)!important}
 body.command-strip-mode .cd-fold>div{padding:0 12px 14px!important}
@@ -6316,5 +6316,431 @@ body.command-strip-mode .more-group-head h3 {
   .more-sum { max-width: 42%; }
 }
 
+/* =====================================================================================
+   MORE-LAYOUT-PREVIEW-1 - miniatures of the Coin Desk and Scout layouts inside the
+   Look group. Presentation only: the same two settings with the same options, actions
+   and destinations, now with a picture of what each one produces.
+
+   Notes for anyone editing this later:
+     - the picture is built entirely from spans and carries role="img". It is not
+       focusable, not in the tab order, and not a control, which is also why it does
+       not have to fight the shared #main button rule.
+     - the only real buttons are .mp-toggle and .mp-seg button, and both carry .mp-btn,
+       which was added to the :not() chain of all four copies of the shared rule
+       body.command-strip-mode #main button:not(...). Without that they would be forced
+       to 38px with 8px 12px padding and a 10px radius.
+     - the three Coin Desk skins are driven by custom properties on .mp-pic, mirroring
+       the real values: strip height, button height, budget-bar height, budget track
+       width, heading size, evidence-panel weight and accent colour.
+   ===================================================================================== */
+.mp-panel {
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--input);
+  margin: 0 0 12px;
+  overflow: hidden;
+}
+.mp-collapsed .mp-bar { border-bottom: 0; }
+.mp-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 9px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(10, 17, 30, .5);
+}
+.mp-bar-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 9px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: #5d6d8c;
+}
+/* No overflow:hidden here: it would clip the ::after that gives these small controls a
+   40px touch target without making them 40px tall. The radii move onto the buttons. */
+.mp-seg { display: flex; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 6px; }
+.mp-seg button:first-child { border-radius: 5px 0 0 5px; }
+.mp-seg button:last-child { border-radius: 0 5px 5px 0; }
+.mp-seg button,
+.mp-toggle,
+.mp-thumb-toggle .mp-btn { position: relative; }
+.mp-seg button::after,
+.mp-toggle::after,
+.mp-thumb-toggle .mp-btn::after {
+  content: ""; position: absolute; left: 0; right: 0; top: -9px; bottom: -9px;
+}
+.mp-seg button {
+  min-height: 22px;
+  padding: 3px 8px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 9px;
+  cursor: pointer;
+}
+.mp-seg button:last-child { border-right: 0; }
+.mp-seg button.on { background: var(--accent); color: #fff; font-weight: 700; }
+.mp-toggle,
+.mp-thumb-toggle .mp-btn {
+  min-height: 22px;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 9px;
+  cursor: pointer;
+}
+.mp-toggle:hover, .mp-seg button:hover { color: var(--text); border-color: var(--accent); }
+.mp-toggle:focus-visible, .mp-seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.mp-stage { display: block; padding: 9px; }
+.mp-note {
+  display: block;
+  padding: 0 9px 8px;
+  font-size: 9px;
+  line-height: 1.4;
+  color: #5d6d8c;
+}
+.mp-head-tools { display: flex; align-items: center; gap: 7px; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; }
+.mp-thumb-toggle { display: inline-flex; align-items: center; gap: 5px; }
+.mp-thumb-toggle > span { font-size: 8.5px; letter-spacing: .07em; text-transform: uppercase; color: #5d6d8c; }
+
+/* ---------- the picture ---------- */
+.mp-pic {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #0b1220;
+  overflow: hidden;
+  color: var(--text);
+  --mp-pad: 9px;
+  --mp-strip-h: 44px; --mp-strip-r: 10px; --mp-strip-gap: 6px;
+  --mp-btn-h: 34px; --mp-btn-r: 8px; --mp-btn-fs: 11px;
+  --mp-bud-h: 34px; --mp-bud-gap: 8px; --mp-bud-bg: rgba(11, 18, 32, .94); --mp-bud-fs: 11px;
+  --mp-track-w: 64px; --mp-track-h: 4px; --mp-track-c: #6d9b82; --mp-bud-strong: #6d9b82;
+  --mp-h2: 22px;
+  --mp-method-fs: 10px; --mp-method-pad: 9px 11px; --mp-method-bw: 3px;
+  --mp-method-bc: #4aa8d8; --mp-method-bg: rgba(23, 50, 76, .38);
+  --mp-hi: var(--accent);
+}
+.mp-pic.mp-lab {
+  --mp-btn-h: 31px; --mp-bud-h: 39px; --mp-track-w: 54px; --mp-bud-strong: var(--green);
+  --mp-method-bc: var(--green); --mp-method-bg: rgba(20, 60, 44, .34); --mp-hi: var(--green);
+  --mp-h2: 25px;
+}
+.mp-pic.mp-focus {
+  --mp-strip-h: 37px; --mp-strip-r: 8px; --mp-strip-gap: 2px;
+  --mp-btn-h: 29px; --mp-btn-r: 6px; --mp-btn-fs: 10px;
+  --mp-bud-h: 29px; --mp-bud-gap: 6px; --mp-bud-bg: transparent; --mp-bud-fs: 10px;
+  --mp-track-w: 23px; --mp-track-h: 2px; --mp-h2: 20px;
+  --mp-method-fs: 9px; --mp-method-pad: 6px 8px; --mp-method-bw: 2px; --mp-method-bg: rgba(23, 50, 76, .26);
+}
+/* No blanket `display` on the picture's children: .mp-pic > span is (0,1,1) and silently
+   beats every single-class component rule below it, which flattened the strip, the budget
+   bar and the ledger rows to plain blocks. Each component says what it is instead. */
+
+.mp-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--mp-strip-gap);
+  min-height: var(--mp-strip-h);
+  margin: var(--mp-pad) var(--mp-pad) 0;
+  padding: 4px 5px;
+  border: 1px solid var(--line);
+  border-radius: var(--mp-strip-r);
+  background: rgba(21, 31, 53, .96);
+  overflow: hidden;
+}
+.mp-sbtn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: var(--mp-btn-h);
+  padding: 0 4px;
+  border-radius: var(--mp-btn-r);
+  background: transparent;
+  color: var(--muted);
+  font-size: calc(var(--mp-btn-fs) - 2px);
+  font-weight: 700;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mp-sbtn.on { background: var(--mp-hi); color: #08121f; }
+.mp-sprompt {
+  flex: 1.4 1 0;
+  min-width: 0;
+  min-height: var(--mp-btn-h);
+  border: 1px solid var(--line);
+  border-radius: var(--mp-btn-r);
+  background: var(--panel-2);
+  color: #5d6d8c;
+  font-size: calc(var(--mp-btn-fs) - 2px);
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.mp-budget {
+  display: flex;
+  align-items: center;
+  gap: var(--mp-bud-gap);
+  min-height: var(--mp-bud-h);
+  margin: 7px 0 0;
+  padding: 0 9px;
+  background: var(--mp-bud-bg);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--mp-bud-fs);
+  overflow: hidden;
+}
+.mp-budget > b { color: var(--mp-bud-strong); font-weight: 650; white-space: nowrap; }
+.mp-track {
+  display: block;
+  flex: 0 0 auto;
+  width: var(--mp-track-w);
+  height: var(--mp-track-h);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .08);
+  overflow: hidden;
+}
+.mp-track > i { display: block; height: 100%; background: var(--mp-track-c); }
+.mp-bsub { color: var(--muted); font-size: calc(var(--mp-bud-fs) - 1px); white-space: nowrap; overflow: hidden; }
+.mp-train {
+  margin-left: auto;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: calc(var(--mp-bud-fs) - 3px);
+  padding: 1px 5px;
+}
+.mp-h2 {
+  display: block;
+  margin: 9px 0 0;
+  padding: 0 var(--mp-pad);
+  font-size: var(--mp-h2);
+  font-weight: 750;
+  letter-spacing: -.02em;
+  line-height: 1.1;
+}
+.mp-h2sub {
+  display: block;
+  padding: 0 var(--mp-pad); margin: 3px 0 0; font-size: 9px; color: var(--muted); line-height: 1.35; }
+.mp-coinrow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 9px 0 0;
+  padding: 0 var(--mp-pad);
+  overflow: hidden;
+}
+.mp-chip {
+  flex: 0 0 auto;
+  border: 1px solid #466180;
+  background: #1a2c46;
+  color: #e8eefb;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.mp-tag {
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 3px 7px;
+  font-size: 8.5px;
+}
+.mp-res {
+  margin-left: auto;
+  flex: 0 0 auto;
+  border: 1px solid var(--accent);
+  background: rgba(61, 125, 255, .12);
+  color: #cfe0ff;
+  border-radius: 7px;
+  padding: 4px 7px;
+  font-size: 9px;
+  font-weight: 700;
+}
+.mp-ctx {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 5px var(--mp-pad) 0;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--mp-hi);
+  border-radius: 8px;
+  background: rgba(19, 32, 56, .85);
+  font-size: 9px;
+  overflow: hidden;
+}
+.mp-lamp {
+  display: block;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--mp-hi); flex: 0 0 auto; }
+.mp-ctx b { font-size: 10px; }
+.mp-ctx .up { color: var(--green); }
+.mp-ctx .down { color: var(--red); }
+.mp-state {
+  margin-left: auto;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 2px 6px;
+  color: var(--muted);
+  font-size: 8px;
+  white-space: nowrap;
+}
+.mp-method {
+  display: block;
+  margin: 8px var(--mp-pad) 0;
+  padding: var(--mp-method-pad);
+  border-left: var(--mp-method-bw) solid var(--mp-method-bc);
+  border-radius: 0 7px 7px 0;
+  background: var(--mp-method-bg);
+  color: var(--muted);
+  font-size: var(--mp-method-fs);
+  line-height: 1.3;
+}
+.mp-method b { color: var(--text); }
+
+/* ---------- rows ---------- */
+.mp-row {
+  display: block;
+  margin: 5px var(--mp-pad) 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 6px 7px;
+  overflow: hidden;
+}
+.mp-row.locked { border-left: 3px solid var(--yellow); }
+.mp-coin, .mp-obs, .mp-next, .mp-acts { display: flex; align-items: baseline; gap: 5px; }
+.mp-coin b { font-size: 11px; }
+.mp-coin small { font-size: 8px; color: var(--muted); }
+.mp-health {
+  display: inline-block;
+  margin-left: auto;
+  flex: 0 0 auto;
+  font-size: 7.5px;
+  font-weight: 800;
+  padding: 2px 5px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.mp-health.ok { color: var(--green); background: rgba(61, 207, 142, .12); }
+.mp-health.warn { color: var(--yellow); background: rgba(246, 207, 104, .12); }
+.mp-health.lock { color: var(--yellow); background: rgba(246, 207, 104, .18); }
+.mp-obs { margin-top: 4px; }
+.mp-obs b { font-size: 10px; }
+.mp-obs em { font-size: 8px; color: var(--muted); font-style: normal; }
+.mp-next { margin-top: 4px; font-size: 8.5px; color: var(--muted); justify-content: space-between; }
+.mp-next strong { font-variant-numeric: tabular-nums; }
+.mp-next .up { color: var(--green); }
+.mp-next .down { color: var(--red); }
+.mp-acts { margin-top: 5px; gap: 3px; align-items: center; }
+.mp-acts > span {
+  flex: 0 0 auto;
+  min-height: 19px;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 8px;
+  display: flex;
+  align-items: center;
+}
+.mp-acts .mp-star { padding: 1px 4px; color: var(--yellow); }
+.mp-acts .mp-go { margin-left: auto; color: #cfe0ff; border-color: #2b456d; background: rgba(61, 125, 255, .10); }
+
+.mp-ledger { display: flex; align-items: center; gap: 6px; padding: 5px 7px; }
+.mp-ledger > span { min-width: 0; }
+.mp-lid { flex: 0 0 52px; }
+.mp-lid b { display: block; font-size: 10.5px; }
+.mp-lid small { display: block; font-size: 7.5px; color: var(--muted); }
+.mp-lsig { flex: 1 1 auto; }
+.mp-lsig b { display: block; font-size: 9.5px; }
+.mp-lsig small { display: block; font-size: 7.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-lhealth { flex: 0 0 auto; }
+.mp-lmeta { flex: 0 0 58px; text-align: right; }
+.mp-lmeta strong { display: block; font-size: 9.5px; font-variant-numeric: tabular-nums; }
+.mp-lmeta small { display: block; font-size: 7px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-lacts {
+  flex: 0 0 auto;
+  display: flex;
+  border: 1px solid #2b456d;
+  border-radius: 6px;
+  background: #142541;
+  overflow: hidden;
+}
+.mp-lacts > span {
+  min-height: 19px;
+  padding: 1px 5px;
+  border-right: 1px solid #2b456d;
+  color: #a7b8d4;
+  font-size: 8px;
+  display: flex;
+  align-items: center;
+}
+.mp-lacts > span:last-child { border-right: 0; color: var(--accent); }
+
+/* ---------- sizer screen ---------- */
+.mp-dec {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 9px var(--mp-pad) 0;
+  padding: 0 0 7px;
+  border-bottom: 1px solid var(--line);
+}
+.mp-dec .mp-lamp { width: 8px; height: 8px; }
+.mp-dec b { font-size: 12px; }
+.mp-dec small { color: var(--muted); font-size: 8.5px; }
+.mp-ticket {
+  display: block;
+  margin: 8px var(--mp-pad) 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 7px 8px;
+}
+.mp-th { display: block; font-size: 8.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.mp-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.mp-fields > span {
+  display: block;
+  border: 1px solid #5c4d1d; background: rgba(246, 207, 104, .05); border-radius: 5px; padding: 3px 5px; }
+.mp-fields small { display: block; font-size: 7.5px; color: var(--muted); }
+.mp-fields b { display: block; font-size: 9.5px; font-variant-numeric: tabular-nums; }
+.mp-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 7px; padding-top: 6px; border-top: 1px solid var(--line); }
+.mp-metrics > span { display: block; }
+.mp-metrics small { display: block; font-size: 7.5px; color: var(--muted); }
+.mp-metrics b { display: block; font-size: 10px; font-variant-numeric: tabular-nums; }
+
+/* ---------- thumbnails inside the option cards ---------- */
+.mp-thumb { display: block; margin: 0 0 8px; }
+.mp-thumbpic { background: #0b1220; }
+.coin-desk-layout-option .mp-thumb { margin-bottom: 8px; }
+.mp-thumb .mp-strip { margin: 0 0 6px; }
+.mp-thumb .mp-budget { margin: 0; }
+.mp-thumb .mp-coinrow { margin: 6px 0 0; }
+.mp-thumb .mp-row { margin: 0 0 4px; }
+.mp-thumb .mp-row:last-child { margin-bottom: 0; }
+.mp-thumb .mp-row:first-child { margin-top: 0; }
+.coin-desk-layout-option .mp-thumb:first-child { margin-top: 0; }
+body.command-strip-mode #main .coin-desk-layout-option .mp-thumb { display: block; }
+
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a41de901bb33eb19',t:'MTc5MDU0Nzc3OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
