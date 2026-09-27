@@ -4291,7 +4291,7 @@ body.page-scout #watchlist-root{display:none!important}body.page-scout .stage{ma
    The exclusions are chart annotations, not controls, and each one is measured: the swing dots sit
    15px apart at their closest on a phone (40px squares would overlap and make a tap ambiguous), and the
    journal's now-marker is a 12px point on a bar. Everything you can actually press is on the floor. --- */
-#main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow),
+#main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.more-info):not(.more-palette-option),
 #main summary, .train-mini, .stepper button, .rr-btn, .horizon-pill {min-height:40px;height:auto}
 details > summary{display:flex;align-items:center;gap:6px}
 .horizon-pill{padding:8px 10px}
@@ -4436,7 +4436,7 @@ body:not(.training) .p1-training,body:not(.training) .p1-feed,body:not(.training
 body:not(.training) .p1-training summary,body:not(.training) .p1-feed summary,body:not(.training) .p1-evidence summary{min-height:30px!important;font-size:10px!important}
 body:not(.training) .p1-actions{gap:5px!important;margin-top:6px!important}
 body:not(.training) .p1-actions button{min-height:34px!important;padding:6px 8px!important;font-size:10px!important}
-body:not(.training) #main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){min-height:32px!important;height:auto!important;padding:5px 8px!important;font-size:11px!important}
+body:not(.training) #main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.more-info):not(.more-palette-option){min-height:32px!important;height:auto!important;padding:5px 8px!important;font-size:11px!important}
 body:not(.training) #main summary{min-height:32px!important;padding:6px 8px!important}
 body:not(.training) .rr-btn{min-height:32px!important;padding:5px 7px!important}
 body:not(.training) .cch .cch-bar button,body:not(.training) .cch .cch-ctl button{min-height:34px!important;padding:5px 8px!important;font-size:11px!important}
@@ -4551,7 +4551,7 @@ body.command-strip-mode .field input,body.command-strip-mode .field select{paddi
 body.command-strip-mode .row{gap:4px!important}
 body.command-strip-mode .btn,body.command-strip-mode .btn.secondary,body.command-strip-mode .btn.danger{min-height:28px!important;height:auto!important;padding:4px 7px!important;border-radius:3px!important;font-size:10px!important;line-height:1.15}
 body.command-strip-mode .text-link{min-height:28px!important;padding:4px 7px!important;font-size:10px!important}
-body.command-strip-mode #main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){min-height:28px!important;height:auto!important;padding:4px 7px!important;border-radius:3px!important;font-size:10px!important;line-height:1.15}
+body.command-strip-mode #main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.more-info):not(.more-palette-option){min-height:28px!important;height:auto!important;padding:4px 7px!important;border-radius:3px!important;font-size:10px!important;line-height:1.15}
 body.command-strip-mode #main summary{min-height:28px!important;height:auto!important;padding:5px 7px!important;font-size:10px!important}
 body.command-strip-mode .results{gap:4px!important}
 body.command-strip-mode .result{padding:6px 7px!important;border-radius:3px!important}
@@ -4794,7 +4794,7 @@ body.command-strip-mode .card,body.command-strip-mode .cd-card,body.command-stri
 body.command-strip-mode .card{padding:16px!important}
 body.command-strip-mode .cd-card{padding:16px!important;margin:0 0 12px!important;background:var(--panel)!important;border:1px solid var(--line)!important}
 body.command-strip-mode .btn,body.command-strip-mode .btn.secondary,body.command-strip-mode .btn.danger{min-height:38px!important;padding:8px 12px!important;border-radius:10px!important;font-size:12px!important;line-height:1.25}
-body.command-strip-mode #main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){min-height:38px!important;padding:8px 12px!important;border-radius:10px!important;font-size:12px!important}
+body.command-strip-mode #main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.more-info):not(.more-palette-option){min-height:38px!important;padding:8px 12px!important;border-radius:10px!important;font-size:12px!important}
 body.command-strip-mode #main summary{min-height:40px!important;padding:10px 12px!important;border-radius:10px!important;font-size:12px!important}
 body.command-strip-mode .cd-fold{margin:10px 0 0!important;border:1px solid var(--line)!important;border-radius:12px!important;background:var(--panel)!important}
 body.command-strip-mode .cd-fold>div{padding:0 12px 14px!important}
@@ -6096,5 +6096,225 @@ body.command-strip-mode #main .coin-navigation .coin-context-bar.lock .coin-cont
    carries information the bar does not (source, age, and the stale flag).
    ===================================================================================== */
 .cd-header .cd-quote > b{display:none}
+/* =====================================================================================
+   MORE-FILTERED-1 - the More tab, filtered.
+
+   Six groups behind a sticky chip rail. Presentation only: the same fields, switches
+   and destinations as before, regrouped, with the explanatory prose moved behind a
+   per-field "i" chip.
+
+   Two cascade notes, both learned the hard way on this sheet:
+     - body.command-strip-mode .card sets padding with !important at (0,2,1), so every
+       rule here that fights it must match that specificity and come later in the file.
+       The block is appended last for exactly that reason.
+     - the shared rule body.command-strip-mode #main button:not(...) at (1,7,2) sets
+       min-height, padding, border-radius and font-size with !important. .more-chip,
+       .more-info and .more-palette-option were added to its :not() chain so the pill
+       shapes and the 17px "i" survive; nothing else about that rule changed.
+   ===================================================================================== */
+.more-screen { padding-bottom: 2px; }
+body.command-strip-mode .more-head { margin: 0 0 8px!important; gap: 10px; align-items: flex-start; }
+.more-head > div { min-width: 0; }
+.more-updates { flex: 0 0 auto; }
+
+/* ---- sticky chip rail: offset is measured in JS into .style.top, this is the fallback ---- */
+.more-filter-rail {
+  position: sticky;
+  top: 34px;
+  z-index: 12;
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 0 0 10px;
+  padding: 7px 2px;
+  background: var(--bg);
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.more-filter-rail::-webkit-scrollbar { display: none; }
+.more-chip {
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--input);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .01em;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color .12s ease, border-color .12s ease, background .12s ease;
+}
+/* 40px touch target without changing the 32px pill. */
+.more-chip::after { content: ""; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; }
+.more-chip:hover { color: var(--text); border-color: var(--accent); }
+.more-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.more-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---- groups ---- */
+.more-groups { display: flex; flex-direction: column; gap: 10px; }
+.more-group { overflow: hidden; }
+.more-group[hidden] { display: none; }
+body.command-strip-mode .more-group { padding: 0!important; }
+.more-group-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(10, 17, 30, .45);
+}
+.more-glyph {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--input);
+  color: var(--accent);
+  font-size: 11px;
+  line-height: 1;
+}
+body.command-strip-mode .more-group-head h3 {
+  margin: 0!important;
+  font-size: 12px!important;
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-transform: none;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.more-sum {
+  flex: 0 0 auto;
+  max-width: 46%;
+  font-size: 10px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.more-group-body { padding: 12px; }
+
+/* ---- the "i" chip and its note ---- */
+.more-info {
+  position: relative;
+  flex: 0 0 auto;
+  width: 17px;
+  height: 17px;
+  margin: 0 0 0 5px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--input);
+  color: var(--muted);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 9px;
+  font-weight: 700;
+  font-style: italic;
+  line-height: 1;
+  vertical-align: middle;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+/* 33px touch target without changing the 17px circle. */
+.more-info::after { content: ""; position: absolute; left: -8px; right: -8px; top: -8px; bottom: -8px; }
+.more-info:hover { color: var(--text); border-color: var(--accent); }
+.more-info.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.more-info:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.more-hint {
+  display: none;
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--accent);
+  border-radius: 8px;
+  background: var(--input);
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.more-hint.open { display: block; }
+/* A note sits between two cluster rows, which breaks the adjacent-sibling border rule. */
+.more-hint + .cluster-row .cell { border-top: 1px solid #5c4d1d; }
+
+/* ---- the label + i rows that replaced .cluster-tag blocks ---- */
+.more-tag-row { display: flex; align-items: center; gap: 2px; margin: 13px 0 0; }
+.more-tag-row:first-child { margin-top: 0; }
+.more-tag-row > span {
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--yellow);
+}
+
+/* ---- palette: the same segmented treatment the two layout pickers already use ---- */
+.more-palette { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 9px; }
+.more-palette-option {
+  display: block;
+  min-height: 52px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--input);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.more-palette-option b { display: block; font-size: 12px; font-weight: 700; color: var(--text); }
+.more-palette-option small { display: block; margin-top: 3px; font-size: 9px; line-height: 1.3; color: var(--muted); }
+.more-palette-option:hover { border-color: var(--accent); }
+.more-palette-option.selected { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.more-palette-option.selected b { color: var(--accent); }
+.more-palette-option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---- action rows: Tools and Data ---- */
+.more-tool-row { margin-top: 2px; }
+.more-tool-row > .btn { flex: 1 1 auto; }
+.more-data-status {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--input);
+}
+.more-data-status .status { font-size: 11px; }
+.more-data-count { flex: 0 0 auto; font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* ---- the two layout pickers keep their own cards, they only lose the outer margin ---- */
+.more-group-body > .coin-desk-layout-settings,
+.more-group-body > .scout-triage-layout-settings { margin-top: 13px; }
+.more-group-body > .coin-desk-layout-settings:first-child,
+.more-group-body > .scout-triage-layout-settings:first-child { margin-top: 0; }
+
+@media (max-width: 400px) {
+  .more-palette { gap: 6px; }
+  .more-palette-option { min-height: 48px; padding: 8px; }
+  .more-palette-option small { font-size: 8.5px; }
+  .more-chip { padding: 0 11px; font-size: 10.5px; }
+  .more-sum { max-width: 42%; }
+}
+
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a41da2e8ce7deb1c',t:'MTc5MDU0NDkwNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a41de901bb33eb19',t:'MTc5MDU0Nzc3OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

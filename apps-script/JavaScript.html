@@ -8198,11 +8198,14 @@
         "</details></section>");
   }
 
-  function field(label, bind, value, type, tipId) {
+  function field(label, bind, value, type, tipId, infoKey) {
     type = type || "number";
     var step = type === "number" ? ' step="any"' : "";
+    /* infoKey is MORE-FILTERED-1 only: it drops a small "i" next to the label. The note
+       itself is printed by moreNote() outside the cluster so it can use the full width. */
     return '<label class="cell' + (trainingOn() && tipId ? " teach" : "") + '"' +
-      (tipId ? ' data-tip="' + tipId + '"' : "") + "><span>" + esc(label) + tipBtn(tipId) +
+      (tipId ? ' data-tip="' + tipId + '"' : "") + '><span>' + esc(label) + tipBtn(tipId) +
+      (infoKey ? moreTag(infoKey) : "") +
       '</span><input type="' + type + '"' + step + ' data-bind="' + bind + '" value="' + esc(value) + '"></label>';
   }
 
@@ -10165,85 +10168,254 @@
     );
   }
 
-  function renderSettings() {
-    var planCount=normalisePlans(state.plans).length;
-    return (
-      '<div class="page-head"><div><h2>More</h2><p class="status ' + (syncOk ? "live" : "sample") + '">' +
-        esc(syncMsg) + " · trades live in your Google Sheet.</p></div>" +
-        '<div class="row"><button class="btn secondary" type="button" data-page="manual">Manual</button>' +
-        '<button class="btn secondary" type="button" data-page="trend">Trend & RSI</button>' +
-        '<button class="btn secondary" data-action="sync-now">Sync now</button></div></div>' +
-      '<section class="card updates-entry"><h3>Updates</h3>' +
-        "<p>What changed in this journal. Newest first. Not a buy signal.</p>" +
-        '<button class="btn" type="button" data-page="updates">Open updates</button></section>' +
-      '<div class="grid two more-utility-grid" style="margin-top:16px">' +
-        '<section class="card more-utility-card"><h3>Quick access</h3>' +
-          '<p class="muted">Less-frequent destinations stay here so the main strip stays focused on the working screens.</p>' +
-          '<div class="row more-utility-actions">' +
-            '<button class="btn secondary" type="button" data-action="open-watchlist">Coins</button>' +
-            '<button class="btn secondary" type="button" data-action="plans-jump">Plans <b>'+planCount+'</b></button>' +
-          '</div>' +
-        '</section>' +
-        '<section class="card more-utility-card"><h3>Display palette</h3>' +
-          '<p class="muted">Choose the device-only colour palette. This does not change signals, safeguards, cloud data or another device.</p>' +
-          '<label class="theme-setting" for="settings-theme"><span>Colour palette</span><select id="settings-theme" aria-label="Colour palette">'+colorThemeOptionsHtml()+'</select></label>' +
-        '</section>' +
-      '</div>' +
-      coinDeskLayoutSettingsHtml() +
-      scoutTriageLayoutSettingsHtml() +
-      '<div class="grid two" style="margin-top:16px"><section class="card"><h3>Account & pair</h3>' +
-        '<div class="cluster"><div class="cluster-row cols-2">' +
-          field("Capital £", "settings.capitalGbp", state.settings.capitalGbp) +
-          riskField() +
-        "</div>" +
-        '<div class="cluster-tag">Active pair</div>' +
-        coinSwitch() +
-        '<p class="muted coin-hint">One pair at a time. Each coin keeps its own tape, closes, and sizer. Day stop stays on the whole account. Quote is GBP.</p>' +
-        '<div class="cluster-tag" style="margin-top:12px">Find · Library · Favourites · Scout</div>' +
-        '<p class="muted coin-hint">Favourites are independent of the active coin. ' +
-          'No seat limit. Open any saved coin without favouriting it. Fetch explicitly; saving sends no market requests.</p>' +
-        '<div class="row" style="margin-top:8px">' +
-          '<button class="btn secondary" type="button" data-action="open-scout">Scout</button>' +
-          '<button class="btn secondary" type="button" data-action="open-scout">Coin Desk</button></div>' +
-        "</div>" +
-      '</section><section class="card"><h3>Fees and fills</h3>' +
-        '<div class="cluster"><div class="cluster-row cols-2">' +
-          field("Buy leg %", "settings.buyFeePct", state.settings.buyFeePct || 0) +
-          field("Sell leg %", "settings.sellFeePct", state.settings.sellFeePct || 0) +
-        '</div><div class="cluster-row cols-2">' +
-          field("Maker %", "settings.makerFeePct", state.settings.makerFeePct) +
-          field("Taker % / side", "settings.takerFeePct", state.settings.takerFeePct) +
-        '</div><div class="cluster-row cols-2">' +
-          field("Fill allowance %", "settings.slipAllowPct", state.settings.slipAllowPct || 0) +
-          '<div class="cell"><span>Both legs or the switch</span><small class="muted">Fill both legs to bill each side on its own money (Revolut X spot: buy 0.00, sell 0.09). Leave both at 0 and the Maker/Taker switch decides, exactly as before. Fill allowance widens the gap the ticket is sized on — 0.15 is a fair first number, 0 means a perfect fill.</small></div>' +
-        "</div></div>" +
-        '<div class="train-switch"><button type="button" class="' + (trainingOn() ? "" : "on") +
-          '" data-action="set-training" data-on="0">Trade</button>' +
-          '<button type="button" class="' + (trainingOn() ? "on" : "") +
-          '" data-action="set-training" data-on="1">Training</button></div>' +
-        '<p class="muted" style="margin:8px 0 14px">Training adds a ? on each box (What / How / Decision / Do this + Words). Use Train in the day bar or nav — no banner strip. Walk starts a short tour. Trade mode hides tips.</p>' +
-        teach("caprule", '<div class="cluster" style="margin-top:12px"><div class="cluster-tag">Session rules</div>' +
-          '<div class="cluster-row cols-2">' +
-            field("Min R:R", "settings.minRr", state.settings.minRr) +
-            field("Stop after N straight losses", "settings.stopAfterLosses", state.settings.stopAfterLosses || state.settings.maxLosses || 2) +
-          "</div>" +
-          '<div class="cluster-row cols-2">' +
-            field("Daily loss cap %", "settings.dailyLossCapPct", state.settings.dailyLossCapPct) +
-            field("Daily profit target %", "settings.profitTargetPct", state.settings.profitTargetPct) +
-          "</div>" +
-          '<div class="cluster-row cols-2">' +
-            field("Soft hold hours", "settings.softHoldHours", state.settings.softHoldHours == null ? 5 : state.settings.softHoldHours) +
-            '<div><label>Journal lane cues</label><div class="train-switch compact">' +
+  /* =====================================================================================
+     MORE-FILTERED-1 - the More tab, filtered.
+
+     The page is reorganised into six groups behind a sticky chip rail: Account, Fees,
+     Rules, Look, Tools, Data. Every control below is the same control that was on the
+     page before, with the same binding, action, destination and default - nothing moves
+     to another screen and no setting is added or removed. Four differences only:
+
+       (a) explanatory prose is collapsed behind a per-field "i" chip instead of being
+           printed permanently. The help paragraphs were longer than the settings they
+           explained, which is what made the page a long scroll;
+       (b) the two "Scout" and "Coin Desk" buttons that both fired open-scout are gone,
+           because the coin navigation directly above them already ends in a "Research"
+           button with that same destination;
+       (c) the palette uses the same segmented control as the two layout pickers under
+           it, instead of a bare select in a card of its own;
+       (d) the chips filter in place by toggling [hidden]. No re-render, so an open
+           note, a half-typed number and the scroll position all survive a filter change.
+     ===================================================================================== */
+  var MORE_GROUPS = ["account", "fees", "rules", "look", "tools", "data"];
+  var moreFilter = "all";
+  var moreInfo = {};
+  var MORE_THEME_SHORT = { signal: "Amber", electric: "Blue", graphite: "Coral" };
+  var MORE_SCOUT_SHORT = { glance: "Glance", ledger: "Ledger" };
+  var MORE_HELP = {
+    capital: "Total account money the Sizer may risk from.",
+    pair: "One pair at a time. Each coin keeps its own tape, closes, and sizer. Day stop stays on the whole account. Quote is GBP.",
+    find: "Favourites are independent of the active coin. No seat limit. Open any saved coin without favouriting it. Fetch explicitly; saving sends no market requests.",
+    buyfee: "What the exchange charges on the buy side.",
+    sellfee: "What the exchange charges on the sell side.",
+    maker: "Charged when your order waits on the book.",
+    taker: "Charged when your order takes a price that is already there, per side.",
+    slip: "Fill allowance widens the gap the ticket is sized on. 0.15 is a fair first number, 0 means a perfect fill.",
+    legs: "Fill both legs to bill each side on its own money (Revolut X spot: buy 0.00, sell 0.09). Leave both at 0 and the Maker/Taker switch decides, exactly as before.",
+    training: "Training adds a ? on each box (What / How / Decision / Do this + Words). Use Train in the day bar or nav - no banner strip. Walk starts a short tour. Trade mode hides tips.",
+    minrr: "Tickets below this reward-to-risk are refused by the Sizer.",
+    stopn: "Day stop trips after this many straight losses.",
+    cap: "Hard stop for the day, as a share of capital.",
+    target: "Optional banking cue, not a lock.",
+    hold: "Amber Held long on open Journal after this many hours. Nudge only - not a hard lock. Past that clock you may be in a short swing hold on purpose.",
+    lane: "Journal lane cues adds HOLD/DECIDE/ACT tag on the open lane (Hours outlook stays in the manage card only).",
+    palette: "Device-only colour palette. Does not change signals, safeguards, cloud data or another device.",
+    sheet: "Phone and laptop share one Google Sheet. A browser with only the example trade cannot overwrite that sheet. If a log vanished, check Drive, that file, File, Version history, or a Backup JSON if you saved one."
+  };
+  function moreTag(key) {
+    if (!MORE_HELP[key]) return "";
+    var on = !!moreInfo[key];
+    return '<button type="button" class="more-info' + (on ? " on" : "") + '" data-action="more-info" data-info="' + esc(key) +
+      '" aria-expanded="' + (on ? "true" : "false") + '" title="What this does" aria-label="Explain this setting">i</button>';
+  }
+  function moreNote(key) {
+    if (!MORE_HELP[key]) return "";
+    var on = !!moreInfo[key];
+    return '<p class="more-hint' + (on ? " open" : "") + '" data-hint="' + esc(key) + '">' + esc(MORE_HELP[key]) + "</p>";
+  }
+  function moreNotes(keys) {
+    return (keys || []).map(function (k) { return moreNote(k); }).join("");
+  }
+  function moreTagged(key, label) {
+    return '<div class="more-tag-row"><span>' + esc(label) + "</span>" + moreTag(key) + "</div>" + moreNote(key);
+  }
+  function moreFilterRailHtml() {
+    var chips = [{ id: "all", label: "All" }, { id: "account", label: "Account" }, { id: "fees", label: "Fees" },
+      { id: "rules", label: "Rules" }, { id: "look", label: "Look" }, { id: "tools", label: "Tools" }, { id: "data", label: "Data" }];
+    return '<div class="more-filter-rail" role="tablist" aria-label="Filter settings">' +
+      chips.map(function (c) {
+        var on = moreFilter === c.id;
+        return '<button type="button" class="more-chip' + (on ? " on" : "") + '" data-action="more-filter" data-filter="' + c.id +
+          '" role="tab" aria-selected="' + (on ? "true" : "false") + '">' + esc(c.label) + "</button>";
+      }).join("") + "</div>";
+  }
+  function moreGroup(id, glyph, title, sum, body) {
+    var show = moreFilter === "all" || moreFilter === id;
+    return '<section class="card more-group" data-more-group="' + id + '"' + (show ? "" : " hidden") + ">" +
+      '<header class="more-group-head"><span class="more-glyph" aria-hidden="true">' + glyph + "</span>" +
+      "<h3>" + esc(title) + "</h3>" +
+      (sum ? '<span class="more-sum">' + sum + "</span>" : "") +
+      '</header><div class="more-group-body">' + body + "</div></section>";
+  }
+  function moreSetFilter(next) {
+    moreFilter = (next && MORE_GROUPS.indexOf(next) >= 0) ? next : "all";
+    Array.prototype.forEach.call(document.querySelectorAll(".more-filter-rail .more-chip"), function (b) {
+      var on = b.getAttribute("data-filter") === moreFilter;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-more-group]"), function (g) {
+      g.hidden = !(moreFilter === "all" || g.getAttribute("data-more-group") === moreFilter);
+    });
+    /* The coin navigation is inside Account; it can only be measured while it is visible. */
+    if (moreFilter === "all" || moreFilter === "account") fitCoinNavigation();
+    moreSyncRailTop();
+  }
+  function moreSyncRailTop() {
+    var rail = document.querySelector(".more-filter-rail");
+    if (!rail) return;
+    var nav = document.querySelector(".nav"), budget = document.getElementById("budget"), top = 0;
+    if (nav) { var nh = nav.getBoundingClientRect().height; if (nh > 0 && nh < 200) top += nh; }
+    if (budget) top += budget.getBoundingClientRect().height;
+    rail.style.top = Math.max(0, Math.round(top)) + "px";
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-action]"); if (!b) return;
+    var a = b.getAttribute("data-action"); if (a.indexOf("more-") !== 0) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (a === "more-filter") { moreSetFilter(b.getAttribute("data-filter")); return; }
+    if (a === "more-theme") { setColorTheme(b.getAttribute("data-theme")); return; }
+    if (a === "more-info") {
+      var key = b.getAttribute("data-info") || "";
+      moreInfo[key] = !moreInfo[key];
+      var on = !!moreInfo[key];
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-expanded", on ? "true" : "false");
+      var note = document.querySelector('.more-hint[data-hint="' + key.replace(/["\\]/g, "") + '"]');
+      if (note) note.classList.toggle("open", on);
+      moreSyncRailTop();
+    }
+  }, true);
+  window.addEventListener("resize", moreSyncRailTop);
+
+  function moreAccountSum() {
+    return esc(gbp(state.settings.capitalGbp) + " · " + num(state.settings.riskPct, 2) + "%");
+  }
+  function moreAccountBody() {
+    return '<div class="cluster"><div class="cluster-row cols-2">' +
+        field("Capital £", "settings.capitalGbp", state.settings.capitalGbp, "number", null, "capital") +
+        riskField() +
+      "</div></div>" + moreNotes(["capital"]) +
+      moreTagged("pair", "Active pair") +
+      coinSwitch() +
+      moreTagged("find", "Find · Library · Favourites");
+  }
+  function moreFeesSum() {
+    return esc(num(Number(state.settings.buyFeePct) || 0, 2) + " / " + num(Number(state.settings.sellFeePct) || 0, 2));
+  }
+  function moreFeesBody() {
+    return '<div class="cluster">' +
+        '<div class="cluster-row cols-2">' +
+          field("Buy leg %", "settings.buyFeePct", state.settings.buyFeePct || 0, "number", null, "buyfee") +
+          field("Sell leg %", "settings.sellFeePct", state.settings.sellFeePct || 0, "number", null, "sellfee") +
+        "</div>" + moreNotes(["buyfee", "sellfee"]) +
+        '<div class="cluster-row cols-2">' +
+          field("Maker %", "settings.makerFeePct", state.settings.makerFeePct, "number", null, "maker") +
+          field("Taker % / side", "settings.takerFeePct", state.settings.takerFeePct, "number", null, "taker") +
+        "</div>" + moreNotes(["maker", "taker"]) +
+        '<div class="cluster-row cols-2">' +
+          field("Fill allowance %", "settings.slipAllowPct", state.settings.slipAllowPct || 0, "number", null, "slip") +
+          '<div class="cell"><span>Both legs or the switch' + moreTag("legs") + "</span></div>" +
+        "</div>" + moreNotes(["slip", "legs"]) +
+      "</div>" +
+      moreTagged("training", "Trade / Training") +
+      '<div class="train-switch">' +
+        '<button type="button" class="' + (trainingOn() ? "" : "on") + '" data-action="set-training" data-on="0">Trade</button>' +
+        '<button type="button" class="' + (trainingOn() ? "on" : "") + '" data-action="set-training" data-on="1">Training</button>' +
+      "</div>";
+  }
+  function moreRulesSum() {
+    return esc("R:R " + num(state.settings.minRr, 1) + " · cap " + num(state.settings.dailyLossCapPct, 1) + "%");
+  }
+  function moreRulesBody() {
+    return teach("caprule", '<div class="cluster">' +
+        '<div class="cluster-row cols-2">' +
+          field("Min R:R", "settings.minRr", state.settings.minRr, "number", null, "minrr") +
+          field("Stop after N straight losses", "settings.stopAfterLosses",
+            state.settings.stopAfterLosses || state.settings.maxLosses || 2, "number", null, "stopn") +
+        "</div>" + moreNotes(["minrr", "stopn"]) +
+        '<div class="cluster-row cols-2">' +
+          field("Daily loss cap %", "settings.dailyLossCapPct", state.settings.dailyLossCapPct, "number", null, "cap") +
+          field("Daily profit target %", "settings.profitTargetPct", state.settings.profitTargetPct, "number", null, "target") +
+        "</div>" + moreNotes(["cap", "target"]) +
+        '<div class="cluster-row cols-2">' +
+          field("Soft hold hours", "settings.softHoldHours",
+            state.settings.softHoldHours == null ? 5 : state.settings.softHoldHours, "number", null, "hold") +
+          '<div class="cell"><span>Journal lane cues' + moreTag("lane") + "</span>" +
+            '<div class="train-switch compact">' +
               '<button type="button" class="' + (state.settings.journalLaneCues ? "" : "on") +
                 '" data-action="set-journal-lane-cues" data-on="0">Off</button>' +
               '<button type="button" class="' + (state.settings.journalLaneCues ? "on" : "") +
-                '" data-action="set-journal-lane-cues" data-on="1">On</button></div></div>' +
+                '" data-action="set-journal-lane-cues" data-on="1">On</button>' +
+            "</div>" +
           "</div>" +
-          '<p class="muted coin-hint">Soft hold hours: amber Held long on open Journal after this many hours. Nudge only — not a hard lock. Past that clock you may be in a short swing hold on purpose. Journal lane cues adds HOLD/DECIDE/ACT tag on the open lane (Hours outlook stays in the manage card only).</p>' +
-          "</div>", true) +
-        '<div class="row" style="margin-top:12px"><button class="btn" data-action="backup">Backup JSON</button>' +
-        '<button class="btn danger" data-action="reset">Reset sample data</button></div>' +
-        '<p class="muted" style="margin-top:10px">Phone and laptop share one Google Sheet. A browser with only the example trade cannot overwrite that sheet. If a log vanished, check Drive → that file → File → Version history, or a Backup JSON if you saved one.</p></section></div>'
+        "</div>" + moreNotes(["hold", "lane"]) +
+      "</div>", true);
+  }
+  function moreLookSum() {
+    return esc((MORE_THEME_SHORT[colorTheme] || colorTheme) + " · " +
+      (MORE_SCOUT_SHORT[scoutTriageLayoutValue()] || ""));
+  }
+  function moreLookBody() {
+    return moreTagged("palette", "Colour palette") +
+      '<div class="more-palette" role="group" aria-label="Colour palette">' +
+        Object.keys(COLOR_THEMES).map(function (k) {
+          var on = k === colorTheme;
+          return '<button type="button" class="more-palette-option' + (on ? " selected" : "") +
+            '" data-action="more-theme" data-theme="' + k + '" aria-pressed="' + (on ? "true" : "false") + '">' +
+            "<b>" + esc(MORE_THEME_SHORT[k] || k) + "</b><small>" + esc(COLOR_THEMES[k].label) + "</small></button>";
+        }).join("") +
+      "</div>" +
+      coinDeskLayoutSettingsHtml() +
+      scoutTriageLayoutSettingsHtml();
+  }
+  function moreToolsSum(planCount) {
+    return esc(planCount + " plan" + (planCount === 1 ? "" : "s"));
+  }
+  function moreToolsBody(planCount) {
+    return '<div class="row more-tool-row">' +
+      '<button class="btn secondary" type="button" data-action="open-watchlist">Coins</button>' +
+      '<button class="btn secondary" type="button" data-action="plans-jump">Plans <b>' + esc(planCount) + "</b></button>" +
+      '<button class="btn secondary" type="button" data-page="updates">Updates</button>' +
+      '<button class="btn secondary" type="button" data-page="manual">Manual</button>' +
+      '<button class="btn secondary" type="button" data-page="trend">Trend &amp; RSI</button>' +
+      "</div>";
+  }
+  function moreDataSum() {
+    return esc(state.trades.length + " trade" + (state.trades.length === 1 ? "" : "s"));
+  }
+  function moreDataBody() {
+    return '<div class="more-data-status">' +
+        '<span class="status ' + (syncOk ? "live" : "sample") + '">' + esc(syncMsg) + "</span>" +
+        '<span class="more-data-count">' + esc(state.trades.length) + " saved</span>" +
+      "</div>" +
+      '<div class="row more-tool-row">' +
+        '<button class="btn" type="button" data-action="sync-now">Sync now</button>' +
+        '<button class="btn" type="button" data-action="backup">Backup JSON</button>' +
+        '<button class="btn danger" type="button" data-action="reset">Reset sample data</button>' +
+      "</div>" +
+      moreTagged("sheet", "Where the data lives");
+  }
+
+  function renderSettings() {
+    var planCount = normalisePlans(state.plans).length;
+    return (
+      '<div class="more-screen">' +
+        '<div class="page-head more-head"><div><h2>More</h2>' +
+          '<p class="status ' + (syncOk ? "live" : "sample") + '">' + esc(syncMsg) +
+            " · trades live in your Google Sheet.</p></div>" +
+          '<button class="btn secondary more-updates" type="button" data-page="updates">Updates</button>' +
+        "</div>" +
+        moreFilterRailHtml() +
+        '<div class="more-groups">' +
+          moreGroup("account", "◈", "Account & pair", moreAccountSum(), moreAccountBody()) +
+          moreGroup("fees", "◎", "Fees & fills", moreFeesSum(), moreFeesBody()) +
+          moreGroup("rules", "⚑", "Session rules", moreRulesSum(), moreRulesBody()) +
+          moreGroup("look", "◐", "Look", moreLookSum(), moreLookBody()) +
+          moreGroup("tools", "⌘", "Tools", moreToolsSum(planCount), moreToolsBody(planCount)) +
+          moreGroup("data", "⇅", "Data", moreDataSum(), moreDataBody()) +
+        "</div>" +
+      "</div>"
     );
   }
 
@@ -12163,9 +12335,19 @@
     return out;
   };
 
+  // MORE-FILTERED-1 - the chip rail sticks directly beneath the sticky budget bar, whose
+  // height depends on the mode and on touch tokens, so the offset is measured after each
+  // draw instead of being hard-coded into the stylesheet. Only the More tab has a rail.
+  var __moreRailRender=render;
+  render=function(){
+    var out=__moreRailRender.apply(this,arguments);
+    if(page==='settings')moreSyncRailTop();
+    return out;
+  };
+
   render();
   syncCoinsNow();
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a41da2b3aa55eb1c',t:'MTc5MDU0NDg5OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a41de8c1ccaaeb19',t:'MTc5MDU0Nzc2OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
