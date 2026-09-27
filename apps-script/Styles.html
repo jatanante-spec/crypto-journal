@@ -5945,5 +5945,31 @@ body.command-strip-mode #main .triage-focus-rows.compact .triage-focus-actions .
   body.command-strip-mode #main .triage-focus-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){width:30px!important;min-width:30px!important;max-width:30px!important;}
   body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){padding:0 8px!important}
 }
+
+/* ====================================================================================
+   LOCK-LABEL-FIX-1 - the lock control shows the word "Lock" when unlocked and the
+   padlock glyph when locked (the same condition that adds .on). It was being sized
+   as an always-glyph: 14px text inside a 30px square, jammed against the borders.
+   Width is now fixed so the action rail lines up across rows in either state, with
+   9px for the word and 14px for the glyph.
+   ==================================================================================== */
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  width:40px!important;min-width:40px!important;max-width:40px!important;padding:0!important;
+}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.on):not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){font-size:9px!important;letter-spacing:.02em}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock.on:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){font-size:14px!important}
+body.command-strip-mode #main .triage-focus-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  width:40px!important;min-width:40px!important;max-width:40px!important;padding:0!important;
+}
+body.command-strip-mode #main .triage-focus-actions .triage-unified-lock:not(.on):not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){font-size:9px!important;letter-spacing:.02em}
+body.command-strip-mode #main .triage-focus-actions .triage-unified-lock.on:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){font-size:14px!important}
+@media(max-width:650px){
+  body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+    width:36px!important;min-width:36px!important;max-width:36px!important;
+  }
+  body.command-strip-mode #main .triage-focus-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+    width:36px!important;min-width:36px!important;max-width:36px!important;
+  }
+}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a41a1a45699b3628',t:'MTc5MDUwNzg1Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a41ae3b948a758b3',t:'MTc5MDUxNjEwNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
