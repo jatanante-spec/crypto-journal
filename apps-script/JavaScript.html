@@ -8276,10 +8276,83 @@
   // The visible row is bounded by space, never by the saved favourites count.
   var coinNavObserver = null;
   var coinNavFrame = 0;
+
+  function ensureSizerPage(){
+    if(page==="sizer")return;
+    page="sizer";render();
+  }
+  function focusSizerFold(foldId){
+    ensureSizerPage();
+    var fold=document.getElementById(foldId);if(!fold)return;
+    fold.open=true;
+    var other=document.getElementById(foldId==="sizer-gates-fold"?"sizer-story-fold":"sizer-gates-fold");
+    if(other)other.open=false;
+    try{fold.scrollIntoView({block:"nearest"});}catch(err){}
+    document.querySelectorAll(".mega-link[data-fold]").forEach(function(n){
+      n.classList.toggle("on",n.getAttribute("data-fold")===foldId&&fold.open);
+    });
+  }
+  function focusSizerTicket(){
+    ensureSizerPage();
+    var logBtn=document.querySelector('#main [data-action="log-sizer"]');
+    if(!logBtn)return;
+    try{logBtn.scrollIntoView({block:"center"});}catch(err){}
+    try{logBtn.focus({preventScroll:true});}catch(err){}
+  }
+  // COIN-DESK-STACK-1 — state for the context bar, from the same primitives as Scout rows.
+  function coinDeskContext(active){
+    var lock=null,snap=null;
+    try{ lock=scoutLockFor(active,state.settings)||null; }catch(err){ lock=null; }
+    try{ var pair=pairByTicker(active,state.settings); if(pair&&pair.ticker) snap=triageSnapshot(pair,false); }catch(err){ snap=null; }
+    var ready=!!(snap&&snap.context&&snap.context.ready);
+    var stale=!!(snap&&snap.fresh&&snap.fresh.stale);
+    var mismatch=!!(snap&&snap.mismatch);
+    var px=snap?Number(snap.price):0;
+    var chg=(snap&&snap.change!=null&&isFinite(Number(snap.change)))?Number(snap.change):null;
+    return {lock:lock,ready:ready,stale:stale,mismatch:mismatch,
+            price:px>0?priceGbp(px,4):"",change:chg,
+            kind:lock?"lock":(!ready||stale||mismatch?"attn":"ready")};
+  }
+  var COIN_DESK_STATE={
+    lock :{label:"Locked in Scout", cls:"lock", act:"View lock",        kind:"lock"},
+    attn :{label:"Needs attention", cls:"attn", act:"Refresh research", kind:"refresh"},
+    ready:{label:"Research ready",  cls:"ready",act:"Open ticket",      kind:"ticket"}
+  };
+  function coinDeskSub(ctx){
+    if(ctx.kind==="lock")return "Protected in Scout · sizing blocked";
+    if(ctx.kind==="attn")return ctx.stale?"Context stale · refresh before sizing":"Context incomplete · hourly data needed";
+    return "Ready to size · gates decide the rest";
+  }
   function coinSwitch() {
     var active=state.settings.coinTicker;
     var fav=watchlistPairs().filter(function(p){return p.ticker!==active;});
-    return '<div class="coin-navigation"><button type="button" class="tag coin-library-toggle" data-action="open-scout" aria-label="'+esc(active)+' active. Open unified Coin Desk"><span class="coin-library-symbol">'+esc(active)+'</span><span class="coin-library-label"> · Coin Desk</span><span class="coin-library-chevron">▾</span></button><div class="coin-shortcuts" aria-label="Shortlist coin shortcuts">'+fav.map(function(p){return '<button type="button" class="tag coin-shortcut" data-action="switch-coin" data-ticker="'+esc(p.ticker)+'">'+esc(p.ticker)+'</button>';}).join('')+'<button type="button" class="tag coin-overflow" data-action="library-overflow" hidden aria-label="Quick switch among all saved coins" aria-haspopup="dialog" aria-controls="quick-switch-root">More</button></div></div>';
+    var ctx=coinDeskContext(active),st=COIN_DESK_STATE[ctx.kind];
+    var chg=ctx.change==null?"":(ctx.change>=0?"+":"")+ctx.change.toFixed(1)+"%";
+    var chgCls=ctx.change==null?"":(ctx.change>=0?"up":"down");
+    return '<div class="coin-navigation">'+
+      '<div class="coin-nav-row">'+
+        '<button type="button" class="tag coin-library-toggle" data-action="library-overflow" aria-haspopup="dialog" aria-controls="quick-switch-root" aria-label="'+esc(active)+' active. Switch coin">'+
+          '<span class="coin-library-symbol">'+esc(active)+'</span><span class="coin-library-chevron">&#9662;</span>'+
+        '</button>'+
+        '<div class="coin-shortcuts" aria-label="Shortlist coin shortcuts">'+
+          fav.map(function(p){return '<button type="button" class="tag coin-shortcut" data-action="switch-coin" data-ticker="'+esc(p.ticker)+'">'+esc(p.ticker)+'</button>';}).join("")+
+          '<button type="button" class="tag coin-overflow" data-action="library-overflow" hidden aria-label="Quick switch among all saved coins" aria-haspopup="dialog" aria-controls="quick-switch-root">More</button>'+
+        "</div>"+
+        '<button type="button" class="coin-research-btn" data-action="open-scout" aria-label="Open Scout for '+esc(active)+'">Research &#8594;</button>'+
+      "</div>"+
+      '<div class="coin-context-bar '+st.cls+'">'+
+        '<span class="coin-context-lamp" aria-hidden="true"></span>'+
+        '<div class="coin-context-lead">'+
+          '<div class="coin-context-l1">'+
+            (ctx.price?"<b>"+esc(ctx.price)+"</b>":"<b>Not fetched</b>")+
+            (chg?'<span class="'+chgCls+'">'+esc(chg)+"</span>":"")+
+            '<span class="coin-context-state">'+esc(st.label)+"</span>"+
+          "</div>"+
+          '<div class="coin-context-l2">'+esc(coinDeskSub(ctx))+"</div>"+
+        "</div>"+
+        '<button type="button" class="coin-context-action" data-action="coin-desk-action" data-kind="'+st.kind+'" data-ticker="'+esc(active)+'">'+esc(st.act)+"</button>"+
+      "</div>"+
+    "</div>";
   }
   function fitCoinNavigation() {
     document.querySelectorAll('.coin-shortcuts').forEach(function(row){
@@ -11652,6 +11725,11 @@
       if (page === "settings" || page === "journal") render();
     } else if (action === "fetch-market" || action === "fetch-closes") {
       runLiveFetch();
+    } else if (action === "coin-desk-action") {
+      var deskKind = btn.getAttribute("data-kind");
+      if (deskKind === "refresh") runLiveFetch();
+      else if (deskKind === "lock") focusSizerFold("sizer-gates-fold");
+      else if (deskKind === "ticket") focusSizerTicket();
     } else if (action === "backup") {
       downloadText("scalping-journal-backup.json", JSON.stringify(state, null, 2), "application/json");
     } else if (action === "reset") {
@@ -12075,4 +12153,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a41bb1263fbbada5',t:'MTc5MDUyNDUxOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a41c5b155bc4a122',t:'MTc5MDUzMTQ3OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
