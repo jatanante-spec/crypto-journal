@@ -5466,6 +5466,13 @@ body.command-strip-mode .scout-triage-layout-options{grid-template-columns:repea
 #main .triage-compact-page .triage-focus-search input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px rgba(61,125,255,.12)}
 #main .triage-compact-page .triage-focus-search button{min-width:36px!important;min-height:35px!important;border:1px solid #2e4a72;border-radius:8px;background:#172a49;color:#a6b5cc;font-size:16px!important;padding:4px!important}
 #main .triage-compact-page .triage-focus-density{min-height:35px!important;border:1px solid #3d67a0;border-radius:8px;background:#17335b;color:#dceaff;padding:6px 9px!important;font-size:9px!important;white-space:nowrap}
+/* COIN-FOCUS-SCOPE-1 · scope tabs: three equal segments, so switching between
+   Shortlist / All coins / Find-add no longer means leaving coin focus first */
+#main .triage-compact-page .triage-focus-scope{display:flex;gap:5px;margin-top:7px}
+#main .triage-compact-page .triage-focus-scope button{flex:1 1 0;min-height:30px;padding:5px 6px;border:1px solid #2a456a;border-radius:999px;background:transparent;color:#a8b7ce;font-size:9.5px;white-space:nowrap}
+#main .triage-compact-page .triage-focus-scope button.on{border-color:var(--accent);background:rgba(61,125,255,.2);color:#eaf2ff;font-weight:700}
+/* COIN-FOCUS-SORT-1 · shares the tools row with the search box and the density toggle */
+#main .triage-compact-page .triage-focus-sort{flex:0 0 auto;max-width:98px;min-height:35px;padding:6px 4px;border:1px solid #3d67a0;border-radius:8px;background:#17335b;color:#dceaff;font-size:9.5px;font-weight:700}
 #main .triage-compact-page .triage-focus-filters{display:flex;gap:5px;overflow-x:auto;margin-top:8px;padding:0 0 2px;scrollbar-width:none}
 #main .triage-compact-page .triage-focus-filters::-webkit-scrollbar{display:none}
 #main .triage-compact-page .triage-focus-filters button{flex:0 0 auto;min-height:29px!important;padding:5px 9px!important;border:1px solid #2a456a;border-radius:999px;background:transparent;color:#aebbd0;font-size:9px!important;white-space:nowrap}
@@ -5530,6 +5537,12 @@ body.command-strip-mode .scout-triage-layout-options{grid-template-columns:repea
 #main .triage-compact-page .triage-focus-bar button{flex:1 1 auto;min-width:0;min-height:38px;padding:8px 10px;border:1px solid #3d67a0;border-radius:9px;background:#17335b;color:#dceaff;font-size:11px;font-weight:750;white-space:nowrap}
 #main .triage-compact-page .triage-focus-bar button.ghost{flex:0 1 auto;border-color:#2e4a72;background:#132442;color:#a9bcd8;font-size:10px;font-weight:600}
 #main .triage-compact-page .triage-focus-bar button:disabled{opacity:.45}
+/* COIN-FOCUS-INSPECT-1 · the inspector sheet and its scrim normally sit at z-index 175
+   and 170 — below the coin focus overlay's 12000, so inspecting a coin could only ever
+   happen outside it. Lift both while focus is open, and size the sheet from the measured
+   viewport so a keyboard cannot bury it. */
+body.triage-focus-inspect #triage-scrim{z-index:12010}
+body.triage-focus-inspect #main .triage-inspector.sheet{z-index:12020;max-height:calc(var(--focus-vh,100dvh) * .86)}
 #main .triage-compact-page .triage-focus-footer b{color:#d5e2f6}
 #main .triage-compact-page .triage-focus-rows.compact .triage-focus-row{min-height:51px;padding-top:5px;padding-bottom:5px}
 #main .triage-compact-page .triage-focus-rows.compact .triage-focus-main{min-height:39px!important}
@@ -7177,4 +7190,4 @@ body.command-strip-mode:not(.training) #main{padding-bottom:calc(8px + env(safe-
   #main #triage-rows{max-height:none;min-height:0}
 }
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42677c3f9cd9d7a',t:'MTc5MDYzNzUxMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4269cf1e8a7a5d0',t:'MTc5MDYzOTAzNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
