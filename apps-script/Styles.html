@@ -4292,7 +4292,7 @@ body.page-scout #watchlist-root{display:none!important}body.page-scout .stage{ma
    15px apart at their closest on a phone (40px squares would overlap and make a tap ambiguous), and the
    journal's now-marker is a 12px point on a bar. Everything you can actually press is on the floor. --- */
 #main button:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option),
-#main summary, .train-mini, .stepper button, .rr-btn, .horizon-pill {min-height:40px;height:auto}
+#main summary, .train-mini, .stepper button, .rr-btn, .horizon-pill{min-height:40px;height:auto}
 details > summary{display:flex;align-items:center;gap:6px}
 .horizon-pill{padding:8px 10px}
 .train-mini{padding:0 9px}
@@ -6743,4 +6743,45 @@ body.command-strip-mode .more-group-head h3 {
 .coin-desk-layout-option .mp-thumb:first-child { margin-top: 0; }
 body.command-strip-mode #main .coin-desk-layout-option .mp-thumb { display: block; }
 
+
+/* ==========================================================================
+   CD-HEADER-FOLD-1 · the coin desk header is two rows, not three.
+   The Fetch button folds up into the coin row beside the Scout jump, and the
+   quote's age joins the context bar next to the price it describes. The third
+   row the header used to spend on a lone button is gone.
+   ========================================================================== */
+/* Fetch inherits the row's geometry from the shared #main button rules - the same
+   38px / radius 10 / 12px the Scout button beside it resolves to - so the two sit as
+   equals. Only colour is overridden here; setting min-height or padding would lose to
+   the shared rules anyway and would leave the two buttons mismatched instead. */
+#main .coin-navigation .coin-fetch-btn{
+  border:1px solid var(--line)!important;border-radius:10px!important;
+  background:var(--panel-2)!important;color:var(--text)!important;
+  font-size:12px!important;font-weight:650!important;
+}
+#main .coin-navigation .coin-fetch-btn[disabled]{opacity:.5;cursor:default}
+#main .coin-navigation .coin-fetch-btn.stale{
+  border-color:#8a6a2a!important;background:rgba(246,207,104,.16)!important;color:#ffe6a8!important;
+  box-shadow:0 0 0 3px rgba(246,207,104,.13);
+}
+/* 40px tap target behind the 30px visual, matching the other desk buttons */
+#main .coin-navigation .coin-fetch-btn::after{
+  content:"";position:absolute;left:0;right:0;top:-5px;bottom:-5px;
+}
+/* the desk note keeps its line; the age sits beside it and the note truncates first */
+#main .coin-navigation .coin-context-l2{
+  display:flex;align-items:baseline;gap:6px;min-width:0;
+  white-space:nowrap;overflow:hidden;
+}
+#main .coin-navigation .coin-context-note{
+  flex:1 1 auto;min-width:0;font-style:normal;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+#main .coin-navigation .coin-context-fresh{
+  flex:0 0 auto;font-style:normal;white-space:nowrap;color:#7d8fb0;
+}
+#main .coin-navigation .coin-context-fresh.stale{color:#f6cf68}
+/* the Cue Deck dialog is a switcher only - it never fetches */
+#cd-dialog .coin-navigation .coin-fetch-btn{display:none}
 </style>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4220bf95c98c5a4',t:'MTc5MDU5MTE1NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

@@ -5800,7 +5800,11 @@
   function cdStatusWord(s){return {block:'BLOCK',wait:'WAIT',unknown:'UNKNOWN',context:'CONTEXT',pass:'PASS'}[s]||'UNKNOWN';}
   function cdStrip(f){var cues=cdCues(f),groups=[['Ticket',['Ticket','R:R','Reach']],['Timing',['Tide','Hour','Spot','Score','RSI','Tape']],['Account',['In','Day']],['Plan / data',['Fetch','ATR','Plan','Source']]];return '<div class="cd-strip" aria-label="Cue groups">'+groups.map(function(g){var rows=cues.filter(function(c){return g[1].indexOf(c.id)>=0;}),status=cdStatus(rows),first=rows.filter(function(c){return c.status===status;})[0]||rows[0];return '<button type="button" class="cd-'+status+'" data-action="cd-deck" data-cue="'+first.id+'"><span>● '+cdStatusWord(status)+'</span><b>'+g[0]+'</b></button>';}).join('')+'</div>'+(lrSeen('hint')?'':'<p class="cd-small">Tap a group to inspect the checks. A proposed plan is not buying approval.</p>');}
   function cdDecision(f){var master=cdMaster(f),tone=master==='BUY'?'pass':(master==='SELL'||master==='NO-GO')?'block':'wait',reason=cdDecisionReason(f,master),sub=cdDecisionSubline(f,master);return '<section class="cd-decision"><b class="cd-verdict cd-'+tone+'">'+esc(master)+'</b><div><strong>'+esc(reason)+'</strong><small>'+esc(sub)+'</small></div><button type="button" class="text-link" data-action="cd-why">Why? / Gates</button></section>'+cdStrip(f);}
-  function cdHeader(f){var quoteKnown=f.fresh.kind!=='sample'&&!f.fresh.stale;return '<header class="cd-header"><div class="cd-header-row">'+coinSwitch()+'<div class="cd-quote"><b>'+esc(quoteKnown?priceGbp(f.t.price,5):'Quote needs Fetch')+'</b><small>'+esc(f.fresh.label)+'</small></div><button type="button" class="btn secondary" data-action="fetch-market"'+(busy?' disabled':'')+'>'+(busy?'Fetching…':'Fetch')+'</button></div></header>';}
+  /* CD-HEADER-FOLD-1 · the quote block and its Fetch button used to sit on a third row of
+     their own. The freshness now lives with the price in the context bar and Fetch sits in
+     the coin row, so the header is two rows. The quote price itself is not repeated here -
+     the context bar already shows it. */
+  function cdHeader(f){return '<header class="cd-header"><div class="cd-header-row">'+coinSwitch(f)+'</div></header>';}
   function climateToneClass(tone){return tone==='good'?'good':tone==='bad'?'bad':tone==='mid'?'mid':'unknown';}
   function climateDataCell(label,value){return '<div class="market-climate-data"><small>'+esc(label)+'</small><b>'+esc(value==null||value===''?'Unknown':String(value))+'</b></div>';}
   function marketClimateReading(id,label,value,detail,tone,body){
@@ -8326,12 +8330,16 @@
     if(ctx.kind==="attn")return ctx.stale?"Context stale · refresh before sizing":"Context incomplete · hourly data needed";
     return "Ready to size · gates decide the rest";
   }
-  function coinSwitch() {
+  /* CD-HEADER-FOLD-1 · pass the coin-desk frame (f) to fold Fetch into the coin row and the
+     quote's age into the context bar. Callers with no frame - the Trend page and More >
+     Account - keep exactly the markup they had. */
+  function coinSwitch(f) {
     var active=state.settings.coinTicker;
     var fav=watchlistPairs().filter(function(p){return p.ticker!==active;});
     var ctx=coinDeskContext(active),st=COIN_DESK_STATE[ctx.kind];
     var chg=ctx.change==null?"":(ctx.change>=0?"+":"")+ctx.change.toFixed(1)+"%";
     var chgCls=ctx.change==null?"":(ctx.change>=0?"up":"down");
+    var fresh=(f&&f.fresh)||marketFreshness(),freshStale=!!fresh.stale;
     return '<div class="coin-navigation">'+
       '<div class="coin-nav-row">'+
         '<button type="button" class="tag coin-library-toggle" data-action="library-overflow" aria-haspopup="dialog" aria-controls="quick-switch-root" aria-label="'+esc(active)+' active. Switch coin">'+
@@ -8341,6 +8349,12 @@
           fav.map(function(p){return '<button type="button" class="tag coin-shortcut" data-action="switch-coin" data-ticker="'+esc(p.ticker)+'">'+esc(p.ticker)+'</button>';}).join("")+
           '<button type="button" class="tag coin-overflow" data-action="library-overflow" hidden aria-label="Quick switch among all saved coins" aria-haspopup="dialog" aria-controls="quick-switch-root">More</button>'+
         "</div>"+
+        (f
+          ? '<button type="button" class="coin-fetch-btn'+(freshStale?" stale":"")+
+              '" data-action="fetch-market" data-fetch-inline="1"'+
+              ' aria-label="Fetch live market data for '+esc(active)+'"'+
+              (busy?" disabled":"")+'>'+esc(busy?"…":(freshStale?"Fetch · stale":"Fetch"))+"</button>"
+          : "")+
         '<button type="button" class="coin-research-btn" data-action="open-scout" aria-label="Open Scout for '+esc(active)+'">Research &#8594;</button>'+
       "</div>"+
       '<div class="coin-context-bar '+st.cls+'">'+
@@ -8351,7 +8365,10 @@
             (chg?'<span class="'+chgCls+'">'+esc(chg)+"</span>":"")+
             '<span class="coin-context-state">'+esc(st.label)+"</span>"+
           "</div>"+
-          '<div class="coin-context-l2">'+esc(coinDeskSub(ctx))+"</div>"+
+          '<div class="coin-context-l2">'+
+            '<i class="coin-context-note">'+esc(coinDeskSub(ctx))+"</i>"+
+            (f?'<em class="coin-context-fresh'+(fresh.kind==="stale"?" stale":"")+'">'+esc(fresh.label)+"</em>":"")+
+          "</div>"+
         "</div>"+
         '<button type="button" class="coin-context-action" data-action="coin-desk-action" data-kind="'+st.kind+'" data-ticker="'+esc(active)+'">'+esc(st.act)+"</button>"+
       "</div>"+
@@ -12538,3 +12555,4 @@
   pullCloud();
 })();
 </script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4220baeb8a0c5a4',t:'MTc5MDU5MTE0Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
