@@ -6755,6 +6755,11 @@ body.command-strip-mode #main .coin-desk-layout-option .mp-thumb { display: bloc
    equals. Only colour is overridden here; setting min-height or padding would lose to
    the shared rules anyway and would leave the two buttons mismatched instead. */
 #main .coin-navigation .coin-fetch-btn{
+  /* position:relative is load bearing, not decoration. The ::after below is the 40px tap
+     target, and it is position:absolute - with no positioned ancestor it resolves against
+     the initial containing block and becomes an invisible full-viewport sheet that eats
+     every tap on the screen. Never remove this line. */
+  position:relative;
   border:1px solid var(--line)!important;border-radius:10px!important;
   background:var(--panel-2)!important;color:var(--text)!important;
   font-size:12px!important;font-weight:650!important;
@@ -6764,9 +6769,10 @@ body.command-strip-mode #main .coin-desk-layout-option .mp-thumb { display: bloc
   border-color:#8a6a2a!important;background:rgba(246,207,104,.16)!important;color:#ffe6a8!important;
   box-shadow:0 0 0 3px rgba(246,207,104,.13);
 }
-/* 40px tap target behind the 30px visual, matching the other desk buttons */
+/* 40px tap target around the 38px visual. -1px each side, not -5px: the button is
+   38px tall because it inherits the row geometry, so -5px would overshoot the row. */
 #main .coin-navigation .coin-fetch-btn::after{
-  content:"";position:absolute;left:0;right:0;top:-5px;bottom:-5px;
+  content:"";position:absolute;left:0;right:0;top:-1px;bottom:-1px;
 }
 /* the desk note keeps its line; the age sits beside it and the note truncates first */
 #main .coin-navigation .coin-context-l2{
@@ -6784,4 +6790,4 @@ body.command-strip-mode #main .coin-desk-layout-option .mp-thumb { display: bloc
 /* the Cue Deck dialog is a switcher only - it never fetches */
 #cd-dialog .coin-navigation .coin-fetch-btn{display:none}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4220bf95c98c5a4',t:'MTc5MDU5MTE1NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a422a738fd31a935',t:'MTc5MDU5NzUxMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
