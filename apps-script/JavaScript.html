@@ -11451,7 +11451,8 @@
     var starAction='<button type="button" class="triage-unified-star '+(star?'on':'')+'" data-action="triage-star" data-ticker="'+ticker+'" aria-pressed="'+star+'" aria-label="'+(star?'Remove '+ticker+' from shortlist':'Add '+ticker+' to shortlist')+'">'+(star?'★':'☆')+'</button>';
     var lockAction='<button type="button" class="triage-unified-lock '+(locked?'on':'')+'" data-action="triage-lock" data-reason="HODL / existing exposure" data-ticker="'+ticker+'" aria-label="'+(locked?'Keep '+ticker+' locked':'Lock '+ticker+' in Scout')+'" title="'+(locked?esc(lock.reason):'Manual Scout lock')+'">'+(locked?'🔒':'Lock')+'</button>';
     var reviewAction='<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+ticker:'Inspect '+ticker)+'">'+(locked?'Research':'Inspect')+'</button>';
-    return '<article class="triage-focus-row '+signalClass+' '+(locked?'locked':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-focus-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-focus-identity"><b>'+ticker+'</b><small>'+price+'</small></span><span class="triage-focus-signal"><b>'+esc(trend)+' <span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span></b><small>'+watch+'</small></span><span class="triage-focus-health triage-unified-health '+healthClass+'">'+esc(health)+'</span><span class="triage-focus-meta"><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong><small>'+location+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button><div class="triage-focus-actions">'+starAction+lockAction+reviewAction+'</div></article>';
+    return '<article class="triage-focus-row '+signalClass+' '+(locked?'locked':'')+'" data-ticker="'+ticker+'">'+
+      '<span class="triage-focus-swipe" aria-hidden="true">Swipe right to refresh</span>'+'<button type="button" class="triage-focus-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-focus-identity"><b>'+ticker+'</b><small>'+price+'</small></span><span class="triage-focus-signal"><b>'+esc(trend)+' <span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span></b><small>'+watch+'</small></span><span class="triage-focus-health triage-unified-health '+healthClass+'">'+esc(health)+'</span><span class="triage-focus-meta"><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong><small>'+location+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button><div class="triage-focus-actions">'+starAction+lockAction+reviewAction+'</div></article>';
   }
   function triageFocusOverlayHtml(){
     return '<aside id="triage-focus" class="triage-focus" hidden role="dialog" aria-modal="true" aria-labelledby="triage-focus-title"><header class="triage-focus-head"><div class="triage-focus-title"><div><small>SCOUT · COIN FOCUS</small><h2 id="triage-focus-title">Coin focus</h2><p id="triage-focus-summary">'+libraryPairs().length+' saved records · compact comparison view</p></div><button type="button" class="triage-focus-close" data-action="triage-focus-close">Close</button></div><div class="triage-focus-tools"><div class="triage-focus-search"><input id="triage-focus-search" type="search" placeholder="Search coins…" aria-label="Search coins in focus list" value="'+esc(triageQuery)+'"><button type="button" data-action="triage-focus-clear" aria-label="Clear focus search">×</button></div><button type="button" class="triage-focus-density" data-action="triage-focus-density" aria-pressed="true">Comfortable</button></div><div class="triage-focus-filters"><button type="button" data-action="triage-filter" data-filter="all">All · '+libraryPairs().length+'</button><button type="button" data-action="triage-filter" data-filter="quality">Needs attention</button><button type="button" data-action="triage-filter" data-filter="ready">Research ready</button><button type="button" data-action="triage-filter" data-filter="starred">★ Starred</button><button type="button" data-action="triage-filter" data-filter="locked">🔒 Locked</button></div></header><div class="triage-focus-status"><span id="triage-focus-status-text">All coins · scrollable list</span><span id="triage-focus-count">Showing '+libraryPairs().length+' of '+libraryPairs().length+'</span></div><div id="triage-focus-rows" class="triage-focus-rows" tabindex="0" aria-label="Full-screen Scout coin records"></div><div class="triage-focus-progress" id="triage-focus-progress" role="status" aria-live="polite" hidden></div><div class="triage-focus-bar" id="triage-focus-bar"><button id="triage-focus-refresh" type="button" data-action="triage-refresh">Refresh all</button><button id="triage-focus-retry" type="button" class="ghost" data-action="triage-retry" hidden>Retry failed</button><button id="triage-focus-cancel" type="button" class="ghost" data-action="triage-cancel" hidden>Cancel queued</button></div><footer class="triage-focus-footer">Research is read-only · Scout locks do not create Journal rows · <b>'+libraryPairs().length+' total records</b></footer></aside>';
@@ -11496,6 +11497,70 @@
     if(cancel)cancel.hidden=!live;
     bar.hidden=find&&!live;
   }
+  /* COIN-FOCUS-SWIPE-1 · refresh a single coin without putting a fourth button in every
+     row. Swipe a row right: it follows the finger, arms at 72px and refreshes that one
+     coin on release. Vertical drags stay a scroll (touch-action keeps pan-y, so the
+     browser pans and sends us pointercancel), the tap a browser may synthesise after a
+     drag is swallowed so it cannot open the inspector, and Inspect -> "Refresh this
+     coin" stays available for anyone who cannot or will not swipe. */
+  var triageSwipe=null,triageSwipeClickAt=0;
+  function triageFocusRefreshOne(ticker){
+    if(!ticker)return;
+    if(!canCloud()){watchlistToast='Refresh needs the deployed app.';triageUpdate(false);return;}
+    if(busy||scoutPeekCount()||scoutPeekQueue.length){watchlistToast='A refresh is already running · wait for it, or use Cancel queued.';triageUpdate(false);return;}
+    triageStart('one',ticker);
+    var st=triageJob&&triageJob.items[ticker];
+    if(st==='queued'||st==='active'||st==='done'){watchlistToast='Refreshing '+ticker+' · this coin only.';triageUpdate(false);}
+    else if(st==='failed'){watchlistToast=ticker+' could not be refreshed · use Retry.';triageUpdate(false);}
+  }
+  function triageSwipeEnd(commit){
+    var s=triageSwipe;triageSwipe=null;if(!s)return;
+    var row=s.row;
+    row.classList.remove('swiping','armed');
+    row.classList.add('releasing');
+    row.style.transform='';row.style.removeProperty('--swipe');
+    setTimeout(function(){row.classList.remove('releasing');},240);
+    if(commit||Math.abs(s.dx)>10)triageSwipeClickAt=Date.now();
+    if(commit)triageFocusRefreshOne(s.ticker);
+  }
+  document.addEventListener('pointerdown',function(e){
+    if(!triageFocusMode||triageSwipe)return;
+    if(e.pointerType==='mouse'&&e.button!==0)return;
+    var row=e.target&&e.target.closest?e.target.closest('#triage-focus-rows .triage-focus-row'):null;
+    if(!row)return;
+    var t=row.getAttribute('data-ticker');
+    if(!t||unifiedScoutScope==='find'||state.settings.coinLibrary.indexOf(t)<0)return;
+    triageSwipe={row:row,ticker:t,x:e.clientX,y:e.clientY,dx:0,armed:false,decided:false,id:e.pointerId};
+  });
+  document.addEventListener('pointermove',function(e){
+    var s=triageSwipe;if(!s||e.pointerId!==s.id)return;
+    var dx=e.clientX-s.x,dy=e.clientY-s.y;
+    if(!s.decided){
+      if(Math.abs(dy)>10&&Math.abs(dy)>=Math.abs(dx)){triageSwipeEnd(false);return;}
+      if(Math.abs(dx)<=10||Math.abs(dx)<Math.abs(dy))return;
+      s.decided=true;s.row.classList.add('swiping');
+      var h0=s.row.querySelector('.triage-focus-swipe');if(h0)h0.textContent='Keep swiping…';
+    }
+    s.dx=dx;
+    var shift=Math.max(0,Math.min(dx,120));
+    s.row.style.transform='translateX('+shift+'px)';
+    s.row.style.setProperty('--swipe',shift+'px');
+    var armed=shift>=72;
+    if(armed!==s.armed){
+      s.armed=armed;s.row.classList.toggle('armed',armed);
+      var hint=s.row.querySelector('.triage-focus-swipe');
+      if(hint)hint.textContent=armed?'Release to refresh':'Keep swiping…';
+      if(armed&&navigator.vibrate){try{navigator.vibrate(12);}catch(err){}}
+    }
+  },{passive:true});
+  document.addEventListener('pointerup',function(e){var s=triageSwipe;if(!s||e.pointerId!==s.id)return;triageSwipeEnd(s.armed);},true);
+  document.addEventListener('pointercancel',function(){if(triageSwipe)triageSwipeEnd(false);});
+  /* a drag can end in a synthesised tap; that tap must not open the inspector */
+  document.addEventListener('click',function(e){
+    if(!triageSwipeClickAt||Date.now()-triageSwipeClickAt>600)return;
+    triageSwipeClickAt=0;
+    if(e.target&&e.target.closest&&e.target.closest('#triage-focus-rows')){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();}
+  },true);
   function triageFocusUpdate(rows,findRows){
     var box=document.getElementById('triage-focus'),host=document.getElementById('triage-focus-rows');
     if(!box||!host)return;
@@ -11507,7 +11572,7 @@
     document.querySelectorAll('#triage-focus [data-action="triage-filter"]').forEach(function(b){b.classList.toggle('on',b.dataset.filter===triageFilter);b.setAttribute('aria-pressed',b.dataset.filter===triageFilter);});
     var summary=document.getElementById('triage-focus-summary'),status=document.getElementById('triage-focus-status-text'),count=document.getElementById('triage-focus-count');
     if(summary)summary.textContent=(unifiedScoutScope==='find'?source.length:triageCache.length)+' saved records · '+(triageFocusDensity==='compact'?'compact':'comfortable')+' comparison view';
-    if(status)status.textContent=unifiedScoutScope==='find'?'Find / add · scrollable list':triageFilter==='all'?'All coins · scrollable list':'Filtered view · scrollable list';
+    if(status)status.textContent=unifiedScoutScope==='find'?'Find / add · scrollable list':(triageFilter==='all'?'All coins':'Filtered view')+' · swipe a row right to refresh it';
     if(count)count.textContent='Showing '+source.length+' of '+(unifiedScoutScope==='find'?findRows.length:triageCache.length);
     triageFocusSyncBar(source);
   }
@@ -13049,3 +13114,4 @@
   pullCloud();
 })();
 </script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4264cfe3d886306',t:'MTc5MDYzNTc2MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

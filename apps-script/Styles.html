@@ -5507,6 +5507,16 @@ body.command-strip-mode .scout-triage-layout-options{grid-template-columns:repea
 #main .triage-compact-page .triage-focus-actions .triage-unified-lock.on{border-color:#c0a229;background:#44370d;color:#ffe17b}
 #main .triage-compact-page .triage-focus-actions .triage-unified-open.locked{border-color:#806e24;color:#ffdd72}
 #main .triage-compact-page .triage-focus-footer{flex:0 0 auto;padding:7px 12px calc(8px + env(safe-area-inset-bottom));border-top:1px solid #294466;background:#101d33;color:#9eacc3;font-size:9px;text-align:center}
+/* COIN-FOCUS-SWIPE-1 · swipe a row right to refresh that one coin. pan-y keeps the list
+   scrolling vertically (and pinch-zoom working); horizontal movement comes to us.
+   The reveal label counter-translates so it stays put while the row slides. */
+#main .triage-compact-page .triage-focus-row{touch-action:pan-y pinch-zoom}
+#main .triage-compact-page .triage-focus-row.swiping{transition:none;z-index:2}
+#main .triage-compact-page .triage-focus-row.releasing{transition:transform .2s ease-out}
+#main .triage-compact-page .triage-focus-row.armed{box-shadow:inset 0 0 0 2px #3d7dff}
+#main .triage-compact-page .triage-focus-swipe{position:absolute;left:12px;top:50%;transform:translate(calc(-1 * var(--swipe,0px)),-50%);opacity:0;pointer-events:none;white-space:nowrap;font-size:9px;font-weight:800;letter-spacing:.02em;color:#7fb2e8;transition:opacity .12s}
+#main .triage-compact-page .triage-focus-row.swiping .triage-focus-swipe{opacity:1}
+#main .triage-compact-page .triage-focus-row.armed .triage-focus-swipe{color:#7ee2a9}
 /* COIN-FOCUS-REFRESH-1 · both strips are toggled with [hidden], and both are
    display:flex below, so [hidden] has to win or they stay on screen eating taps. */
 #main .triage-compact-page .triage-focus-bar[hidden],#main .triage-compact-page .triage-focus-progress[hidden]{display:none!important}
@@ -7165,3 +7175,4 @@ body.command-strip-mode:not(.training) #main{padding-bottom:calc(8px + env(safe-
   #main #triage-rows{max-height:none;min-height:0}
 }
 </style>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4264d267ad46306',t:'MTc5MDYzNTc2Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
