@@ -6789,5 +6789,53 @@ body.command-strip-mode #main .coin-desk-layout-option .mp-thumb { display: bloc
 #main .coin-navigation .coin-context-fresh.stale{color:#f6cf68}
 /* the Cue Deck dialog is a switcher only - it never fetches */
 #cd-dialog .coin-navigation .coin-fetch-btn{display:none}
+/* SCOUT-HUB-1 · the rebuilt Scout. One head, one search across three sources,
+   three scopes, remove with undo, rows that expand in place. Presentation only. */
+#main .triage-compact-page .triage-hub-head{align-items:flex-end;gap:10px;padding:4px 2px 0;margin-bottom:1px}
+#main .triage-compact-page .triage-hub-head>div:first-child{min-width:0;flex:1}
+#main .triage-compact-page .triage-hub-head h2{font-size:20px;margin:0;line-height:1.05;letter-spacing:-.04em}
+#main .triage-compact-page .triage-hub-head #triage-hub-counts{margin-top:3px;font-size:9px;line-height:1.4;color:var(--muted)}
+#main .triage-compact-page .triage-hub-head .triage-head-tools{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+#main .triage-compact-page .triage-hub-head .triage-plans-button{margin:0;min-height:32px;padding:7px 8px;font-size:9px;position:relative}
+#main .triage-edit-button{min-height:32px;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel-2);color:var(--muted);font-size:9px;font-weight:750;white-space:nowrap;position:relative}
+#main .triage-edit-button.on{border-color:var(--accent);background:rgba(61,125,255,.2);color:var(--text)}
+#main .triage-edit-button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* the add button is always visible - Scout is where a coin gets added */
+#main .triage-compact-page .triage-add-jump{flex:0 0 40px;width:40px;min-height:40px;border:1px solid var(--accent);border-radius:9px;background:rgba(61,125,255,.2);color:var(--accent);font-size:19px;line-height:1;position:relative}
+#main .triage-compact-page .triage-add-jump:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#main .triage-group-label{margin:7px 2px 3px;font-size:8px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+/* last resort only: nothing saved, nothing in the catalogue, nothing from the provider */
+#main .triage-manual-row{display:block;padding:10px}
+#main .triage-manual-row .triage-unified-main{display:block;padding:0 0 8px;border:0;background:transparent}
+#main .triage-manual-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) auto;gap:6px}
+#main .triage-manual-fields input{min-width:0;width:100%;padding:9px 8px;border:1px solid var(--line);border-radius:9px;background:var(--input);color:var(--text);font-size:12px}
+#main .triage-manual-fields input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px rgba(61,125,255,.12)}
+#main .triage-manual-fields .triage-unified-open{min-height:40px;padding:5px 12px;color:var(--green)}
+/* the only surface that can show a Scout message now the Library sheet is gone */
+#main .triage-toast-row{display:flex;align-items:center;gap:8px;margin:0 0 7px;padding:8px 10px;border:1px solid #315889;border-radius:10px;background:#142b4d}
+#main .triage-toast-row[hidden]{display:none}
+#main .triage-toast{margin:0;flex:1;min-width:0;font-size:10px;line-height:1.5;color:#dceaff}
+#main #triage-undo-remove{flex:0 0 auto;min-height:32px;padding:6px 12px;border:1px solid #4c83dc;border-radius:8px;background:#173762;color:#dceaff;font-size:10px;font-weight:750;position:relative}
+#main #triage-undo-remove[hidden]{display:none}
+#main .triage-unified-remove{min-width:30px;min-height:30px;padding:5px;border:1px solid #6b2f3a;border-radius:8px;background:rgba(255,92,122,.14);color:#ff8095;font-size:14px;line-height:1;position:relative}
+#main .triage-unified-remove:focus-visible{outline:2px solid #ff5c7a;outline-offset:2px}
+#main .triage-compact-page .triage-ledger-row.triage-editing .triage-ledger-actions{flex-basis:174px;min-width:174px}
+#main .triage-row-detail{grid-column:1 / -1;margin-top:7px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+#main .triage-detail-note{margin:0 0 5px;font-size:10px;line-height:1.55;color:var(--muted)}
+#main .triage-detail-note:last-of-type{margin-bottom:7px}
+#main .triage-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0}
+#main .triage-detail-grid>div{min-width:0}
+#main .triage-detail-grid dt{margin:0 0 1px;font-size:8px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+#main .triage-detail-grid dd{margin:0;font-size:10px;font-weight:700;color:var(--text);overflow-wrap:anywhere}
+#main .triage-detail-actions{display:flex;gap:6px;margin-top:8px}
+#main .triage-detail-actions button{flex:1;min-height:34px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);font-size:10px;font-weight:750;position:relative}
+#main .triage-detail-actions button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(max-width:390px){
+  #main .triage-manual-fields{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  #main .triage-manual-fields .triage-unified-open{grid-column:1 / -1}
+  #main .triage-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #main .triage-compact-page .triage-hub-head h2{font-size:18px}
+  #main .triage-compact-page .triage-ledger-row.triage-editing .triage-ledger-actions{flex-basis:168px;min-width:168px}
+}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a422a738fd31a935',t:'MTc5MDU5NzUxMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4236e75d8220763',t:'MTc5MDYwNTY3Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

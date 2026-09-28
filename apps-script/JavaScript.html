@@ -10571,7 +10571,7 @@
   }
   function moreToolsBody(planCount) {
     return '<div class="row more-tool-row">' +
-      '<button class="btn secondary" type="button" data-action="open-watchlist">Coins</button>' +
+      '<button class="btn secondary" type="button" data-page="scout">Scout</button>' +
       '<button class="btn secondary" type="button" data-action="plans-jump">Plans <b>' + esc(planCount) + "</b></button>" +
       '<button class="btn secondary" type="button" data-page="updates">Updates</button>' +
       '<button class="btn secondary" type="button" data-page="manual">Manual</button>' +
@@ -11164,6 +11164,9 @@
 
   // S1: pure per-coin Scout summaries; never swaps the active trading state.
   var triageFilter='all',triageKind='any',triageQuery='',triageFav=false,triageSort='priority',triageSelected='',triageCache=[],triageScroll=0,triageSheet=false,triageFocus=null,triageBatch=[],triageOldOverflow='',triageFocusMode=false,triageFocusDensity='compact',triageFocusReturn=null,triageFocusOldOverflow='';
+  /* SCOUT-HUB-1 · how the Scout screen happens to be arranged right now. None of it is
+     persisted, and none of it touches trading, sizing, risk or verdicts. */
+  var triageEdit=false,triageRemoved=null,triageExpanded='';
   function triageBook(ticker){return ticker===state.settings.coinTicker?{market:state.market,closes:state.closes,hourly:state.hourly,hourlyAts:state.hourlyAts,hourlyVolumes:state.hourlyVolumes,sizer:state.sizer}:state.books&&state.books[ticker]||{market:{},closes:[],hourly:[],hourlyAts:[],hourlyVolumes:[],sizer:{}};}
   function triageFreshness(book){var m=book.market||{},at=Date.parse(m.lastFetchedAt),age=Date.now()-at,status=String(m.scoutPeekStatus||''),failed=status==='failed',pending=status==='pending';return {stale:failed||pending||!(Number(m.price)>0)||!isFinite(at)||age<0||age>=STALE_MS,age:age,label:failed?'Refresh failed · cached data withheld':pending?'Refresh pending · cached data withheld':!isFinite(at)||!(Number(m.price)>0)?'Not fetched':age<0?'Invalid timestamp':age>=STALE_MS?'Stale '+ageLabel(age):ageLabel(age)};}
   /* SC1 \u2014 Scout's early warning, in the Timing gate's own words. The position words are the labels Market
@@ -11349,7 +11352,7 @@
   }
   document.addEventListener('click',function(e){var b=e.target.closest('[data-action]');if(!b)return;var a=b.getAttribute('data-action');if(a.indexOf('triage-')!==0)return;e.preventDefault();e.stopImmediatePropagation();var t=b.getAttribute('data-ticker');
     if(a==='triage-scope'){unifiedScoutScope=b.dataset.scope||'all';triageFav=unifiedScoutScope==='shortlist';triageFilter='all';triageKind='any';triageUpdate(false);document.getElementById('triage-rows').scrollTop=0;}
-    else if(a==='triage-add'){var addPair=pairByTicker(t);if(addPair){upsertCustomCoin(addPair);ensureCoinBook(t);unifiedScoutScope='all';triageSelected=t;watchlistToast=t+' added to All coins. Star it for the shortlist.';save();render();}}
+    else if(a==='triage-add'){var addPair=pairByTicker(t);if(addPair){upsertCustomCoin(addPair);ensureCoinBook(t);unifiedScoutScope='all';triageSelected=t;triageQuery='';triageRemoved=null;save();render();scoutToast(t+' added to Scout. Nothing is fetched until you refresh it.');}}
     else if(a==='triage-filter'){triageFilter=b.dataset.filter;triageKind='any';triageUpdate(false);document.getElementById('triage-rows').scrollTop=0;}
     else if(a==='triage-kind'){triageKind=b.dataset.kind;triageUpdate(false);}
     else if(a==='triage-fav'){triageFav=!triageFav;triageUpdate(false);}
@@ -11360,13 +11363,21 @@
     else if(a==='triage-focus-clear'){triageQuery='';var focusSearch=document.getElementById('triage-focus-search');if(focusSearch)focusSearch.value='';triageUpdate(false);if(focusSearch)focusSearch.focus();}
     else if(a==='triage-trend-help')triageTrendHelp(t);
     else if(a==='triage-trend-help-close'){var trendTip=document.getElementById('triage-trend-popover');if(trendTip)trendTip.remove();}
+    /* SCOUT-HUB-1 · these two replace the Library sheet. triage-row expands a coin in
+       place when Edit is off, so nothing jumps; triage-remove is only armed in edit mode. */
+    else if(a==='triage-row'){triageExpanded=(triageExpanded===t?'':t);triageUpdate(false);}
+    else if(a==='triage-remove')scoutRemoveCoin(t);
+    else if(a==='triage-undo')scoutUndoRemove();
+    else if(a==='triage-edit'){triageEdit=!triageEdit;if(!triageEdit)triageExpanded='';triageUpdate(false);}
+    else if(a==='triage-add-manual')triageManualAdd();
+    else if(a==='triage-add-jump'){unifiedScoutScope='find';triageQuery='';triageEdit=false;save();render();
+      var jumpInput=document.getElementById('triage-search');if(jumpInput)jumpInput.focus();}
     else if(a==='triage-inspect')triageInspect(t);
     else if(a==='triage-close')triageClose();
     else if(a==='triage-star'){toggleWatchlistTicker(t);triageUpdate(false);var star=document.querySelector('#triage-inspector [data-action="triage-star"]');if(star)star.focus({preventScroll:true});}
     else if(a==='triage-lock'){writeScoutLock(t,true,b.getAttribute('data-reason')||'Manual Scout lock');watchlistToast=t+' locked in Scout · Sizer handoff guarded. Research remains available.';save();triageSelected=t;triageUpdate(false);}
     else if(a==='triage-unlock'){if(!window.confirm('Unlock '+t+' for the Sizer handoff? This changes Scout protection only; it does not alter Journal history.'))return;writeScoutLock(t,false,'Unlocked in Scout');watchlistToast=t+' unlocked for deliberate Sizer review.';save();triageSelected=t;triageUpdate(false);}
     else if(a==='triage-open'){var targetPage=b.getAttribute('data-page-target')||'sizer',targetTicker=b.getAttribute('data-ticker')||t;if(targetTicker&&targetPage==='sizer'&&scoutLockFor(targetTicker)){watchlistToast=targetTicker+' is manually locked in Scout. Review the lock or unlock it deliberately before Sizer.';triageSelected=targetTicker;triageInspect(targetTicker);return;}if(triageFocusMode)triageFocusClose();if(targetTicker){applyPair(targetTicker);}page=targetPage;triageClose();render();}
-    else if(a==='triage-library'){triageClose();page='sizer';render();openWatchlist('library');}
     else if(a==='triage-refresh')triageStart('filtered');
     else if(a==='triage-all')triageStart('all');
     else if(a==='triage-retry')triageStart('retry');
@@ -11885,7 +11896,7 @@
     } else if (action === "switch-coin") {
       applyPair(btn.getAttribute("data-ticker"));
     } else if (action === "open-watchlist") {
-      openWatchlist("library");
+      closeWatchlist(); page = "scout"; unifiedScoutScope = "all"; render();
     } else if (action === "open-scout") {
       if(triageSheet)triageClose();
       closeWatchlist();
@@ -12336,7 +12347,6 @@
     else if(a==='quick-select')selectQuickCoin(el.getAttribute('data-quick-ticker'));
     else if(a==='quick-filter'){quickSwitchFilter=el.getAttribute('data-filter');quickSwitchLimit=60;document.getElementById('quick-switch-list').scrollTop=0;renderQuickSwitch();}
     else if(a==='quick-more'){quickSwitchLimit+=60;renderQuickSwitch();}
-    else if(a==='quick-library'){closeQuickSwitch(false);setWatchlistMode('library');openWatchlist('library');}
   },true);
   document.addEventListener('input',function(e){if(e.target.id==='quick-switch-search'){quickSwitchQuery=e.target.value;quickSwitchLimit=60;document.getElementById('quick-switch-list').scrollTop=0;renderQuickSwitch();}});
   document.addEventListener('keydown',function(e){
@@ -12439,15 +12449,140 @@
     var healthMarkup='<span class="triage-unified-health '+healthClass+'">'+esc(health)+'</span>';
     var starAction='<button type="button" class="triage-unified-star '+(star?'on':'')+'" data-action="triage-star" data-ticker="'+ticker+'" aria-pressed="'+star+'" aria-label="'+(star?'Remove '+ticker+' from shortlist':'Add '+ticker+' to shortlist')+'">'+(star?'★':'☆')+'</button>';
     var lockAction='<button type="button" class="triage-unified-lock '+(locked?'on':'')+'" data-action="triage-lock" data-reason="HODL / existing exposure" data-ticker="'+ticker+'" aria-label="'+(locked?'Keep '+ticker+' locked':'Lock '+ticker+' in Scout')+'" title="'+(locked?esc(lock.reason):'Manual Scout lock')+'">'+(locked?'🔒':'Lock')+'</button>';
-    var actions=starAction+lockAction+'<button type="button" class="triage-unified-open '+openClass+'" data-action="triage-open" data-page-target="sizer" data-ticker="'+ticker+'" aria-label="'+(locked?'Locked · open checks for '+ticker:'Open '+ticker+' in Sizer')+'">'+openLabel+'</button>';
-    var reviewActions=starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+ticker:'Inspect '+ticker)+'">'+(locked?'Research':'Inspect')+'</button>';
+    var removeAction=triageEdit?'<button type="button" class="triage-unified-remove" data-action="triage-remove" data-ticker="'+ticker+'" aria-label="Remove '+name+' from Scout">−</button>':'';
+    var actions=removeAction+starAction+lockAction+'<button type="button" class="triage-unified-open '+openClass+'" data-action="triage-open" data-page-target="sizer" data-ticker="'+ticker+'" aria-label="'+(locked?'Locked · open checks for '+ticker:'Open '+ticker+' in Sizer')+'">'+openLabel+'</button>';
+    var reviewActions=removeAction+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+ticker:'Inspect '+ticker)+'">'+(locked?'Research':'Inspect')+'</button>';
     if(scoutTriageLayoutValue()==='glance'){
-      return '<article class="triage-unified-row triage-combined-row '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-combined-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-combined-head">'+combinedCoin+healthMarkup+'</span><span class="triage-combined-observation"><span><b>'+esc(trend)+'</b><span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span><em>'+watch+'</em></span></span><span class="triage-combined-next"><span><b>Observe</b> → test evidence · '+location+'</span><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</strong></span></button><div class="triage-combined-actions">'+reviewActions+'</div></article>';
+      return '<article class="triage-unified-row triage-combined-row '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-combined-main" data-action="triage-row" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-combined-head">'+combinedCoin+healthMarkup+'</span><span class="triage-combined-observation"><span><b>'+esc(trend)+'</b><span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span><em>'+watch+'</em></span></span><span class="triage-combined-next"><span><b>Observe</b> → test evidence · '+location+'</span><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</strong></span></button><div class="triage-combined-actions">'+reviewActions+'</div>'+
+      (triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
     }
     if(scoutTriageLayoutValue()==='ledger'){
-      return '<article class="triage-unified-row triage-ledger-row '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-ledger-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-ledger-identity">'+combinedCoin+'</span><span class="triage-ledger-signal"><b>'+esc(trend)+' <span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span></b><small>'+watch+'</small></span><span class="triage-ledger-health">'+healthMarkup+'</span><span class="triage-ledger-meta"><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong><small>'+location+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button><div class="triage-ledger-actions">'+reviewActions+'</div></article>';
+      return '<article class="triage-unified-row triage-ledger-row '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-ledger-main" data-action="triage-row" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-ledger-identity">'+combinedCoin+'</span><span class="triage-ledger-signal"><b>'+esc(trend)+' <span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span></b><small>'+watch+'</small></span><span class="triage-ledger-health">'+healthMarkup+'</span><span class="triage-ledger-meta"><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong><small>'+location+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button><div class="triage-ledger-actions">'+reviewActions+'</div>'+
+      (triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
     }
     return '<article class="triage-unified-row triage-scan-row '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-scan-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-scan-head">'+coin+healthMarkup+'</span><span class="triage-scan-evidence">'+evidence+'</span><span class="triage-scan-meta">'+changeMarkup+'<small>· '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button>'+actions+'</article>';
+  }
+  /* SCOUT-HUB-1 · add / remove / message plumbing for the rebuilt Scout.
+     scoutToast is the only way a Scout message can reach the screen now that the Library
+     sheet is gone; every peek, lock and add note already writes into watchlistToast, so
+     this just gives that variable somewhere to land. */
+  function scoutToast(msg){
+    watchlistToast = msg || "";
+    if (page === "scout") triageUpdate(false);
+  }
+  function triageRowDetailHtml(r){
+    var c = r.pair, lock = scoutLockFor(c.ticker);
+    var trend = r.scanStatus === "failed" ? "Outdated"
+      : r.scanStatus && r.scanStatus !== "done" ? "Refreshing…"
+      : r.context.ready ? (r.observation.trend || "Observed") : "Unknown";
+    return '<div class="triage-row-detail">' +
+      '<p class="triage-detail-note">' + scoutCueMarkup(r.watch || "") + '</p>' +
+      (lock ? '<p class="triage-detail-note">🔒 ' + esc(lock.reason || "Locked") + '</p>' : "") +
+      (r.mismatch ? '<p class="triage-detail-note">Draft entry is more than 15% away from the fetched price.</p>' : "") +
+      '<dl class="triage-detail-grid">' +
+        '<div><dt>Signal</dt><dd>' + esc(trend) + '</dd></div>' +
+        '<div><dt>Location</dt><dd>' + esc(r.pos && r.pos.word || "not checked") + '</dd></div>' +
+        '<div><dt>Retest</dt><dd>' + esc(pcLabel(r.pattern.code)) + '</dd></div>' +
+        '<div><dt>Candles</dt><dd>' + esc(crShort(r.candle)) + '</dd></div>' +
+        '<div><dt>Continuation</dt><dd>' + esc(r.continuation && r.continuation.code || "—") + '</dd></div>' +
+        '<div><dt>24h</dt><dd>' + esc(r.change != null ? (r.change >= 0 ? "+" : "") + num(r.change, 1) + "%" : "—") + '</dd></div>' +
+      '</dl>' +
+      '<div class="triage-detail-actions">' +
+        '<button type="button" data-action="triage-peek" data-ticker="' + esc(c.ticker) + '">Check now</button>' +
+        '<button type="button" data-action="triage-inspect" data-ticker="' + esc(c.ticker) + '">Open ' + esc(c.ticker) + '</button>' +
+      '</div></div>';
+  }
+  function triageManualRowHtml(q){
+    return '<article class="triage-unified-row triage-find-row triage-manual-row">' +
+      '<div class="triage-unified-main">' +
+        '<span class="triage-unified-coin"><b>' + esc(q) + '</b><small>Not saved, not in the catalogue, not from the provider</small></span>' +
+        '<span class="triage-unified-watch"><b>Add by hand</b><small>The ticker plus the CoinGecko id it trades under</small></span>' +
+      '</div>' +
+      '<div class="triage-manual-fields">' +
+        '<input id="triage-manual-ticker" type="text" placeholder="Ticker" maxlength="12" value="' + esc(q) + '" aria-label="Ticker">' +
+        '<input id="triage-manual-id" type="text" placeholder="CoinGecko id  e.g. decentraland" maxlength="60" aria-label="CoinGecko id">' +
+        '<button type="button" class="triage-unified-open add" data-action="triage-add-manual">＋ Add</button>' +
+      '</div></article>';
+  }
+  function triageResultsHtml(rows, findRows){
+    var q = String(triageQuery || "").trim();
+    if (!q){
+      return unifiedScoutScope === "find"
+        ? findRows.map(unifiedScoutFindRowHtml).join("")
+        : rows.map(unifiedScoutRowHtml).join("");
+    }
+    var out = [];
+    if (unifiedScoutScope !== "find" && rows.length){
+      out.push('<p class="triage-group-label">Saved · ' + rows.length + '</p>');
+      out.push(rows.map(unifiedScoutRowHtml).join(""));
+    }
+    if (findRows.length){
+      out.push('<p class="triage-group-label">' +
+        (unifiedScoutScope === "find" ? "Available to add · " : "Not saved yet · ") + findRows.length + '</p>');
+      out.push(findRows.map(unifiedScoutFindRowHtml).join(""));
+    }
+    if (!rows.length && !findRows.length) out.push(triageManualRowHtml(q.toUpperCase()));
+    return out.join("");
+  }
+  function triageManualAdd(){
+    var ti = document.getElementById("triage-manual-ticker"), ii = document.getElementById("triage-manual-id");
+    var ticker = String(ti && ti.value || "").trim().toUpperCase();
+    var id = String(ii && ii.value || "").trim().toLowerCase();
+    if (!/^[A-Z0-9]{2,12}$/.test(ticker)){ scoutToast("Ticker: 2–12 letters/numbers."); return; }
+    if (!/^[a-z0-9-]{2,60}$/.test(id)){ scoutToast("CoinGecko id looks off (e.g. decentraland)."); return; }
+    if (state.settings.coinLibrary.indexOf(ticker) >= 0){ scoutToast(ticker + " is already saved."); return; }
+    upsertCustomCoin({ ticker: ticker, id: id, name: ticker, sample: 1, vs: "gbp", core: false });
+    normalizeWatchlist(state.settings);
+    ensureCoinBook(ticker);
+    triageQuery = ""; unifiedScoutScope = "all"; triageSelected = ticker; triageRemoved = null;
+    save();
+    render();
+    scoutToast(ticker + " added to Scout. Nothing is fetched until you refresh it.");
+  }
+  /* Removing a coin is destructive, so the whole affected slice is snapshotted in memory
+     and Undo puts it back. The snapshot is never persisted and dies with the session. */
+  function scoutRemoveCoin(ticker){
+    var t = String(ticker || "").toUpperCase();
+    if (!t) return;
+    if (libraryPairs().length <= 1){ scoutToast("Keep at least one saved coin."); return; }
+    triageRemoved = {
+      ticker: t,
+      lib: state.settings.coinLibrary.slice(),
+      fav: state.settings.watchlist.slice(),
+      customs: JSON.parse(JSON.stringify(state.settings.customCoins || [])),
+      book: state.books[t] || null,
+      active: state.settings.coinTicker,
+      activeId: state.settings.coinId
+    };
+    state.settings.coinLibrary = state.settings.coinLibrary.filter(function(x){ return x !== t; });
+    state.settings.watchlist  = state.settings.watchlist.filter(function(x){ return x !== t; });
+    state.settings.customCoins = (state.settings.customCoins || []).filter(function(c){
+      return String(c.ticker || "").toUpperCase() !== t; });
+    delete state.books[t];
+    if (state.settings.coinTicker === t){
+      var next = state.settings.coinLibrary[0], p = next ? pairByTicker(next) : null;
+      state.settings.coinTicker = next || t;
+      if (p) state.settings.coinId = p.id;
+    }
+    if (triageSelected === t) triageSelected = "";
+    if (triageExpanded === t) triageExpanded = "";
+    save();
+    render();
+    scoutToast(t + " removed from Scout.");
+  }
+  function scoutUndoRemove(){
+    var r = triageRemoved;
+    if (!r) return;
+    state.settings.coinLibrary = r.lib.slice();
+    state.settings.watchlist = r.fav.slice();
+    state.settings.customCoins = JSON.parse(JSON.stringify(r.customs || []));
+    if (r.book) state.books[r.ticker] = r.book;
+    state.settings.coinTicker = r.active;
+    if (r.activeId) state.settings.coinId = r.activeId;
+    triageRemoved = null;
+    save();
+    render();
+    scoutToast(r.ticker + " restored.");
   }
   function unifiedScoutFindRowHtml(p){
     return '<article class="triage-unified-row triage-find-row" data-ticker="'+esc(p.ticker)+'"><div class="triage-unified-main"><span class="triage-unified-coin"><b>'+esc(p.ticker)+'</b><small>'+esc(p.name||p.ticker)+'</small></span><span class="triage-unified-watch"><b>Available to add</b><small>Quote research starts only after Save / Peek</small></span><span class="triage-unified-change">—<small>not saved</small></span><span class="triage-unified-health unknown">Not saved</span></div><button type="button" class="triage-unified-open add" data-action="triage-add" data-ticker="'+esc(p.ticker)+'">＋ Add</button></article>';
@@ -12455,25 +12590,74 @@
   function renderTriage(){
     var compact=scoutPhoneLayout();
     var head=compact
-      ? '<header class="triage-head triage-head-compact"><div><div class="triage-kicker">Scout · list-first review</div><h2>Scout</h2><p>'+libraryPairs().length+' saved records · combined view</p></div><div class="triage-head-tools"><button type="button" class="triage-more-button" data-page="settings">More</button></div></header><div class="triage-compact-notice"><b>Observe first</b><span>Watch cues are not entry approval.</span></div>'
+      ? '<header class="triage-head triage-head-compact triage-hub-head"><div><h2>Scout</h2>'+
+        '<p id="triage-hub-counts">'+libraryPairs().length+' saved · '+state.settings.watchlist.length+' ★</p></div>'+
+        '<div class="triage-head-tools">'+
+          '<button type="button" class="triage-plans-button" data-action="plans-jump">Plans <b>'+normalisePlans(state.plans).length+'</b></button>'+
+          '<button type="button" class="triage-edit-button'+(triageEdit?' on':'')+'" data-action="triage-edit" aria-pressed="'+triageEdit+'">'+(triageEdit?'Done':'Edit')+'</button>'+
+        '</div></header>'
       : '<header class="triage-head"><div><div class="triage-kicker">Scout · unified coin workspace</div><h2>Coin Desk</h2><p>One record per coin: discover, test the evidence, shortlist, and open the existing workspace. Watch cues are not entry approval.</p></div><button type="button" class="triage-plans-button" data-action="plans-jump">Plans <b>'+normalisePlans(state.plans).length+'</b></button></header><div class="triage-method"><span><b>One source of truth</b> saved · shortlisted · found are record states</span><span><b>Scientific loop</b> observe → test → practical next action</span><span><b>Feasibility</b> freshness · coverage · source shown before promotion</span></div><div class="triage-stats"><button type="button" data-action="triage-scope" data-scope="shortlist"><b id="triage-count-review">—</b> Shortlist <small>quick review set</small></button><button type="button" data-action="triage-filter" data-filter="quality"><b id="triage-count-quality">—</b> Needs attention <small>stale or incomplete</small></button><button type="button" data-action="triage-filter" data-filter="ready"><b id="triage-count-ready">—</b> Research ready <small>usable evidence</small></button><button type="button" data-action="triage-scope" data-scope="all"><b id="triage-count-all">—</b> All coins <small>one saved inventory</small></button><span id="triage-count-draft" hidden>0</span></div>';
     var countCache=compact?'<div class="triage-count-cache triage-stats" hidden><span id="triage-count-review">0</span><span id="triage-count-quality">0</span><span id="triage-count-ready">0</span><span id="triage-count-all">0</span><span id="triage-count-draft">0</span></div>':'';
     var tools=compact
-      ? '<div class="triage-combined-controls"><div class="triage-combined-control-line"><div class="triage-search"><input id="triage-search" type="search" placeholder="Search coins…" aria-label="Search Scout" value="'+esc(triageQuery)+'"><button type="button" data-action="triage-clear" aria-label="Clear Scout search">×</button></div><button type="button" class="triage-combined-refresh-icon" data-action="triage-refresh" aria-label="Refresh visible">↻</button></div><div class="triage-filters"><button type="button" data-action="triage-filter" data-filter="all">All · '+libraryPairs().length+'</button><button type="button" data-action="triage-filter" data-filter="quality">Needs attention</button><button type="button" data-action="triage-filter" data-filter="ready">Research ready</button><button type="button" data-action="triage-filter" data-filter="starred">★ Starred</button><button type="button" data-action="triage-filter" data-filter="locked">🔒 Locked</button></div></div>'
+      ? '<div class="triage-combined-controls">'+
+        '<div class="triage-combined-control-line">'+
+          '<div class="triage-search"><input id="triage-search" type="search" placeholder="Add or find a coin" aria-label="Add or find a coin" value="'+esc(triageQuery)+'">'+
+          '<button type="button" data-action="triage-clear" aria-label="Clear Scout search">×</button></div>'+
+          '<button type="button" class="triage-add-jump" data-action="triage-add-jump" aria-label="Add a coin">＋</button>'+
+        '</div>'+
+        '<div class="triage-mode-tabs" role="tablist" aria-label="Coin record scope">'+
+          '<button type="button" data-action="triage-scope" data-scope="shortlist" role="tab">Shortlist</button>'+
+          '<button type="button" data-action="triage-scope" data-scope="all" role="tab">All coins</button>'+
+          '<button type="button" data-action="triage-scope" data-scope="find" role="tab">Find / add</button>'+
+        '</div>'+
+        '<div class="triage-filters">'+
+          '<button type="button" data-action="triage-filter" data-filter="all">All</button>'+
+          '<button type="button" data-action="triage-filter" data-filter="quality">Needs attention</button>'+
+          '<button type="button" data-action="triage-filter" data-filter="ready">Research ready</button>'+
+          '<button type="button" data-action="triage-filter" data-filter="starred">★ Starred</button>'+
+          '<button type="button" data-action="triage-filter" data-filter="locked">🔒 Locked</button>'+
+          '<select id="triage-sort" aria-label="Sort Scout">'+
+            [['priority','Review priority'],['az','Symbol A–Z'],['change','24h change']].map(function(o){
+              return '<option value="'+o[0]+'"'+(triageSort===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+
+          '</select>'+
+        '</div></div>'
       : '<div class="triage-tools"><div class="triage-mode-tabs" role="tablist" aria-label="Coin record scope"><button type="button" data-action="triage-scope" data-scope="shortlist" role="tab">Shortlist</button><button type="button" data-action="triage-scope" data-scope="all" role="tab">All coins</button><button type="button" data-action="triage-scope" data-scope="find" role="tab">Find / add</button></div><div class="triage-search"><input id="triage-search" type="search" placeholder="Search once: symbol, name or watch state…" aria-label="Search Scout" value="'+esc(triageQuery)+'"><button type="button" data-action="triage-clear" aria-label="Clear Scout search">×</button></div><div class="triage-filters"><button type="button" data-action="triage-filter" data-filter="all">All</button><button type="button" data-action="triage-filter" data-filter="quality">Needs attention</button><button type="button" data-action="triage-filter" data-filter="ready">Research ready</button><button type="button" data-action="triage-filter" data-filter="starred">★ Starred</button><button type="button" data-action="triage-filter" data-filter="locked">🔒 Locked</button><span class="triage-filter-divider"></span><button type="button" data-action="triage-kind" data-kind="any">All cues</button><button type="button" data-action="triage-kind" data-kind="turn">Turn</button><button type="button" data-action="triage-kind" data-kind="hold">Continuation</button><select id="triage-sort" aria-label="Sort Scout"><option value="priority">Review priority</option><option value="az">Symbol A–Z</option><option value="change">24h change</option></select></div></div>';
     var status=compact
-      ? '<div class="triage-combined-status"><span id="triage-combined-summary">0 shown · 0 research ready · 0 need attention</span><div class="triage-combined-status-actions"><button type="button" class="triage-focus-open" data-action="triage-focus-open" aria-label="Open full-screen coin focus">⛶ Focus</button><button id="triage-refresh" type="button" data-action="triage-refresh">Refresh visible</button></div><span id="triage-scan-status" hidden></span></div>'
+      ? '<div class="triage-combined-status"><span id="triage-combined-summary">0 shown · 0 research ready · 0 need attention</span>'+
+        '<div class="triage-combined-status-actions">'+
+          '<button type="button" class="triage-focus-open" data-action="triage-focus-open" aria-label="Open full-screen coin focus">⛶ Focus</button>'+
+          '<button id="triage-refresh" type="button" data-action="triage-refresh">Refresh visible</button>'+
+        '</div><span id="triage-scan-status" hidden></span></div>'+
+        /* the only surface that can show a Scout message: every peek, lock and add note
+           used to be written into the Library sheet, which no longer exists */
+        '<div class="triage-toast-row" id="triage-toast-row"'+((watchlistToast||triageRemoved)?'':' hidden')+'>'+
+          '<p id="triage-toast" class="triage-toast" role="status" aria-live="polite">'+esc(watchlistToast||'')+'</p>'+
+          '<button id="triage-undo-remove" type="button" data-action="triage-undo"'+(triageRemoved?'':' hidden')+'>Undo</button>'+
+        '</div>'
       : '<div class="triage-scanbar"><span id="triage-scan-status"></span><button id="triage-refresh" type="button" data-action="triage-refresh">Refresh visible</button><button id="triage-all" type="button" data-action="triage-all">Refresh all saved</button><button id="triage-retry" type="button" data-action="triage-retry">Retry failed</button><button id="triage-resume" type="button" data-action="triage-resume" hidden>Resume queue</button><button id="triage-cancel" type="button" data-action="triage-cancel">Cancel queued</button></div>';
     return '<section class="triage-page '+(compact?'triage-compact-page':'')+'"><div id="triage-scrim" hidden data-action="triage-close"></div>'+head+countCache+'<div class="triage-layout"><section class="triage-scanner">'+tools+status+'<div class="triage-columns"><span>Coin / price</span><span>Signal / evidence</span><span>24h / location</span><span>Evidence health</span><span></span></div><div id="triage-rows" tabindex="0" aria-label="Scout coin records"></div><footer id="triage-result-count"></footer></section><div id="triage-inspector-host"></div></div><p class="triage-footnote">Shortlist is a convenience view over the same saved records; it does not create a second library. Refresh is manual and can use two concurrent Peeks. Evidence is read-only. Manual Scout locks are independent of Journal history; a locked coin cannot use the Sizer Open handoff until it is explicitly unlocked, while Market remains available for research.</p>'+(compact?triageFocusOverlayHtml():'')+'</section>';
   }
   function triageUpdate(record){
     if(page!=='scout'||!document.getElementById('triage-rows'))return;
     triageCache=libraryPairs().map(function(p){return triageSnapshot(p,record!==false);});
-    var rows=unifiedScoutMatches(triageCache),findRows=unifiedScoutScope==='find'?unifiedScoutFindPairs():[],el=document.getElementById('triage-rows'),oldScroll=el.scrollTop;
+    var rows=unifiedScoutMatches(triageCache),findRows=(unifiedScoutScope==='find'||String(triageQuery||'').trim())?unifiedScoutFindPairs():[],el=document.getElementById('triage-rows'),oldScroll=el.scrollTop;
     document.getElementById('triage-count-review').textContent=state.settings.watchlist.length;document.getElementById('triage-count-all').textContent=triageCache.length;document.getElementById('triage-count-quality').textContent=triageCache.filter(function(r){return !r.context.ready;}).length;document.getElementById('triage-count-ready').textContent=triageCache.filter(function(r){return r.context.ready&&!r.mismatch;}).length;document.getElementById('triage-count-draft').textContent=triageCache.filter(function(r){return r.mismatch;}).length;
     document.querySelectorAll('[data-action="triage-scope"]').forEach(function(b){b.classList.toggle('on',b.dataset.scope===unifiedScoutScope);b.setAttribute('aria-selected',b.dataset.scope===unifiedScoutScope);});document.querySelectorAll('[data-action="triage-filter"]').forEach(function(b){b.classList.toggle('on',b.dataset.filter===triageFilter);b.setAttribute('aria-pressed',b.dataset.filter===triageFilter);});document.querySelectorAll('[data-action="triage-kind"]').forEach(function(b){b.classList.toggle('on',b.dataset.kind===triageKind);b.setAttribute('aria-pressed',b.dataset.kind===triageKind);});var sort=document.getElementById('triage-sort');if(sort)sort.value=triageSort;
-    var html=unifiedScoutScope==='find'?findRows.map(unifiedScoutFindRowHtml).join(''):rows.map(unifiedScoutRowHtml).join('');el.innerHTML=html||'<p class="triage-empty"><b>No records match this view.</b><br>Change the scope, search or filter. No result is also useful information.</p>';
+    var html=triageResultsHtml(rows,findRows);el.innerHTML=html||'<p class="triage-empty"><b>No records match this view.</b><br>Change the scope, search or filter. No result is also useful information.</p>';
     el.scrollTop=oldScroll;
+    var toastEl=document.getElementById('triage-toast');
+    if(toastEl){toastEl.textContent=watchlistToast||'';}
+    var toastRow=document.getElementById('triage-toast-row');
+    if(toastRow)toastRow.hidden=!watchlistToast&&!triageRemoved;
+    var undoBtn=document.getElementById('triage-undo-remove');
+    if(undoBtn)undoBtn.hidden=!triageRemoved;
+    var hubCounts=document.getElementById('triage-hub-counts');
+    if(hubCounts)hubCounts.textContent=libraryPairs().length+' saved · '+state.settings.watchlist.length+' ★ · '+
+      triageCache.filter(function(r){return !r.context.ready||r.mismatch||!!scoutLockFor(r.pair.ticker);}).length+' need attention';
+    var sortEl=document.getElementById('triage-sort');
+    if(sortEl&&sortEl.value!==triageSort)sortEl.value=triageSort;
+    document.querySelectorAll('[data-action="triage-edit"]').forEach(function(b){
+      b.classList.toggle('on',triageEdit);b.setAttribute('aria-pressed',triageEdit);b.textContent=triageEdit?'Done':'Edit';});
     document.getElementById('triage-result-count').textContent=scoutPhoneLayout()?'Research is read-only · Scout locks do not create Journal rows':unifiedScoutScope==='find'?findRows.length+' available to add · saved records are not duplicated':rows.length+' shown · '+triageCache.length+' saved records · select to inspect';
     var combinedSummary=document.getElementById('triage-combined-summary');
     if(combinedSummary){var readyCount=triageCache.filter(function(r){return r.context.ready&&!r.mismatch&&!scoutLockFor(r.pair.ticker);}).length,attentionCount=triageCache.filter(function(r){return !r.context.ready||r.mismatch||!!scoutLockFor(r.pair.ticker);}).length,progress=triageProgressLabel()||(scoutPeekCount()+scoutPeekQueue.length?'Refreshing coins · '+scoutPeekCount()+' active · '+scoutPeekQueue.length+' queued':'');combinedSummary.textContent=progress||((unifiedScoutScope==='find'?findRows.length:rows.length)+' shown · '+readyCount+' research ready · '+attentionCount+' need attention');}
@@ -12555,4 +12739,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a422a6e86f1ba935',t:'MTc5MDU5NzUwMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4236e3c0f3c0763',t:'MTc5MDYwNTY2NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
