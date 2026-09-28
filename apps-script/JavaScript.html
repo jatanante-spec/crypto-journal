@@ -11561,6 +11561,39 @@
     triageSwipeClickAt=0;
     if(e.target&&e.target.closest&&e.target.closest('#triage-focus-rows')){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();}
   },true);
+  /* COIN-FOCUS-KEEP-1 · coin focus now stays open until you close it. render() rebuilds
+     #main from scratch and the overlay is part of that HTML, so it comes back hidden;
+     the old code dealt with that by closing focus outright, which is why it vanished on
+     its own. Instead: remember that focus is open, and restore it after every render —
+     keeping the scroll position, and the caret if you were typing in the search box.
+     triageFocusRestore() is called from the render wrapper further down. */
+  var triageFocusScroll=0,triageFocusSearchFocus=false,triageFocusCaret=0;
+  function triageFocusRestore(){
+    if(!triageFocusMode)return;
+    triageSwipe=null;                       /* any live gesture points at a dead node now */
+    var box=document.getElementById('triage-focus');
+    if(!box){triageFocusClose();return;}    /* no longer on Scout: close cleanly, not stuck */
+    box.hidden=false;box.classList.add('open');
+    document.body.classList.add('triage-focus-open');
+    document.body.style.overflow='hidden';
+    triageFocusUpdate(unifiedScoutMatches(triageCache),unifiedScoutScope==='find'?unifiedScoutFindPairs():[]);
+    var rows=document.getElementById('triage-focus-rows');
+    if(rows&&triageFocusScroll)rows.scrollTop=triageFocusScroll;
+    if(triageFocusSearchFocus){
+      var input=document.getElementById('triage-focus-search');
+      if(input){input.focus({preventScroll:true});try{input.setSelectionRange(triageFocusCaret,triageFocusCaret);}catch(err){}}
+    }
+  }
+  function triageFocusKeepState(){
+    if(!triageFocusMode)return;
+    var rows=document.getElementById('triage-focus-rows');
+    if(rows)triageFocusScroll=rows.scrollTop;
+    var input=document.getElementById('triage-focus-search');
+    if(input&&document.activeElement===input){
+      triageFocusSearchFocus=true;
+      triageFocusCaret=input.selectionStart==null?input.value.length:input.selectionStart;
+    }else triageFocusSearchFocus=false;
+  }
   function triageFocusUpdate(rows,findRows){
     var box=document.getElementById('triage-focus'),host=document.getElementById('triage-focus-rows');
     if(!box||!host)return;
@@ -11578,12 +11611,12 @@
   }
   function triageFocusOpenMode(){
     var box=document.getElementById('triage-focus');if(!box)return;
-    triageFocusReturn=document.activeElement;triageFocusOldOverflow=document.body.style.overflow;triageFocusMode=true;document.body.classList.add('triage-focus-open');document.body.style.overflow='hidden';box.hidden=false;box.classList.add('open');triageFocusUpdate(unifiedScoutMatches(triageCache),unifiedScoutScope==='find'?unifiedScoutFindPairs():[]);var close=box.querySelector('[data-action="triage-focus-close"]');if(close)close.focus();
+    triageFocusReturn=document.activeElement;triageFocusOldOverflow=document.body.style.overflow;triageFocusMode=true;triageFocusScroll=0;triageFocusSearchFocus=false;document.body.classList.add('triage-focus-open');document.body.style.overflow='hidden';box.hidden=false;box.classList.add('open');triageFocusUpdate(unifiedScoutMatches(triageCache),unifiedScoutScope==='find'?unifiedScoutFindPairs():[]);var close=box.querySelector('[data-action="triage-focus-close"]');if(close)close.focus();
   }
   function triageFocusClose(){
     var box=document.getElementById('triage-focus');if(box){box.hidden=true;box.classList.remove('open');}
     if(!triageFocusMode)return;
-    triageFocusMode=false;document.body.classList.remove('triage-focus-open');document.body.style.overflow=triageFocusOldOverflow||'';if(triageFocusReturn&&triageFocusReturn.isConnected)triageFocusReturn.focus({preventScroll:true});triageFocusReturn=null;
+    triageFocusMode=false;triageFocusSearchFocus=false;document.body.classList.remove('triage-focus-open');document.body.style.overflow=triageFocusOldOverflow||'';if(triageFocusReturn&&triageFocusReturn.isConnected)triageFocusReturn.focus({preventScroll:true});triageFocusReturn=null;
   }
   function triageFocusToggleDensity(){
     triageFocusDensity=triageFocusDensity==='compact'?'comfortable':'compact';triageFocusUpdate(unifiedScoutMatches(triageCache),unifiedScoutScope==='find'?unifiedScoutFindPairs():[]);
@@ -11796,7 +11829,6 @@
   });
 
   function render() {
-    if(triageFocusMode)triageFocusClose();
     rememberPrimaryPage(page);
     var trendTip=document.getElementById('triage-trend-popover');if(trendTip)trendTip.remove();
     var oldTriage=document.getElementById("triage-rows");if(oldTriage)triageScroll=oldTriage.scrollTop;
@@ -13092,10 +13124,31 @@
   window.addEventListener('resize',scoutFitRows,{passive:true});
   window.addEventListener('orientationchange',scoutFitRows,{passive:true});
   if(window.visualViewport)window.visualViewport.addEventListener('resize',scoutFitRows,{passive:true});
+  /* COIN-FOCUS-FIT-1 · the overlay was sized with 100dvh. Engines disagree about what
+     dvh means once the browser toolbar collapses, and dvh ignores a phone keyboard
+     altogether — either way the refresh bar can end up under the visible area, which is
+     exactly how the earlier Scout list fix failed in Chrome. Measure the same way the
+     list cap does and hand the number to CSS. */
+  function focusFitViewport(){
+    try{
+      var vv=window.visualViewport,vh=(vv&&vv.height)||window.innerHeight||0;
+      if(vh)document.documentElement.style.setProperty('--focus-vh',Math.round(vh)+'px');
+    }catch(e){}
+  }
+  window.addEventListener('resize',focusFitViewport,{passive:true});
+  window.addEventListener('orientationchange',focusFitViewport,{passive:true});
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',focusFitViewport,{passive:true});
+    window.visualViewport.addEventListener('scroll',focusFitViewport,{passive:true});
+  }
+  focusFitViewport();
   var __scoutFitRender=render;
   render=function(){
+    try{ triageFocusKeepState(); }catch(e){}
     var out=__scoutFitRender.apply(this,arguments);
     try{ scoutFitRows(); }catch(e){}
+    try{ focusFitViewport(); }catch(e){}
+    try{ triageFocusRestore(); }catch(e){}
     return out;
   };
 
@@ -13114,4 +13167,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4264cfe3d886306',t:'MTc5MDYzNTc2MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a426778e49b09d7a',t:'MTc5MDYzNzUwMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
