@@ -5471,7 +5471,7 @@ body.command-strip-mode .scout-triage-layout-options{grid-template-columns:repea
 #main .triage-compact-page .triage-focus-status{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:0 0 auto;padding:8px 12px 6px;color:#9cabc1;font-size:9px}
 #main .triage-compact-page .triage-focus-status span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #main .triage-compact-page .triage-focus-status span:last-child{text-align:right}
-#main .triage-compact-page .triage-focus-rows{flex:1 1 auto;min-height:0;overflow:auto;padding:0 10px calc(16px + env(safe-area-inset-bottom));overscroll-behavior:contain}
+#main .triage-compact-page .triage-focus-rows{flex:1 1 auto;min-height:0;overflow:auto;padding:0 10px 10px;overscroll-behavior:contain}
 #main .triage-compact-page .triage-focus-row{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:center;max-width:960px;min-height:64px;margin:5px auto;padding:7px 7px 7px 10px;border:1px solid #294466;border-radius:9px;background:#11223b;overflow:hidden}
 #main .triage-compact-page .triage-focus-row:after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#7185a4;pointer-events:none}
 #main .triage-compact-page .triage-focus-row.signal-improving:not(.locked){background:linear-gradient(90deg,rgba(43,121,166,.22),rgba(17,34,59,.98) 34%)}
@@ -5507,6 +5507,17 @@ body.command-strip-mode .scout-triage-layout-options{grid-template-columns:repea
 #main .triage-compact-page .triage-focus-actions .triage-unified-lock.on{border-color:#c0a229;background:#44370d;color:#ffe17b}
 #main .triage-compact-page .triage-focus-actions .triage-unified-open.locked{border-color:#806e24;color:#ffdd72}
 #main .triage-compact-page .triage-focus-footer{flex:0 0 auto;padding:7px 12px calc(8px + env(safe-area-inset-bottom));border-top:1px solid #294466;background:#101d33;color:#9eacc3;font-size:9px;text-align:center}
+/* COIN-FOCUS-REFRESH-1 · both strips are toggled with [hidden], and both are
+   display:flex below, so [hidden] has to win or they stay on screen eating taps. */
+#main .triage-compact-page .triage-focus-bar[hidden],#main .triage-compact-page .triage-focus-progress[hidden]{display:none!important}
+#main .triage-compact-page .triage-focus-progress{flex:0 0 auto;display:flex;align-items:center;gap:7px;padding:7px 12px;border-top:1px solid #294466;background:#101d33;color:#bcd2f2;font-size:9px;line-height:1.35}
+#main .triage-compact-page .triage-focus-progress:before{content:"";flex:0 0 auto;width:10px;height:10px;border:2px solid #3d67a0;border-top-color:#62d9ff;border-radius:50%;animation:triage-focus-spin .9s linear infinite}
+#main .triage-compact-page .triage-focus-progress:not(.busy):before{animation:none;border-color:#3d67a0}
+@keyframes triage-focus-spin{to{transform:rotate(360deg)}}
+#main .triage-compact-page .triage-focus-bar{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid #294466;background:#0e1a2d}
+#main .triage-compact-page .triage-focus-bar button{flex:1 1 auto;min-width:0;min-height:38px;padding:8px 10px;border:1px solid #3d67a0;border-radius:9px;background:#17335b;color:#dceaff;font-size:11px;font-weight:750;white-space:nowrap}
+#main .triage-compact-page .triage-focus-bar button.ghost{flex:0 1 auto;border-color:#2e4a72;background:#132442;color:#a9bcd8;font-size:10px;font-weight:600}
+#main .triage-compact-page .triage-focus-bar button:disabled{opacity:.45}
 #main .triage-compact-page .triage-focus-footer b{color:#d5e2f6}
 #main .triage-compact-page .triage-focus-rows.compact .triage-focus-row{min-height:51px;padding-top:5px;padding-bottom:5px}
 #main .triage-compact-page .triage-focus-rows.compact .triage-focus-main{min-height:39px!important}
@@ -7154,4 +7165,3 @@ body.command-strip-mode:not(.training) #main{padding-bottom:calc(8px + env(safe-
   #main #triage-rows{max-height:none;min-height:0}
 }
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a425ef3b79cdd4ce',t:'MTc5MDYzMTkxOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

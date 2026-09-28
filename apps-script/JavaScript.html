@@ -11454,7 +11454,47 @@
     return '<article class="triage-focus-row '+signalClass+' '+(locked?'locked':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-focus-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-focus-identity"><b>'+ticker+'</b><small>'+price+'</small></span><span class="triage-focus-signal"><b>'+esc(trend)+' <span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span></b><small>'+watch+'</small></span><span class="triage-focus-health triage-unified-health '+healthClass+'">'+esc(health)+'</span><span class="triage-focus-meta"><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong><small>'+location+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button><div class="triage-focus-actions">'+starAction+lockAction+reviewAction+'</div></article>';
   }
   function triageFocusOverlayHtml(){
-    return '<aside id="triage-focus" class="triage-focus" hidden role="dialog" aria-modal="true" aria-labelledby="triage-focus-title"><header class="triage-focus-head"><div class="triage-focus-title"><div><small>SCOUT · COIN FOCUS</small><h2 id="triage-focus-title">Coin focus</h2><p id="triage-focus-summary">'+libraryPairs().length+' saved records · compact comparison view</p></div><button type="button" class="triage-focus-close" data-action="triage-focus-close">Close</button></div><div class="triage-focus-tools"><div class="triage-focus-search"><input id="triage-focus-search" type="search" placeholder="Search coins…" aria-label="Search coins in focus list" value="'+esc(triageQuery)+'"><button type="button" data-action="triage-focus-clear" aria-label="Clear focus search">×</button></div><button type="button" class="triage-focus-density" data-action="triage-focus-density" aria-pressed="true">Comfortable</button></div><div class="triage-focus-filters"><button type="button" data-action="triage-filter" data-filter="all">All · '+libraryPairs().length+'</button><button type="button" data-action="triage-filter" data-filter="quality">Needs attention</button><button type="button" data-action="triage-filter" data-filter="ready">Research ready</button><button type="button" data-action="triage-filter" data-filter="starred">★ Starred</button><button type="button" data-action="triage-filter" data-filter="locked">🔒 Locked</button></div></header><div class="triage-focus-status"><span id="triage-focus-status-text">All coins · scrollable list</span><span id="triage-focus-count">Showing '+libraryPairs().length+' of '+libraryPairs().length+'</span></div><div id="triage-focus-rows" class="triage-focus-rows" tabindex="0" aria-label="Full-screen Scout coin records"></div><footer class="triage-focus-footer">Research is read-only · Scout locks do not create Journal rows · <b>'+libraryPairs().length+' total records</b></footer></aside>';
+    return '<aside id="triage-focus" class="triage-focus" hidden role="dialog" aria-modal="true" aria-labelledby="triage-focus-title"><header class="triage-focus-head"><div class="triage-focus-title"><div><small>SCOUT · COIN FOCUS</small><h2 id="triage-focus-title">Coin focus</h2><p id="triage-focus-summary">'+libraryPairs().length+' saved records · compact comparison view</p></div><button type="button" class="triage-focus-close" data-action="triage-focus-close">Close</button></div><div class="triage-focus-tools"><div class="triage-focus-search"><input id="triage-focus-search" type="search" placeholder="Search coins…" aria-label="Search coins in focus list" value="'+esc(triageQuery)+'"><button type="button" data-action="triage-focus-clear" aria-label="Clear focus search">×</button></div><button type="button" class="triage-focus-density" data-action="triage-focus-density" aria-pressed="true">Comfortable</button></div><div class="triage-focus-filters"><button type="button" data-action="triage-filter" data-filter="all">All · '+libraryPairs().length+'</button><button type="button" data-action="triage-filter" data-filter="quality">Needs attention</button><button type="button" data-action="triage-filter" data-filter="ready">Research ready</button><button type="button" data-action="triage-filter" data-filter="starred">★ Starred</button><button type="button" data-action="triage-filter" data-filter="locked">🔒 Locked</button></div></header><div class="triage-focus-status"><span id="triage-focus-status-text">All coins · scrollable list</span><span id="triage-focus-count">Showing '+libraryPairs().length+' of '+libraryPairs().length+'</span></div><div id="triage-focus-rows" class="triage-focus-rows" tabindex="0" aria-label="Full-screen Scout coin records"></div><div class="triage-focus-progress" id="triage-focus-progress" role="status" aria-live="polite" hidden></div><div class="triage-focus-bar" id="triage-focus-bar"><button id="triage-focus-refresh" type="button" data-action="triage-refresh">Refresh all</button><button id="triage-focus-retry" type="button" class="ghost" data-action="triage-retry" hidden>Retry failed</button><button id="triage-focus-cancel" type="button" class="ghost" data-action="triage-cancel" hidden>Cancel queued</button></div><footer class="triage-focus-footer">Research is read-only · Scout locks do not create Journal rows · <b>'+libraryPairs().length+' total records</b></footer></aside>';
+  }
+  /* COIN-FOCUS-REFRESH-1 · the full-screen coin focus overlay had no way to start,
+     retry or steer a refresh: the only toolbar that existed was the one it covers on
+     the page underneath. This mirrors that toolbar inside the overlay. The progress
+     line matters as much as the buttons — a refresh that shows nothing looks failed,
+     and the page's toast row (the only surface that shows a Scout message) is not
+     inside the overlay. Rows already re-render live from triageUpdate(). */
+  var triageFocusDoneAt=0;
+  function triageFocusSyncBar(rows){
+    var bar=document.getElementById('triage-focus-bar'),prog=document.getElementById('triage-focus-progress');
+    if(!bar&&!prog)return;
+    var counts=triageJobCounts(),live=scoutPeekCount()+scoutPeekQueue.length,
+        finished=counts.done+counts.failed+counts.cancelled,
+        running=!!(counts.total&&finished<counts.total),list=rows||[],
+        locked=!canCloud()||busy||!!live,find=unifiedScoutScope==='find';
+    if(counts.total&&!running&&!live){if(!triageFocusDoneAt)triageFocusDoneAt=Date.now();}
+    else if(running||live)triageFocusDoneAt=0;
+    var recent=!!(triageFocusDoneAt&&Date.now()-triageFocusDoneAt<12000),
+        active=running||!!live||triagePaused||recent;
+    if(prog){
+      var bits=[];
+      if(counts.total)bits.push(triageProgressLabel());
+      /* triageProgressLabel() already carries the queued count, so only add it here when there is no job to report it */
+      if(live)bits.push(scoutPeekCount()+' active'+(counts.total?'':' · '+scoutPeekQueue.length+' queued'));
+      if(triagePaused)bits.push('waiting for provider cooldown; continuing automatically');
+      if(active&&watchlistToast)bits.push(watchlistToast);
+      prog.textContent=bits.join(' · ');
+      prog.hidden=!bits.length;
+      prog.classList.toggle('busy',running||!!live);
+    }
+    if(!bar)return;
+    var refresh=document.getElementById('triage-focus-refresh'),retry=document.getElementById('triage-focus-retry'),cancel=document.getElementById('triage-focus-cancel');
+    if(refresh){
+      refresh.hidden=find;
+      refresh.disabled=locked||!list.length;
+      refresh.textContent=live?'Refreshing…':(unifiedScoutScope==='all'&&triageFilter==='all'?'Refresh all · ':'Refresh visible · ')+list.length;
+    }
+    if(retry){retry.hidden=find||!counts.failed||locked;retry.textContent='Retry · '+counts.failed;}
+    if(cancel)cancel.hidden=!live;
+    bar.hidden=find&&!live;
   }
   function triageFocusUpdate(rows,findRows){
     var box=document.getElementById('triage-focus'),host=document.getElementById('triage-focus-rows');
@@ -11469,6 +11509,7 @@
     if(summary)summary.textContent=(unifiedScoutScope==='find'?source.length:triageCache.length)+' saved records · '+(triageFocusDensity==='compact'?'compact':'comfortable')+' comparison view';
     if(status)status.textContent=unifiedScoutScope==='find'?'Find / add · scrollable list':triageFilter==='all'?'All coins · scrollable list':'Filtered view · scrollable list';
     if(count)count.textContent='Showing '+source.length+' of '+(unifiedScoutScope==='find'?findRows.length:triageCache.length);
+    triageFocusSyncBar(source);
   }
   function triageFocusOpenMode(){
     var box=document.getElementById('triage-focus');if(!box)return;
@@ -13008,4 +13049,3 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a425ef0d5840d4ce',t:'MTc5MDYzMTkxMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
