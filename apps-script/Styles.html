@@ -7104,5 +7104,43 @@ body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.ti
 .climate-layout-group:first-of-type{margin-top:0}
 .climate-layout-group h4{margin:0 0 6px;font-size:8.5px;font-weight:800;letter-spacing:.12em;
   text-transform:uppercase;color:var(--muted)}
+
+/* SCOUT-VIEWPORT-FIT-1 · two things reserved room at the bottom of Scout that is no
+   longer used, so the coin list stopped well short of the screen edge.
+
+   1. .app and #main reserve 58px and 30-62px of bottom padding for .nav, which in the
+      base stylesheet is position:fixed;bottom:0. Command-strip-mode moved that nav to
+      position:sticky;top:0, so nothing is anchored to the bottom any more and the
+      reservation became dead space (measured: 58 + 62 = 120px on a 390px phone).
+
+   2. #triage-rows had a fixed height (460px, 430px under 650px). Measured top is a
+      constant 343px on every phone width, so a fixed height is wrong at every size:
+      it left 159px of unused screen on a 430x932 display and pushed the box past the
+      fold on a 360x640 one.
+
+   Fix: drop the reservation, and let the list grow only as far as its content needs,
+   capped at whatever is left of the viewport. 100dvh tracks the browser chrome as it
+   shows and hides. The 343px is the measured height of the sticky chrome above the
+   list in command-strip-mode. */
+
+@media(max-width:900px){
+  body.command-strip-mode:not(.training) .app{padding-bottom:0!important}
+}
+@media(max-width:760px){
+  body.command-strip-mode .app{padding-bottom:0}
+}
+/* placed after every other #main padding rule so it wins the !important tie */
+body.command-strip-mode:not(.training) #main{padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))!important}
+
+#main #triage-rows{
+  height:auto;
+  max-height:calc(100dvh - var(--scout-rows-offset,386px) - env(safe-area-inset-bottom,0px));
+  min-height:200px;
+}
+/* on a short or landscape screen there is not enough room for an inner scroll, so let
+   the page scroll as a whole instead of trapping the list in a tiny box */
+@media(max-height:560px){
+  #main #triage-rows{max-height:none;min-height:0}
+}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4249d5029cb0f12',t:'MTc5MDYxODA3OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a425c0d82df0b13d',t:'MTc5MDYzMDAxOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
