@@ -5822,8 +5822,27 @@
     ring: { label: "C · Composite ring", short: "Composite ring",
       detail: "One four-segment ring sums up overall alignment above the tiles. Strongest hierarchy." },
     bar:  { label: "D · Linear bars", short: "Linear bars",
-      detail: "The arc straightens into a bar, sorted worst-first, with numbers in a tabular column. Shortest." }
+      detail: "The arc straightens into a bar, sorted worst-first, with numbers in a tabular column. Shortest." },
+    rail: { label: "D1 · Continuum rail", short: "Continuum rail",
+      detail: "A marker sits on a Supportive-to-Fragile rail instead of a filling bar, so it reads as position rather than progress. The scale is stated once for the group." },
+    diverging: { label: "D2 · Diverging bars", short: "Diverging bars",
+      detail: "Bars grow from a centre line: right is aligned, left is against, balanced sits on the line. Direction carries the meaning." },
+    steps: { label: "D3 · Step meter", short: "Step meter",
+      detail: "Five cells filled to the level. Discrete cells match the discrete readings and stop the bar implying a false precision." },
+    band: { label: "D4 · Neutral band", short: "Neutral band",
+      detail: "A filled bar measured against a shaded balanced band, so the length finally has something to be read against." },
+    plain: { label: "D5 · Gauge-free rows", short: "Gauge-free rows",
+      detail: "No gauge at all: label, value, tone chip and numbers in aligned columns. Shortest, and nothing is implied by a bar width." }
   };
+  /* The More tab offers nine. Grouped because nine undifferentiated buttons is a wall. */
+  var CLIMATE_LAYOUT_GROUPS = [
+    { title: "Grid layouts", keys: ['chip','hero','ring'] },
+    { title: "Row layouts", keys: ['bar','rail','diverging','steps','band','plain'] }
+  ];
+  /* Where each tone sits on the continuum. No-data has no position at all, which is the
+     point: it must never be drawn as zero. */
+  var CLIMATE_POS = { bad:0.16, mid:0.50, good:0.84, unknown:null };
+  var CLIMATE_TONE_WORD = { good:"Aligned", mid:"Mixed", bad:"Against", unknown:"No reading" };
   function climateLayoutValue(){
     var v = state && state.settings ? String(state.settings.climateLayout || "chip") : "chip";
     return CLIMATE_LAYOUTS[v] ? v : "chip";
@@ -5848,6 +5867,43 @@
   function climateBar(r){
     var pct = Math.round((CLIMATE_PCT[r.tone] || 0) * 100);
     return '<span class="climate-bar climate-bar-'+r.tone+'"><i style="width:'+pct+'%'+'"></i></span>';
+  }
+  function climateRailFoot(r, lead){
+    return '<div class="climate-rail-foot"><span class="climate-tone-word">' + esc(lead) +
+      '</span><span>' + esc(r.detail) + '</span></div>';
+  }
+  function climateRail(r){
+    var p = CLIMATE_POS[r.tone];
+    return '<div class="climate-rail' + (p == null ? ' climate-rail-unknown' : '') + '">' +
+      '<span class="climate-rail-mid"></span>' +
+      (p == null ? '' : '<span class="climate-rail-thumb" style="left:' + (p * 100).toFixed(1) + '%"></span>') +
+      '</div>' + climateRailFoot(r, CLIMATE_TONE_WORD[r.tone]);
+  }
+  function climateDiverging(r){
+    var p = CLIMATE_POS[r.tone], inner = '';
+    if (r.tone === 'mid') inner = '<i class="climate-div-fill" style="left:46%;right:46%"></i>';
+    else if (r.tone === 'good') inner = '<i class="climate-div-fill" style="left:50%;width:' + ((p - 0.5) * 100).toFixed(1) + '%"></i>';
+    else if (r.tone === 'bad') inner = '<i class="climate-div-fill" style="right:50%;width:' + ((0.5 - p) * 100).toFixed(1) + '%"></i>';
+    return '<div class="climate-div' + (p == null ? ' climate-div-unknown' : '') + '">' +
+      '<span class="climate-div-zero"></span>' + inner + '</div>' +
+      climateRailFoot(r, CLIMATE_TONE_WORD[r.tone]);
+  }
+  function climateSteps(r){
+    var fill = { good:4, mid:3, bad:1, unknown:0 }, n = fill[r.tone] || 0, cells = '';
+    for (var i = 0; i < 5; i++) cells += '<span' + (i < n ? ' class="climate-step-on"' : '') + '></span>';
+    return '<div class="climate-steps' + (n === 0 ? ' climate-steps-unknown' : '') + '">' + cells + '</div>' +
+      climateRailFoot(r, n === 0 ? CLIMATE_TONE_WORD.unknown : 'Level ' + n + ' of 5 \u00b7 ' + CLIMATE_TONE_WORD[r.tone]);
+  }
+  function climateBand(r){
+    var p = CLIMATE_POS[r.tone];
+    return '<div class="climate-bandwrap' + (p == null ? ' climate-bandwrap-unknown' : '') + '">' +
+      '<span class="climate-band"></span>' +
+      (p == null ? '' : '<i class="climate-band-fill" style="width:' + (p * 100).toFixed(1) + '%"></i>') +
+      '</div>' + climateRailFoot(r, CLIMATE_TONE_WORD[r.tone]);
+  }
+  function climateRowTop(r){
+    return '<span class="climate-row-top"><span class="climate-label">' + esc(r.label) +
+      '</span><b class="climate-val">' + esc(r.value) + '</b></span>';
   }
   function climateChips(r){
     var shown = (r.nums || []).filter(function(n){
@@ -5875,6 +5931,9 @@
   }
   function marketClimateLayoutHtml(readings){
     var layout = climateLayoutValue(), used = readings.slice();
+    // D keeps its shipped worst-first sort. The newer row layouts keep a fixed order instead:
+    // the four readings are independent, so re-sorting implies a ranking that does not exist,
+    // and a continuum marker is only comparable when the rows stay where the eye expects them.
     if (layout === 'bar'){
       var rank = { bad:0, unknown:1, mid:2, good:3 };
       used.sort(function(a, b){
@@ -5891,6 +5950,18 @@
           '<b class="climate-val">'+esc(r.value)+'</b>' +
           '<em>'+esc((r.nums && r.nums[0] && r.nums[0][1]) || '—')+'</em></span>' +
           '<span class="climate-bar-track">'+climateBar(r)+'<small>'+esc(r.detail)+'</small></span>';
+      } else if (layout === 'rail'){
+        head = climateRowTop(r) + climateRail(r) + climateChips(r);
+      } else if (layout === 'diverging'){
+        head = climateRowTop(r) + climateDiverging(r) + climateChips(r);
+      } else if (layout === 'steps'){
+        head = climateRowTop(r) + climateSteps(r) + climateChips(r);
+      } else if (layout === 'band'){
+        head = climateRowTop(r) + climateBand(r) + climateChips(r);
+      } else if (layout === 'plain'){
+        head = '<span class="climate-plain-row">' + climateRowTop(r) +
+          '<span class="climate-plain-tools"><span class="climate-tone-chip">' +
+          esc(CLIMATE_TONE_WORD[r.tone]) + '</span>' + climateChips(r) + '</span></span>';
       } else if (layout === 'hero'){
         head = viz + '<small class="climate-label">'+esc(r.label)+'</small>' +
           '<b class="climate-val">'+esc(r.value)+'</b>' +
@@ -5906,21 +5977,40 @@
     }).join('');
     var ringBlock = layout === 'ring' ? '<div class="climate-ring-row">'+climateRingHtml(readings)+
       '<p class="climate-ring-note">Each segment maps to one reading below. The count is how many read supportive.</p></div>' : '';
-    return '<div class="climate-layout climate-layout-'+layout+'">'+ringBlock+
+    // The rail and the band are the two layouts whose gauge is read against a scale, so the
+    // scale is stated once for the group rather than repeated inside each row.
+    var scaleBlock = '';
+    if (layout === 'rail'){
+      scaleBlock = '<div class="climate-scale"><span>Continuum</span>' +
+        '<span class="climate-scale-ends"><b class="climate-scale-l">Fragile</b>' +
+        '<b class="climate-scale-c">Balanced</b><b class="climate-scale-r">Supportive</b>' +
+        '</span></div>';
+    } else if (layout === 'band'){
+      scaleBlock = '<div class="climate-band-key"><span><b>Balanced band</b> 38\u201362%</span>' +
+        '<span>left of the band reads against \u00b7 right reads aligned</span></div>';
+    }
+    return '<div class="climate-layout climate-layout-'+layout+'">'+ringBlock+scaleBlock+
       '<div class="climate-grid">'+tiles+'</div></div>';
+  }
+  function climateLayoutGroupsHtml(current){
+    return CLIMATE_LAYOUT_GROUPS.map(function(group){
+      return '<div class="climate-layout-group"><h4>' + esc(group.title) + '</h4>' +
+        '<div class="coin-desk-layout-options climate-layout-options" role="group" aria-label="' +
+        esc(group.title) + '">' +
+        group.keys.map(function(key){
+          var item = CLIMATE_LAYOUTS[key], selected = key === current;
+          return '<button type="button" class="coin-desk-layout-option'+(selected?' selected':'')+'" data-action="set-climate-layout" data-layout="'+key+'" aria-pressed="'+selected+'">' +
+            '<span class="layout-option-top"><b>'+esc(item.label)+'</b><i>'+(selected?'Selected':'Use this')+'</i></span>' +
+            '<small>'+esc(item.detail)+'</small></button>';
+        }).join('') + '</div></div>';
+    }).join('');
   }
   function climateLayoutSettingsHtml(){
     var current = climateLayoutValue();
     return '<section class="card climate-layout-settings"><header><div><h3>Market climate layout</h3>' +
       '<p class="muted">Choose how the four independent readings are drawn. Presentation only — the readings, numbers and boundaries are identical in every layout.</p>' +
       '</div><span class="mp-head-tools"><span class="layout-setting-badge">'+esc(CLIMATE_LAYOUTS[current].short)+'</span></span></header>' +
-      '<div class="coin-desk-layout-options climate-layout-options" role="group" aria-label="Market climate layout options">' +
-      ['chip','hero','ring','bar'].map(function(key){
-        var item = CLIMATE_LAYOUTS[key], selected = key === current;
-        return '<button type="button" class="coin-desk-layout-option'+(selected?' selected':'')+'" data-action="set-climate-layout" data-layout="'+key+'" aria-pressed="'+selected+'">' +
-          '<span class="layout-option-top"><b>'+esc(item.label)+'</b><i>'+(selected?'Selected':'Use this')+'</i></span>' +
-          '<small>'+esc(item.detail)+'</small></button>';
-      }).join('') + '</div></section>';
+      climateLayoutGroupsHtml(current) + '</section>';
   }
   function marketClimateHtml(f){
     var t=f.t||{},c=f.c||{},o=f.observation||{},fresh=f.fresh||marketFreshness();
@@ -12876,4 +12966,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4241b1029846a3e',t:'MTc5MDYxMjc0Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4249d141bff0f12',t:'MTc5MDYxODA2OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

@@ -6998,5 +6998,111 @@ body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.ti
   .climate-ring{width:66px;height:66px}
   .climate-ring svg{width:66px;height:66px}
 }
+
+/* CLIMATE-LAYOUT-2 · five more ways to draw the same four readings, chosen from the More
+   tab. D1-D5 exist because a plain filled bar reads as progress toward a goal, while these
+   readings are a position on a Supportive-to-Fragile continuum. Each new gauge either makes
+   the position explicit (rail, diverging, steps) or gives the length something to be read
+   against (band) — or drops the gauge entirely (plain), which is the honest answer when the
+   bar's width is only a lookup on tone. No-data never draws as zero: it draws as a hatched
+   track with no marker, no fill and no filled cells. Presentation only throughout. */
+
+/* every row layout is a single column, like D */
+.climate-layout-rail .climate-grid,
+.climate-layout-diverging .climate-grid,
+.climate-layout-steps .climate-grid,
+.climate-layout-band .climate-grid,
+.climate-layout-plain .climate-grid{grid-template-columns:minmax(0,1fr);gap:5px}
+
+.climate-row-top{display:flex;align-items:baseline;gap:8px}
+.climate-row-top .climate-label{flex:0 0 70px}
+.climate-row-top .climate-val{flex:1;min-width:0;font-size:12px}
+
+/* shared footer: the tone word carries the meaning so colour is never the only cue */
+.climate-rail-foot{display:flex;justify-content:space-between;gap:8px;margin-top:4px;
+  font-size:9px;color:var(--muted)}
+.climate-tone-word{flex:0 0 auto;font-size:8px;font-weight:800;letter-spacing:.06em;
+  text-transform:uppercase}
+.climate-tone-good .climate-tone-word{color:var(--green)}
+.climate-tone-mid .climate-tone-word{color:var(--yellow)}
+.climate-tone-bad .climate-tone-word{color:var(--red)}
+.climate-tone-unknown .climate-tone-word{color:var(--muted)}
+
+/* D1 · continuum rail — a marker placed on the scale, not a bar filling up */
+.climate-scale{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:8px;
+  font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.climate-scale-ends{position:relative;flex:1;height:12px;border-top:1px dashed var(--line)}
+.climate-scale-ends b{position:absolute;top:-1px;font-size:8px;font-weight:800}
+.climate-scale-l{left:0;color:var(--red)}
+.climate-scale-c{left:50%;transform:translateX(-50%);color:var(--yellow)}
+.climate-scale-r{right:0;color:var(--green)}
+.climate-rail{position:relative;height:9px;border-radius:5px;background:#22314f;margin-top:7px}
+.climate-rail-mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;
+  background:rgba(230,195,92,.45);transform:translateX(-.5px)}
+.climate-rail-thumb{position:absolute;top:50%;width:13px;height:13px;border-radius:50%;
+  transform:translate(-50%,-50%);border:2px solid #0b1420;background:var(--muted);
+  box-shadow:0 0 0 1px rgba(255,255,255,.22)}
+.climate-tone-good .climate-rail-thumb{background:var(--green)}
+.climate-tone-mid .climate-rail-thumb{background:var(--yellow)}
+.climate-tone-bad .climate-rail-thumb{background:var(--red)}
+.climate-rail-unknown{background:repeating-linear-gradient(135deg,#22314f 0 4px,#1a2540 4px 8px);
+  border:1px dashed #3a4c72}
+
+/* D2 · diverging — grows from a centre line, so direction carries the meaning */
+.climate-div{position:relative;height:11px;border-radius:4px;background:#22314f;
+  margin-top:7px;overflow:hidden}
+.climate-div-zero{position:absolute;left:50%;top:0;bottom:0;width:1px;background:#4a5d85;
+  transform:translateX(-.5px)}
+.climate-div-fill{position:absolute;top:1px;bottom:1px;border-radius:3px;background:var(--muted)}
+.climate-tone-good .climate-div-fill{background:var(--green)}
+.climate-tone-mid .climate-div-fill{background:var(--yellow)}
+.climate-tone-bad .climate-div-fill{background:var(--red)}
+.climate-div-unknown{background:repeating-linear-gradient(135deg,#22314f 0 4px,#1a2540 4px 8px);
+  border:1px dashed #3a4c72}
+
+/* D3 · step meter — discrete cells for a discrete reading */
+.climate-steps{display:flex;gap:3px;margin-top:7px}
+.climate-steps>span{flex:1;height:9px;border-radius:2px;background:#22314f}
+.climate-step-on{background:var(--muted)}
+.climate-tone-good .climate-step-on{background:var(--green)}
+.climate-tone-mid .climate-step-on{background:var(--yellow)}
+.climate-tone-bad .climate-step-on{background:var(--red)}
+.climate-steps-unknown>span{background:transparent;border:1px dashed #3a4c72}
+
+/* D4 · neutral band — the length finally has a reference */
+.climate-bandwrap{position:relative;height:11px;border-radius:4px;background:#22314f;
+  margin-top:7px;overflow:hidden}
+.climate-band{position:absolute;top:0;bottom:0;left:38%;right:38%;
+  background:rgba(230,195,92,.16);border-left:1px dashed rgba(230,195,92,.5);
+  border-right:1px dashed rgba(230,195,92,.5)}
+.climate-band-fill{position:absolute;left:0;top:1px;bottom:1px;border-radius:3px;
+  background:var(--muted)}
+.climate-tone-good .climate-band-fill{background:var(--green)}
+.climate-tone-mid .climate-band-fill{background:var(--yellow)}
+.climate-tone-bad .climate-band-fill{background:var(--red)}
+.climate-bandwrap-unknown{background:repeating-linear-gradient(135deg,#22314f 0 4px,#1a2540 4px 8px);
+  border:1px dashed #3a4c72}
+.climate-band-key{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;
+  margin-bottom:8px;font-size:9.5px;color:var(--muted)}
+.climate-band-key b{color:var(--yellow);font-weight:800}
+
+/* D5 · gauge-free — the chip replaces the gauge, so tone is still stated, not just coloured */
+.climate-plain-row{display:flex;align-items:center;gap:8px}
+.climate-plain-row .climate-row-top{flex:1;min-width:0}
+.climate-plain-tools{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.climate-tone-chip{padding:2px 5px;border-radius:4px;border:1px solid currentColor;
+  font-size:8px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  white-space:nowrap}
+.climate-tone-good .climate-tone-chip{color:var(--green)}
+.climate-tone-mid .climate-tone-chip{color:var(--yellow)}
+.climate-tone-bad .climate-tone-chip{color:var(--red)}
+.climate-tone-unknown .climate-tone-chip{color:var(--muted)}
+.climate-layout-plain .climate-chips{margin-top:0}
+
+/* the More tab now offers nine, so they are grouped rather than presented as a wall */
+.climate-layout-group{margin-top:12px}
+.climate-layout-group:first-of-type{margin-top:0}
+.climate-layout-group h4{margin:0 0 6px;font-size:8.5px;font-weight:800;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted)}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4244cac79a6fe8d',t:'MTc5MDYxNDc3NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4249d5029cb0f12',t:'MTc5MDYxODA3OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
