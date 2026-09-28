@@ -12951,6 +12951,48 @@
     return out;
   };
 
+  /* SCOUT-VIEWPORT-FIT-2 · cap the coin list to the space that is actually visible.
+     100dvh is the obvious unit for this and it measured correctly in headless Chromium
+     and in Firefox, but not in Chrome on Android, where it resolves against the
+     collapsing browser toolbar and left the list short of the screen edge. Engines
+     disagree about how dvh tracks a moving toolbar; they do not disagree on
+     visualViewport.height. So the cap is measured from that, and the list's own offset
+     is measured too rather than hard-coded, because the sticky chrome above it changes
+     height between coin-desk layouts. */
+  function scoutFitRows(){
+    try{
+      var rows=document.getElementById('triage-rows'), root=document.documentElement;
+      if(!rows||!root) return;
+      var vv=window.visualViewport;
+      var vh=(vv&&vv.height)||window.innerHeight||0;
+      if(!vh) return;
+      // too short for an inner scroll: let the page scroll as a whole instead
+      if(vh<560){ root.style.setProperty('--scout-rows-cap','none'); return; }
+      var box=rows.getBoundingClientRect();
+      var y=window.pageYOffset||document.documentElement.scrollTop||0;
+      var top=box.top+y;                        // document-space offset of the list
+      var sc=rows.closest?rows.closest('.triage-scanner'):null;
+      // what still sits below the list: the footer inside the scanner, its border,
+      // and #main's bottom padding
+      var below=sc?Math.max(0,sc.getBoundingClientRect().bottom-box.bottom):0;
+      var main=document.getElementById('main');
+      var pad=main?(parseFloat(getComputedStyle(main).paddingBottom)||0):0;
+      var allow=Math.round(below+pad+2);
+      root.style.setProperty('--scout-rows-offset',Math.round(top+allow)+'px');
+      root.style.setProperty('--scout-rows-cap',
+        'calc('+Math.round(vh)+'px - '+Math.round(top+allow)+'px - env(safe-area-inset-bottom,0px))');
+    }catch(e){}
+  }
+  window.addEventListener('resize',scoutFitRows,{passive:true});
+  window.addEventListener('orientationchange',scoutFitRows,{passive:true});
+  if(window.visualViewport)window.visualViewport.addEventListener('resize',scoutFitRows,{passive:true});
+  var __scoutFitRender=render;
+  render=function(){
+    var out=__scoutFitRender.apply(this,arguments);
+    try{ scoutFitRows(); }catch(e){}
+    return out;
+  };
+
   // MORE-FILTERED-1 - the chip rail sticks directly beneath the sticky budget bar, whose
   // height depends on the mode and on touch tokens, so the offset is measured after each
   // draw instead of being hard-coded into the stylesheet. Only the More tab has a rail.
@@ -12966,4 +13008,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a425c138e9d7b13d',t:'MTc5MDYzMDAzNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a425ef0d5840d4ce',t:'MTc5MDYzMTkxMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

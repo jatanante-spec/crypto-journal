@@ -7119,9 +7119,16 @@ body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.ti
       fold on a 360x640 one.
 
    Fix: drop the reservation, and let the list grow only as far as its content needs,
-   capped at whatever is left of the viewport. 100dvh tracks the browser chrome as it
-   shows and hides. The 343px is the measured height of the sticky chrome above the
-   list in command-strip-mode. */
+   capped at whatever is left of the viewport.
+
+   The cap is measured at runtime (SCOUT-VIEWPORT-FIT-2) rather than trusted to 100dvh.
+   100dvh is the obvious unit for this and it measured correctly in headless Chromium
+   and in Firefox, but not in Chrome on Android, where it resolves against the collapsing
+   browser toolbar and left the list short of the screen edge again. Engines disagree on
+   how dvh tracks a moving toolbar; they do not disagree on visualViewport.height. So the
+   cap is computed from that and passed to CSS through --scout-rows-cap. The calc() is
+   only a first-paint fallback, and 386px is the measured chrome height above the list
+   in command-strip-mode. */
 
 @media(max-width:900px){
   body.command-strip-mode:not(.training) .app{padding-bottom:0!important}
@@ -7134,13 +7141,17 @@ body.command-strip-mode:not(.training) #main{padding-bottom:calc(8px + env(safe-
 
 #main #triage-rows{
   height:auto;
-  max-height:calc(100dvh - var(--scout-rows-offset,386px) - env(safe-area-inset-bottom,0px));
+  /* --scout-rows-cap is measured at runtime from visualViewport (SCOUT-VIEWPORT-FIT-2).
+     The calc() fallback applies only until the first measurement. */
+  max-height:var(--scout-rows-cap, calc(100dvh - 386px - env(safe-area-inset-bottom,0px)));
   min-height:200px;
 }
 /* on a short or landscape screen there is not enough room for an inner scroll, so let
-   the page scroll as a whole instead of trapping the list in a tiny box */
+   the page scroll as a whole instead of trapping the list in a tiny box. The runtime
+   measurement sets --scout-rows-cap to none in that case as well, because only it knows
+   the real visible height. */
 @media(max-height:560px){
   #main #triage-rows{max-height:none;min-height:0}
 }
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a425c0d82df0b13d',t:'MTc5MDYzMDAxOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a425ef3b79cdd4ce',t:'MTc5MDYzMTkxOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
