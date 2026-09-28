@@ -6837,5 +6837,117 @@ body.command-strip-mode #main .coin-desk-layout-option .mp-thumb { display: bloc
   #main .triage-compact-page .triage-hub-head h2{font-size:18px}
   #main .triage-compact-page .triage-ledger-row.triage-editing .triage-ledger-actions{flex-basis:168px;min-width:168px}
 }
+
+/* SCOUT-ROW-ACTIONS-1 · the command-strip density pass squeezed the Scout row action
+   buttons into 30–32px boxes with padding:0, so the star glyph and the Lock / Inspect
+   labels sat flush against the border. This restores breathing room: the two square
+   buttons are widened slightly and all three get real horizontal padding. The group
+   still fits inside the existing 132px actions column, so the row geometry is unchanged.
+   Same specificity as the rules it overrides, placed later so it wins the tie. */
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow),
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow),
+body.command-strip-mode #main .triage-focus-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow),
+body.command-strip-mode #main .triage-focus-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  width:36px!important;min-width:36px!important;max-width:36px!important;
+  padding:0 4px!important;line-height:1!important;white-space:nowrap!important;
+}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow),
+body.command-strip-mode #main .triage-focus-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  font-size:13px!important;
+}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow),
+body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+  width:58px!important;min-width:58px!important;max-width:58px!important;
+  padding:0 8px!important;line-height:1!important;white-space:nowrap!important;
+}
+@media(max-width:390px){
+  body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow),
+  body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+    width:34px!important;min-width:34px!important;max-width:34px!important;
+  }
+  body.command-strip-mode #main .triage-ledger-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
+    width:56px!important;min-width:56px!important;max-width:56px!important;
+  }
+}
+/* CLIMATE-LAYOUT-1 · four ways to draw the same four independent readings, chosen from
+   the More tab. Presentation only — the values, numbers and boundary notes are identical
+   in every layout. The tile is a native <details>, so opening one needs no script and
+   cannot disturb scroll position, and an open tile spans the full grid width. */
+.climate-layout{display:block}
+.climate-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.climate-layout-bar .climate-grid{grid-template-columns:minmax(0,1fr);gap:5px}
+
+.climate-tile{min-width:0;border:1px solid var(--line);border-radius:10px;background:rgba(9,17,29,.34);overflow:hidden}
+.climate-tile>summary{display:block;padding:9px 10px;cursor:pointer;list-style:none;min-height:42px;position:relative}
+.climate-tile>summary::-webkit-details-marker{display:none}
+.climate-tile>summary:hover{background:rgba(70,100,150,.12)}
+.climate-tile>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.climate-tile[open]{grid-column:1 / -1}
+.climate-tile[open]>summary{background:rgba(61,125,255,.1)}
+.climate-sum{display:block;position:relative;padding-right:14px}
+.climate-chev{position:absolute;top:0;right:0;font-size:14px;line-height:1;color:var(--muted);font-style:normal}
+.climate-tile[open] .climate-chev{transform:rotate(90deg)}
+
+.climate-top{display:flex;align-items:center;gap:8px;min-width:0}
+.climate-id{display:flex;flex-direction:column;min-width:0}
+.climate-label{font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.climate-val{font-size:15px;font-weight:800;letter-spacing:-.01em;line-height:1.15}
+.climate-det{display:block;font-size:9px;color:var(--muted);margin-top:2px}
+.climate-arc{flex:0 0 auto;display:block}
+.climate-tone-good .climate-val{color:var(--green)}
+.climate-tone-mid .climate-val{color:var(--yellow)}
+.climate-tone-bad .climate-val{color:var(--red)}
+.climate-tone-unknown .climate-val{color:var(--muted)}
+
+.climate-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.climate-chip{padding:2px 6px;border-radius:5px;background:var(--input);border:1px solid var(--line);
+  font-size:8.5px;color:var(--muted);white-space:nowrap}
+.climate-chip b{color:var(--text);font-variant-numeric:tabular-nums}
+
+.climate-panel-body{padding:9px 10px 10px;margin-top:2px;border-top:1px solid var(--line);
+  font-size:11px;line-height:1.6;color:var(--muted)}
+.climate-panel-body p{margin:0 0 8px}
+.climate-boundary{margin:8px 0 0;padding-top:7px;border-top:1px solid var(--line);font-size:9.5px;color:var(--muted)}
+
+/* B · hero dial — the arc leads and the value sits beneath it */
+.climate-tile-hero>summary{text-align:center}
+.climate-tile-hero .climate-arc{margin:0 auto 3px}
+.climate-tile-hero .climate-val{font-size:13px}
+.climate-tile-hero .climate-chips{justify-content:center}
+
+/* C · composite ring — one ring summarises alignment above the tiles */
+.climate-ring-row{display:flex;align-items:center;gap:12px;margin-bottom:9px;padding:10px;
+  border:1px solid var(--line);border-radius:10px;background:rgba(9,17,29,.34)}
+.climate-ring{position:relative;flex:0 0 auto;width:76px;height:76px}
+.climate-ring svg{width:76px;height:76px;display:block}
+.climate-ring-centre{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.climate-ring-centre b{display:block;font-size:17px;font-weight:800;line-height:1.05}
+.climate-ring-centre b i{font-size:10px;font-style:normal;color:var(--muted)}
+.climate-ring-centre small{font-size:7.5px;font-weight:800;letter-spacing:.1em;color:var(--muted)}
+.climate-ring-note{margin:0;font-size:10px;line-height:1.5;color:var(--muted)}
+
+/* D · linear bars — the arc straightened, sorted worst-first */
+.climate-bar-row{display:flex;align-items:baseline;gap:8px}
+.climate-bar-row small{flex:0 0 66px;font-size:8.5px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted)}
+.climate-bar-row .climate-val{flex:1;min-width:0;font-size:12px}
+.climate-bar-row em{flex:0 0 auto;font-style:normal;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.climate-bar-track{display:flex;align-items:center;gap:7px;margin-top:6px}
+.climate-bar{position:relative;flex:1;min-width:0;height:6px;border-radius:3px;
+  background:var(--input);border:1px solid var(--line);overflow:hidden}
+.climate-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px}
+.climate-bar-good i{background:var(--green)}
+.climate-bar-mid i{background:var(--yellow)}
+.climate-bar-bad i{background:var(--red)}
+.climate-bar-unknown i{background:var(--muted);opacity:.4}
+.climate-bar-track small{flex:0 0 auto;font-size:9px;color:var(--muted)}
+
+@media(max-width:390px){
+  .climate-grid{gap:5px}
+  .climate-val{font-size:13px}
+  .climate-tile-hero .climate-val{font-size:12px}
+  .climate-ring{width:66px;height:66px}
+  .climate-ring svg{width:66px;height:66px}
+}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4236e75d8220763',t:'MTc5MDYwNTY3Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4241b6bd9a66a3e',t:'MTc5MDYxMjc1OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

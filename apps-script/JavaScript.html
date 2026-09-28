@@ -5811,6 +5811,117 @@
     tone=climateToneClass(tone);
     return '<details class="market-climate-reading climate-'+tone+'"><summary><span class="market-climate-reading-head"><span class="market-climate-reading-dot" aria-hidden="true"></span><span><small>'+esc(label)+'</small><b>'+esc(value)+'</b><em>'+esc(detail)+'</em></span></span><span class="market-climate-info" aria-hidden="true">i</span></summary><div class="market-climate-reading-body">'+body+'<p class="market-climate-boundary">Observation only · '+esc(id)+' does not change entry Gates, sizing or ticket state.</p></div></details>';
   }
+  /* CLIMATE-LAYOUT-1 · the four independent readings can be drawn four ways, chosen from
+     the More tab. Presentation only: every layout shows the same values, the same numbers
+     and the same boundary note. Nothing here changes readings, Gates, sizing or tickets. */
+  var CLIMATE_LAYOUTS = {
+    chip: { label: "A · Chip gauge", short: "Chip gauge",
+      detail: "2x2 tiles with a small arc beside each label. The gauge indexes; the words and numbers carry the facts." },
+    hero: { label: "B · Hero dial", short: "Hero dial",
+      detail: "A dial leads each tile with the value beneath it. Most visual, but taller and blank when data is missing." },
+    ring: { label: "C · Composite ring", short: "Composite ring",
+      detail: "One four-segment ring sums up overall alignment above the tiles. Strongest hierarchy." },
+    bar:  { label: "D · Linear bars", short: "Linear bars",
+      detail: "The arc straightens into a bar, sorted worst-first, with numbers in a tabular column. Shortest." }
+  };
+  function climateLayoutValue(){
+    var v = state && state.settings ? String(state.settings.climateLayout || "chip") : "chip";
+    return CLIMATE_LAYOUTS[v] ? v : "chip";
+  }
+  var CLIMATE_TONE_HEX = { good:"#3dcf8e", mid:"#e6c35c", bad:"#ff6b7a", unknown:"#93a0c0" };
+  var CLIMATE_PCT = { good:0.82, mid:0.5, bad:0.18, unknown:0 };
+  function climateArc(r, w, h, rad, sw){
+    var pct = CLIMATE_PCT[r.tone] || 0;
+    var cx = w/2, cy = h - sw/2 - 2, len = Math.PI*rad, th = Math.PI*(1-pct);
+    var nx = cx + (rad - sw/2 - 3)*Math.cos(th), ny = cy - (rad - sw/2 - 3)*Math.sin(th);
+    var col = CLIMATE_TONE_HEX[r.tone] || CLIMATE_TONE_HEX.unknown, dim = r.tone === "unknown";
+    var sweep = 'M'+(cx-rad)+' '+cy+' A'+rad+' '+rad+' 0 0 1 '+(cx+rad)+' '+cy;
+    return '<svg class="climate-arc" viewBox="0 0 '+w+' '+h+'" width="'+w+'" height="'+h+'" role="img" aria-label="'+esc(r.label)+' reads '+esc(r.value)+'">' +
+      '<path d="'+sweep+'" fill="none" stroke="#22314f" stroke-width="'+sw+'" stroke-linecap="round"'+(dim?' stroke-dasharray="3 4"':'')+'/>' +
+      (pct > 0
+        ? '<path d="'+sweep+'" fill="none" stroke="'+col+'" stroke-width="'+sw+'" stroke-linecap="round" stroke-dasharray="'+len.toFixed(1)+'" stroke-dashoffset="'+(len*(1-pct)).toFixed(1)+'"/>' +
+          '<line x1="'+cx+'" y1="'+cy+'" x2="'+nx.toFixed(1)+'" y2="'+ny.toFixed(1)+'" stroke="#e8eefc" stroke-width="2" stroke-linecap="round"/>' +
+          '<circle cx="'+cx+'" cy="'+cy+'" r="2.6" fill="#e8eefc"/>'
+        : '') +
+      '</svg>';
+  }
+  function climateBar(r){
+    var pct = Math.round((CLIMATE_PCT[r.tone] || 0) * 100);
+    return '<span class="climate-bar climate-bar-'+r.tone+'"><i style="width:'+pct+'%'+'"></i></span>';
+  }
+  function climateChips(r){
+    var shown = (r.nums || []).filter(function(n){
+      return n[1] && n[1] !== 'Unknown' && n[1] !== '—' && n[1] !== 'unavailable'; }).slice(0, 2);
+    if (!shown.length) return '';
+    return '<span class="climate-chips">' + shown.map(function(n){
+      return '<span class="climate-chip">'+esc(n[0])+' <b>'+esc(n[1])+'</b></span>'; }).join('') + '</span>';
+  }
+  function climatePanelHtml(r){
+    return '<div class="climate-panel-body"><p>'+esc(r.prose)+'</p>' +
+      '<div class="market-climate-data-grid">' + (r.nums || []).map(function(n){
+        return climateDataCell(n[0], n[1]); }).join('') + '</div>' +
+      '<p class="climate-boundary">Observation only · '+esc(r.label)+' does not change entry Gates, sizing or ticket state.</p></div>';
+  }
+  function climateRingHtml(readings){
+    var rad = 34, c = 2*Math.PI*rad, seg = c/4, gap = 6, dash = seg - gap;
+    var aligned = readings.filter(function(x){ return x.tone === 'good'; }).length;
+    return '<div class="climate-ring"><svg viewBox="0 0 88 88" role="img" aria-label="'+aligned+' of 4 readings aligned">' +
+      '<circle cx="44" cy="44" r="'+rad+'" fill="none" stroke="#22314f" stroke-width="11"/>' +
+      readings.map(function(x, i){
+        return '<circle cx="44" cy="44" r="'+rad+'" fill="none" stroke="'+(CLIMATE_TONE_HEX[x.tone]||CLIMATE_TONE_HEX.unknown)+
+          '" stroke-width="11" stroke-dasharray="'+dash.toFixed(1)+' '+(c-dash).toFixed(1)+'" stroke-dashoffset="'+(-(i*seg)).toFixed(1)+
+          '" transform="rotate(-90 44 44)" stroke-linecap="round" opacity="'+(x.tone==='unknown'?0.32:1)+'"/>'; }).join('') +
+      '</svg><span class="climate-ring-centre"><b>'+aligned+'<i>/4</i></b><small>ALIGNED</small></span></div>';
+  }
+  function marketClimateLayoutHtml(readings){
+    var layout = climateLayoutValue(), used = readings.slice();
+    if (layout === 'bar'){
+      var rank = { bad:0, unknown:1, mid:2, good:3 };
+      used.sort(function(a, b){
+        return (rank[a.tone] == null ? 1 : rank[a.tone]) - (rank[b.tone] == null ? 1 : rank[b.tone]); });
+    }
+    var tiles = used.map(function(r){
+      var viz = '', cls = 'climate-tile climate-tile-'+layout+' climate-tone-'+r.tone;
+      if (layout === 'chip') viz = climateArc(r, 46, 30, 15, 5);
+      else if (layout === 'hero') viz = climateArc(r, 84, 52, 32, 8);
+      else if (layout === 'ring') viz = climateArc(r, 40, 26, 13, 4);
+      var head;
+      if (layout === 'bar'){
+        head = '<span class="climate-bar-row"><small class="climate-label">'+esc(r.label)+'</small>' +
+          '<b class="climate-val">'+esc(r.value)+'</b>' +
+          '<em>'+esc((r.nums && r.nums[0] && r.nums[0][1]) || '—')+'</em></span>' +
+          '<span class="climate-bar-track">'+climateBar(r)+'<small>'+esc(r.detail)+'</small></span>';
+      } else if (layout === 'hero'){
+        head = viz + '<small class="climate-label">'+esc(r.label)+'</small>' +
+          '<b class="climate-val">'+esc(r.value)+'</b>' +
+          '<span class="climate-det">'+esc(r.detail)+'</span>' + climateChips(r);
+      } else {
+        head = '<span class="climate-top">'+viz+'<span class="climate-id"><small class="climate-label">'+
+          esc(r.label)+'</small><b class="climate-val">'+esc(r.value)+'</b></span></span>' +
+          '<span class="climate-det">'+esc(r.detail)+'</span>' + climateChips(r);
+      }
+      return '<details class="'+cls+'"><summary><span class="climate-sum">'+head+
+        '<i class="climate-chev" aria-hidden="true">&#8250;</i></span></summary>' +
+        climatePanelHtml(r) + '</details>';
+    }).join('');
+    var ringBlock = layout === 'ring' ? '<div class="climate-ring-row">'+climateRingHtml(readings)+
+      '<p class="climate-ring-note">Each segment maps to one reading below. The count is how many read supportive.</p></div>' : '';
+    return '<div class="climate-layout climate-layout-'+layout+'">'+ringBlock+
+      '<div class="climate-grid">'+tiles+'</div></div>';
+  }
+  function climateLayoutSettingsHtml(){
+    var current = climateLayoutValue();
+    return '<section class="card climate-layout-settings"><header><div><h3>Market climate layout</h3>' +
+      '<p class="muted">Choose how the four independent readings are drawn. Presentation only — the readings, numbers and boundaries are identical in every layout.</p>' +
+      '</div><span class="mp-head-tools"><span class="layout-setting-badge">'+esc(CLIMATE_LAYOUTS[current].short)+'</span></span></header>' +
+      '<div class="coin-desk-layout-options climate-layout-options" role="group" aria-label="Market climate layout options">' +
+      ['chip','hero','ring','bar'].map(function(key){
+        var item = CLIMATE_LAYOUTS[key], selected = key === current;
+        return '<button type="button" class="coin-desk-layout-option'+(selected?' selected':'')+'" data-action="set-climate-layout" data-layout="'+key+'" aria-pressed="'+selected+'">' +
+          '<span class="layout-option-top"><b>'+esc(item.label)+'</b><i>'+(selected?'Selected':'Use this')+'</i></span>' +
+          '<small>'+esc(item.detail)+'</small></button>';
+      }).join('') + '</div></section>';
+  }
   function marketClimateHtml(f){
     var t=f.t||{},c=f.c||{},o=f.observation||{},fresh=f.fresh||marketFreshness();
     var usable=fresh.kind!=='sample'&&!fresh.stale&&!!c.ready;
@@ -5841,21 +5952,37 @@
     var barLabel=barAt?formatPivotWhen(barAt):'completed hour unavailable';
     var structureValue=!usable?'Unknown':invalid?'Weakening':c.hl?'Holding':'Watch';
     var structureDetail=!usable?'Hourly evidence unavailable':invalid?'Completed close below reference':c.hl?'Higher low / structure intact':'No confirmed higher low';
-    var structureBody='<p>'+esc(invalid?'The completed price broke the latest confirmed reference. The reference is informational, not a stop order.':c.hl?'The latest confirmed higher low is being retained as context. It needs completed-hour evidence; it does not unlock a ticket.':'No confirmed higher low is available in the validated window.')+'</p><div class="market-climate-data-grid">'+climateDataCell('Last close',lastClose?priceGbp(lastClose,5):'Unknown')+climateDataCell('Reference',ref)+climateDataCell('Observed',barLabel)+'</div>';
+    var structureProse=invalid?'The completed price broke the latest confirmed reference. The reference is informational, not a stop order.':c.hl?'The latest confirmed higher low is being retained as context. It needs completed-hour evidence; it does not unlock a ticket.':'No confirmed higher low is available in the validated window.';
+    var structureNums=[['Last close',lastClose?priceGbp(lastClose,5):'Unknown'],['Reference',ref],['Observed',barLabel]];
+    var structureBody='<p>'+esc(structureProse)+'</p><div class="market-climate-data-grid">'+climateDataCell('Last close',lastClose?priceGbp(lastClose,5):'Unknown')+climateDataCell('Reference',ref)+climateDataCell('Observed',barLabel)+'</div>';
     var momentumValue=!usable||t.hourRsi==null?'Unknown':t.hourRsi>=70?'Hot / late':t.hourRsi<=30?'Stretched':t.hourTrend==='DOWN'?'Cooling':t.hourTrend==='UP'?'Improving':'Mixed';
     var momentumTone=momentumValue==='Improving'?'good':momentumValue==='Cooling'||momentumValue==='Hot / late'?'mid':'unknown';
     var momentumDetail=!usable||t.hourRsi==null?'Validated hourly RSI unavailable':(t.hourTrend||'mixed')+' · RSI '+num(t.hourRsi,1);
+    var momentumProse='Momentum is descriptive here. RSI and hourly direction are not stand-alone triggers and do not override the existing verdict.';
+    var momentumNums=[['Hourly RSI',t.hourRsi==null?'Unknown':num(t.hourRsi,1)],['Hourly direction',t.hourTrend||'Unknown'],['EMA20',ema?priceGbp(ema,5):'Unknown']];
     var momentumBody='<p>Momentum is descriptive here. RSI and hourly direction are not stand-alone triggers and do not override the existing verdict.</p><div class="market-climate-data-grid">'+climateDataCell('Hourly RSI',t.hourRsi==null?'Unknown':num(t.hourRsi,1))+climateDataCell('Hourly direction',t.hourTrend||'Unknown')+climateDataCell('EMA20',ema?priceGbp(ema,5):'Unknown')+'</div>';
     var ratio=t.volRatio!=null&&isFinite(Number(t.volRatio))?Number(t.volRatio):null;
     var participationValue=!usable||!t.volReady?'Unknown':ratio!=null&&ratio<.85?'Quiet':ratio!=null&&ratio>1.2?'Confirming':'Normal';
     var participationTone=participationValue==='Confirming'?'good':participationValue==='Quiet'?'mid':'unknown';
     var participationDetail=!usable||!t.volReady?'Validated hourly volume unavailable':ratio==null?'Volume state available · ratio unknown':(num(ratio,1)+'× recent median');
+    var participationProse='Participation tests whether activity is confirming the move. A quiet move is not automatically bearish; it is simply weaker confirmation.';
+    var participationNums=[['State',t.volEvidenceLabel||t.volState||'Unknown'],['Ratio',ratio==null?'Unknown':num(ratio,1)+'× median'],['Bar',t.volBarAt?formatPivotWhen(t.volBarAt):'Unknown']];
     var participationBody='<p>Participation tests whether activity is confirming the move. A quiet move is not automatically bearish; it is simply weaker confirmation.</p><div class="market-climate-data-grid">'+climateDataCell('State',t.volEvidenceLabel||t.volState||'Unknown')+climateDataCell('Ratio',ratio==null?'Unknown':num(ratio,1)+'× median')+climateDataCell('Bar',t.volBarAt?formatPivotWhen(t.volBarAt):'Unknown')+'</div>';
     var rangeKnown=Number(t.high)>Number(t.low)&&Number(t.price)>0;
     var locationValue=!usable||!rangeKnown?'Unknown':t.nearHigh?'Near high':t.nearLow?'Near low':t.locPct<50?'Lower half':'Upper half';
     var locationTone=locationValue==='Lower half'||locationValue==='Near low'?'good':locationValue==='Near high'?'mid':'unknown';
     var locationDetail=!usable||!rangeKnown?'Provider day range unavailable':(num(t.locPct,1)+'% of provider day range');
+    var locationProse='Location tells us where price sits inside the observed provider range. It is context, not a buy-the-dip instruction or a forecast.';
+    var locationNums=[['Price',t.price?priceGbp(t.price,5):'Unknown'],['Range',rangeKnown?priceGbp(t.low,5)+' – '+priceGbp(t.high,5):'Unknown'],['Position',rangeKnown?num(t.locPct,1)+'%':'Unknown']];
     var locationBody='<p>Location tells us where price sits inside the observed provider range. It is context, not a buy-the-dip instruction or a forecast.</p><div class="market-climate-data-grid">'+climateDataCell('Price',t.price?priceGbp(t.price,5):'Unknown')+climateDataCell('Range',rangeKnown?priceGbp(t.low,5)+' – '+priceGbp(t.high,5):'Unknown')+climateDataCell('Position',rangeKnown?num(t.locPct,1)+'%':'Unknown')+'</div>';
+    /* CLIMATE-LAYOUT-1 · the four readings as data. Every layout draws from this same
+       array, so switching layout cannot change a value, a number or a boundary. */
+    var climateReadings=[
+      {label:'Structure',value:structureValue,detail:structureDetail,tone:invalid?'bad':c.hl?'good':'mid',prose:structureProse,nums:structureNums},
+      {label:'Momentum',value:momentumValue,detail:momentumDetail,tone:momentumTone,prose:momentumProse,nums:momentumNums},
+      {label:'Participation',value:participationValue,detail:participationDetail,tone:participationTone,prose:participationProse,nums:participationNums},
+      {label:'Location',value:locationValue,detail:locationDetail,tone:locationTone,prose:locationProse,nums:locationNums}
+    ];
     var track=['SUPPORTIVE','BALANCED','FRAGILE','UNKNOWN'].indexOf(status);if(track<0)track=1;
     var trackLabels=['Supportive','Balanced','Fragile','Unknown'];
     var trackHtml=trackLabels.map(function(label,i){return '<span class="market-climate-track-point '+(i===track?'active':'')+'">'+label+'</span>';}).join('');
@@ -5863,7 +5990,7 @@
     var methodObserved=invalid?'Completed close broke the latest structure reference.':c.hl?'A higher low and completed close are retained as hourly observations.':'The current validated hourly series does not establish a confirmed turn.';
     var methodInterpreted=invalid?'The earlier watch is invalidated; no new continuation confirmation exists.':c1==='Watch invalidated'?'The continuation watch is invalidated; no new entry is inferred.':c1||'No continuation conclusion is available.';
     var methodPractical=invalid?'Re-observe the next completed hour. Do not promote this layer into a new plan.':'Use the climate as context, then read the existing Gates and ticket independently.';
-    return '<section class="market-climate climate-'+tone+'" aria-labelledby="market-climate-title"><header class="market-climate-head"><div><small class="market-climate-kicker">Coin climate · observation layer</small><h2 id="market-climate-title">Market climate</h2><p>'+esc(fresh.label||'Freshness unavailable')+' · '+esc(String(f.coin||state.settings.coinTicker).toUpperCase())+' / '+esc(String(state.settings.vsCurrency||'gbp').toUpperCase())+'</p></div><span class="market-climate-status climate-'+tone+'"><i></i>'+esc(status+' · '+statusWord)+'</span></header><p class="market-climate-subtitle">'+esc(subtitle)+'</p><div class="market-climate-track" aria-label="Climate continuum">'+trackHtml+'</div><div class="market-climate-readout"><b>What the data says</b><span>'+esc(readout)+'</span></div><div class="market-climate-meta"><span>Completed hour · '+esc(barLabel)+'</span><span>Freshness · '+esc(fresh.label||'unknown')+'</span><span>T1 / C1 · observation only</span></div><div class="market-climate-glance"><div class="market-climate-glance-head"><h3>Four independent readings</h3><small>No magic composite · inspect each dimension</small></div><div class="market-climate-grid">'+marketClimateReading('Structure','Structure',structureValue,structureDetail,invalid?'bad':c.hl?'good':'mid',structureBody)+marketClimateReading('Momentum','Momentum',momentumValue,momentumDetail,momentumTone,momentumBody)+marketClimateReading('Participation','Participation',participationValue,participationDetail,participationTone,participationBody)+marketClimateReading('Location','Location',locationValue,locationDetail,locationTone,locationBody)+'</div></div><div class="market-climate-change"><span>!</span><div><small>Latest observed change</small><b>'+esc(invalid?'Structure weakened during the completed hour':obsLabel)+'</b><p>'+esc(invalid?'Earlier watch evidence remains in history; it is not rewritten.':'This is a descriptive observation, not an automatic entry instruction.')+'</p></div></div><div class="market-climate-method"><div><small>1 · Observed</small><b>What happened?</b><p>'+esc(methodObserved)+'</p></div><div><small>2 · Interpreted</small><b>What does it imply?</b><p>'+esc(methodInterpreted)+'</p></div><div><small>3 · Practical</small><b>What changes now?</b><p>'+esc(methodPractical)+'</p></div></div><details class="market-climate-evidence"><summary>Evidence behind the climate<small>Reference levels · continuation watch · feed health</small></summary><div class="market-climate-evidence-grid">'+climateDataCell('Structure reference',ref)+climateDataCell('Continuation',c1)+climateDataCell('Feed',t.volReady?'Hourly volume usable':'Check hourly feed')+'</div><p class="market-climate-footnote">Climate is a transparent descriptive layer. It does not change the existing engine, risk, sizing, plan, Journal or order behaviour. If evidence is stale or incomplete, the correct state is Unknown.</p></details><div class="market-climate-actions"><button type="button" class="btn secondary" data-action="cd-why">Open entry Gates separately</button><span>Climate explains the environment · Gates evaluate the ticket</span></div></section>';
+    return '<section class="market-climate climate-'+tone+'" aria-labelledby="market-climate-title"><header class="market-climate-head"><div><small class="market-climate-kicker">Coin climate · observation layer</small><h2 id="market-climate-title">Market climate</h2><p>'+esc(fresh.label||'Freshness unavailable')+' · '+esc(String(f.coin||state.settings.coinTicker).toUpperCase())+' / '+esc(String(state.settings.vsCurrency||'gbp').toUpperCase())+'</p></div><span class="market-climate-status climate-'+tone+'"><i></i>'+esc(status+' · '+statusWord)+'</span></header><p class="market-climate-subtitle">'+esc(subtitle)+'</p><div class="market-climate-track" aria-label="Climate continuum">'+trackHtml+'</div><div class="market-climate-readout"><b>What the data says</b><span>'+esc(readout)+'</span></div><div class="market-climate-meta"><span>Completed hour · '+esc(barLabel)+'</span><span>Freshness · '+esc(fresh.label||'unknown')+'</span><span>T1 / C1 · observation only</span></div><div class="market-climate-glance"><div class="market-climate-glance-head"><h3>Four independent readings</h3><small>No magic composite · inspect each dimension</small></div>'+marketClimateLayoutHtml(climateReadings)+'</div><div class="market-climate-change"><span>!</span><div><small>Latest observed change</small><b>'+esc(invalid?'Structure weakened during the completed hour':obsLabel)+'</b><p>'+esc(invalid?'Earlier watch evidence remains in history; it is not rewritten.':'This is a descriptive observation, not an automatic entry instruction.')+'</p></div></div><div class="market-climate-method"><div><small>1 · Observed</small><b>What happened?</b><p>'+esc(methodObserved)+'</p></div><div><small>2 · Interpreted</small><b>What does it imply?</b><p>'+esc(methodInterpreted)+'</p></div><div><small>3 · Practical</small><b>What changes now?</b><p>'+esc(methodPractical)+'</p></div></div><details class="market-climate-evidence"><summary>Evidence behind the climate<small>Reference levels · continuation watch · feed health</small></summary><div class="market-climate-evidence-grid">'+climateDataCell('Structure reference',ref)+climateDataCell('Continuation',c1)+climateDataCell('Feed',t.volReady?'Hourly volume usable':'Check hourly feed')+'</div><p class="market-climate-footnote">Climate is a transparent descriptive layer. It does not change the existing engine, risk, sizing, plan, Journal or order behaviour. If evidence is stale or incomplete, the correct state is Unknown.</p></details><div class="market-climate-actions"><button type="button" class="btn secondary" data-action="cd-why">Open entry Gates separately</button><span>Climate explains the environment · Gates evaluate the ticket</span></div></section>';
   }
   function cdMismatch(f){var entry=Number(state.sizer.entry),quote=Number(f.t.price);return f.fresh.kind!=='sample'&&!f.fresh.stale&&entry>0&&quote>0&&Math.abs(entry/quote-1)>.15;}
   function cdChartOptions(c,ticket,include){var low=Math.min.apply(null,c.prices),high=Math.max.apply(null,c.prices),all=[];['entry','stop','target'].forEach(function(k){var v=Number(ticket[k]);if(v>0&&isFinite(v))all.push({v:v,label:k,col:k==='stop'?'#f397a5':k==='target'?'#b6d68e':'#d8dfe8'});});return {levels:include?all:all.filter(function(l){return l.v>=low&&l.v<=high;}),excluded:include?[]:all.filter(function(l){return l.v<low||l.v>high;})};}
@@ -10564,7 +10691,8 @@
         }).join("") +
       "</div>" +
       coinDeskLayoutSettingsHtml(true) +
-      scoutTriageLayoutSettingsHtml(true);
+      scoutTriageLayoutSettingsHtml(true) +
+      climateLayoutSettingsHtml();
   }
   function moreToolsSum(planCount) {
     return esc(planCount + " plan" + (planCount === 1 ? "" : "s"));
@@ -11830,6 +11958,15 @@
       render();
       return;
     }
+    if (action === "set-climate-layout") {
+      var climateLayout = btn.getAttribute("data-layout");
+      if (!CLIMATE_LAYOUTS[climateLayout]) return;
+      state.settings.climateLayout = climateLayout;
+      errorMsg = "";
+      save();
+      render();
+      return;
+    }
     if (action === "set-scout-triage-layout") {
       var triageLayout = btn.getAttribute("data-layout");
       if (!SCOUT_TRIAGE_LAYOUTS[triageLayout]) return;
@@ -12739,4 +12876,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4236e3c0f3c0763',t:'MTc5MDYwNTY2NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4241b1029846a3e',t:'MTc5MDYxMjc0Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
