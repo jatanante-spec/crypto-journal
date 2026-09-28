@@ -6869,6 +6869,55 @@ body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.ti
     width:56px!important;min-width:56px!important;max-width:56px!important;
   }
 }
+/* SCOUT-ROW-ACTIONS-2 · why the previous fix did nothing.
+   The command-strip density pass ships a blanket rule
+     body.command-strip-mode #main button:not(.tip-btn)...:not(.more-palette-option)
+   carrying min-height:38px, padding:8px 12px, border-radius:10px and font-size:12px,
+   all !important. Its ten :not() clauses give it specificity (1,11,2).
+   SCOUT-ROW-ACTIONS-1 used only six :not() clauses, scoring (1,9,1), so it silently
+   lost EVERY property: the buttons kept padding:8px 12px, which inside a 36px segment
+   leaves 12px of content box, while "Lock" needs ~24px and "Research" ~41px at the
+   inherited 12px. Hence labels bursting their borders.
+   This block repeats the full ten-clause chain to reach (1,13,1) and win, then restores
+   the segmented look: square segments inside the container's 9px radius, real padding,
+   and a type size measured against the real Space Grotesk metrics.
+     "Lock"    10px -> 23.8px in 28px    "Research"  9px -> 40.6px in 46px
+     "Inspect"  9px -> 33.2px in 46px    at <=390px  8px -> 36.1px in 44px
+   Tap height and the ::after hit expansion are deliberately left alone. */
+body.command-strip-mode #main .triage-ledger-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option) button,
+body.command-strip-mode #main .triage-focus-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option) button{
+  padding:0!important;border-radius:0!important;
+}
+body.command-strip-mode #main .triage-ledger-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option) button:first-child{border-radius:9px 0 0 9px!important}
+body.command-strip-mode #main .triage-ledger-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option) button:last-child{border-radius:0 9px 9px 0!important}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option),
+body.command-strip-mode #main .triage-focus-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option),
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option),
+body.command-strip-mode #main .triage-focus-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option){
+  width:36px!important;min-width:36px!important;max-width:36px!important;
+  padding:0 4px!important;font-size:10px!important;
+  line-height:1!important;white-space:nowrap!important;
+}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option),
+body.command-strip-mode #main .triage-focus-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option){font-size:13px!important}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option),
+body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option){
+  width:58px!important;min-width:58px!important;max-width:58px!important;
+  padding:0 6px!important;font-size:9px!important;
+  line-height:1!important;white-space:nowrap!important;
+}
+@media(max-width:390px){
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option),
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option){
+  width:34px!important;min-width:34px!important;max-width:34px!important;
+}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option),
+body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.more-info):not(.more-palette-option){
+  width:56px!important;min-width:56px!important;max-width:56px!important;
+  font-size:8px!important;
+}
+}
+
 /* CLIMATE-LAYOUT-1 · four ways to draw the same four independent readings, chosen from
    the More tab. Presentation only — the values, numbers and boundary notes are identical
    in every layout. The tile is a native <details>, so opening one needs no script and
@@ -6950,4 +6999,4 @@ body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.ti
   .climate-ring svg{width:66px;height:66px}
 }
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4241b6bd9a66a3e',t:'MTc5MDYxMjc1OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4244cac79a6fe8d',t:'MTc5MDYxNDc3NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
