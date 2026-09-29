@@ -7331,5 +7331,47 @@ body.command-strip-mode:not(.training) #main{padding-bottom:calc(8px + env(safe-
 .cd-cue-need,.cd-cue-cap{margin:8px 0 0;padding:8px 10px;border-radius:8px;font-size:11.5px;line-height:1.5}
 .cd-cue-need{background:#101725;border:1px dashed var(--line);color:var(--yellow)}
 .cd-cue-cap{background:rgba(255,113,142,.12);border:1px solid #6e2437;color:var(--red)}
+
+/* ---------- SIZER-C-1 · the Sizer rebuilt around the one question ----------
+   The Log action is pinned, every secondary section is one row with the single number
+   worth seeing while it is shut, and the verdict names what would unblock it. Same
+   sections, same numbers, same rules: only the order and the container changed. */
+.cd-more{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.cd-more-row{border:1px solid var(--line);border-radius:11px;background:var(--panel);margin:0}
+.cd-more-row>summary{display:flex;align-items:center;gap:8px;padding:12px;cursor:pointer;
+  list-style:none;font-size:13px;font-weight:600}
+.cd-more-row>summary::-webkit-details-marker{display:none}
+.cd-more-row>summary>span:first-child{flex:1;min-width:0}
+.cd-more-meta{font-weight:400;font-size:11px;color:var(--muted);text-align:right;
+  max-width:46%;overflow-wrap:anywhere;line-height:1.35}
+.cd-more-chev{color:var(--muted);font-weight:400;transition:transform .15s}
+.cd-more-row[open] .cd-more-chev{transform:rotate(90deg)}
+.cd-more-row>div{padding:2px 12px 12px;border-top:1px solid var(--line)}
+.cd-more-foot{display:flex;gap:8px;align-items:center;padding:2px 0 4px}
+.cd-more-foot .btn{flex:1}
+/* Sticky cannot lift the bar out of .sizer-screen, which is a flex item with its own
+   height, so the bar is fixed to the viewport instead and the screen reserves the room.
+   It lives inside the Sizer page only, so it can never appear anywhere else. */
+.cd-action-bar{position:fixed;left:0;right:0;bottom:0;z-index:14;display:flex;align-items:center;gap:10px;
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  background:rgba(11,18,32,.97);border-top:1px solid var(--line);
+  backdrop-filter:blur(8px);box-shadow:0 -8px 24px rgba(0,0,0,.35)}
+/* room so the last row is never behind the bar; more when the bottom nav is there too */
+.sizer-screen{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+body:not(.command-strip-mode) .cd-action-bar{bottom:58px}
+body:not(.command-strip-mode) .sizer-screen{padding-bottom:calc(130px + env(safe-area-inset-bottom))}
+.cd-action-why{flex:1;font-size:11px;color:var(--muted);min-width:0;overflow-wrap:anywhere;line-height:1.35}
+.cd-action-bar .btn{flex:0 0 auto;min-width:130px}
+.cd-need-line{display:flex;gap:6px;align-items:flex-start;margin-top:7px;padding:6px 8px;
+  border-radius:8px;background:var(--input);border:1px dashed var(--line);color:var(--yellow);
+  font-size:11px;line-height:1.45;overflow-wrap:anywhere}
+.cd-need-line b{font-weight:600}
+.cd-need-more{color:var(--muted)}
+.cd-need-line .triage-tone-sign{width:9px;height:9px;flex:0 0 auto;margin-top:3px}
+.cd-metrics div.cd-metric-ok b{color:var(--green)}
+.cd-metrics div.cd-metric-bad b{color:var(--red)}
+.cd-metrics .cd-metric-thr{display:block;font-size:9.5px;color:var(--muted)}
+.cd-ticket .rr-targets{margin-top:9px}
+@media(max-width:760px){.cd-action-bar .btn{min-width:116px}.cd-more-meta{max-width:40%}}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42dfca0ae07eb1c',t:'MTc5MDcxNjM1NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42e64bfeee08cad',t:'MTc5MDcyMDYxOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
