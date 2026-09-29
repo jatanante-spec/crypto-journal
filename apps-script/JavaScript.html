@@ -1784,12 +1784,15 @@
     return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
   }
 
+  /* The composite's weights, in one place, because the deck now shows the score's
+     ceiling as well as its value, and the two must not drift apart. */
+  var COMPOSITE_W = { trend: 0.45, momentum: 0.25, vol: 0.3 };
   function computeMarket(m) {
     var dailyRangePct = m.low24h === 0 ? 0 : ((m.high24h - m.low24h) / m.low24h) * 100;
     var trendScore = clamp(50 + m.change30d * 1.2 + m.change7d * 2, 0, 100);
     var momentumScore = clamp(50 + m.change24h * 3, 0, 100);
     var volFitScore = clamp(100 - Math.abs(dailyRangePct - 5) * 12, 0, 100);
-    var composite = Math.round(0.45 * trendScore + 0.25 * momentumScore + 0.3 * volFitScore);
+    var composite = Math.round(COMPOSITE_W.trend * trendScore + COMPOSITE_W.momentum * momentumScore + COMPOSITE_W.vol * volFitScore);
     var verdict = composite >= 70 ? "FAVOURABLE" : composite >= 45 ? "MIXED" : "UNFAVOURABLE";
     var rangeVsStop = m.stopDistancePct === 0 ? null : dailyRangePct / m.stopDistancePct;
     var stopCheck = "Enter a stop distance %.";
@@ -5759,20 +5762,72 @@
     if(f.inWhy)return 'Open ticket · exchange action remains manual';
     return 'Existing engine · '+f.v.go+' · no order is placed';
   }
-  function cdCue(id,name,group,status,value,rule,detail,simple){return {id:id,name:name,group:group,status:status,value:value,rule:rule,detail:detail,simple:simple};}
+  function cdCue(id,name,group,status,value,rule,detail,simple,need,cap){return {id:id,name:name,group:group,status:status,value:value,rule:rule,detail:detail,simple:simple,need:need||'',cap:cap||''};}
+  /* The deck draws the same sign the rest of the app uses. It reads the shared paths when
+     they are in scope and falls back to a literal copy when they are not, so a scope change
+     can never break a row. */
+  function cdToneSign(kind){
+    var d=(typeof TRIAGE_TONE_SIGN==='object'&&TRIAGE_TONE_SIGN&&TRIAGE_TONE_SIGN[kind])||
+          (kind==='bad'?'M12 3.6l8.4 14.8H3.6zM12 9.6v3.6M12 16.1v.01':'M12 8.5v4.5M12 16.4v.01');
+    return '<svg class="triage-tone-sign" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="'+d+'"/></svg>';
+  }
   function cdCues(f){
     var t=f.t,c=f.c,a=[],quoteKnown=f.fresh.kind!=='sample'&&!f.fresh.stale,checks=f.v.checks||[];
     function check(k){var v=checks.filter(function(x){return x.name===k;})[0];return v?!!v.pass:null;}
-    function add(k,name,value,rule,detail,simple,known,timing){var pass=check(k),status=known===false||pass===null?'unknown':pass?'pass':timing?'wait':'block';a.push(cdCue(k,name,'entry',status,value,rule,detail,simple));}
+    var GATE={hourRsi:60,spot:50,score:70};
+    /* Where the score cannot get to on a given day. The trend and momentum terms are the
+       two that can still move; the range-fit term is fixed by the day's range. */
+    function scoreCeiling(){
+      try{
+        if(typeof computeMarket!=='function'||typeof COMPOSITE_W!=='object'||!state.market)return null;
+        var m=computeMarket(state.market);
+        if(!m||!isFinite(m.volFitScore))return null;
+        return Math.round(COMPOSITE_W.trend*100+COMPOSITE_W.momentum*100+COMPOSITE_W.vol*m.volFitScore);
+      }catch(e){return null;}
+    }
+    function volFitOf(range){return Math.max(0,Math.min(100,100-Math.abs(range-5)*12));}
+    var ceilScore=scoreCeiling();
+    /* How far a waiting gate is, in the one unit that describes it. Deliberately
+       descriptive: it says what the gate is waiting for, never what to do about it. */
+    function hourNeed(){
+      if(t.hourRsi==null)return '';
+      var gap=t.hourRsi-GATE.hourRsi;
+      if(gap<=0)return '';
+      return 'Needs the hourly RSI under '+GATE.hourRsi+' \u2014 '+num(gap,1)+' points away.';
+    }
+    function spotNeed(){
+      if(!(t.high>t.low&&t.low>0)||!isFinite(t.mid)||t.locPct<GATE.spot)return '';
+      var drop=Math.abs((t.mid-t.price)/t.price*100);
+      return 'Needs the quote below '+priceGbp(t.mid,4)+', the 24h midpoint \u2014 '+num(drop,1)+'% under the current price.';
+    }
+    function scoreNeed(){
+      if(!isFinite(t.composite))return '';
+      var gap=GATE.score-t.composite;
+      if(gap<=0)return '';
+      if(ceilScore==null)return 'Needs '+num(gap,1)+' more.';
+      if(ceilScore<=GATE.score)return 'Needs '+num(gap,1)+' more, but the ceiling today is '+num(ceilScore,1)+', so it cannot be reached.';
+      return 'Needs '+num(gap,1)+' more; the ceiling today is '+num(ceilScore,1)+', so there is room.';
+    }
+    function scoreCap(){
+      if(ceilScore==null||!isFinite(t.composite)||ceilScore>GATE.score)return '';
+      var range=t.low>0?((t.high-t.low)/t.low*100):null;
+      return 'Capped at '+num(ceilScore,1)+' against a gate of '+GATE.score+' today. Range fit is '+
+        (range==null?'unavailable':num(volFitOf(range),0)+'/100 because the 24h range is '+num(range,1)+'%')+
+        '. Only a maximum trend with a maximum day reaches it.';
+    }
+    var hourIsWait=quoteKnown&&c.ready&&t.hourRsi!=null&&check('Hour')===false,
+        spotIsWait=quoteKnown&&t.high>t.low&&t.low>0&&check('Spot')===false,
+        scoreIsWait=quoteKnown&&isFinite(t.composite)&&check('Score')===false;
+    function add(k,name,value,rule,detail,simple,known,timing,need,cap){var pass=check(k),status=known===false||pass===null?'unknown':pass?'pass':timing?'wait':'block';a.push(cdCue(k,name,'entry',status,value,rule,detail,simple,need,cap));}
     add('Fetch','Quote freshness',f.fresh.label,'Sample or stale quote blocks entry.',fetchBlockWhy()||'Quote is within the existing client freshness threshold. History components may still be unavailable.','Check that the instruments have current readings.',true,false);
     add('Ticket','Ticket geometry',f.out.invalid?'Invalid prices':'Stop < entry < target','Positive entry/stop/target with stop below entry and target above it.',f.out.invalidReason||'A valid ordering of numbers does not establish a structurally sound trade.','Put the numbers in the right order before assessing the plan.',true,false);
     add('R:R','Reward / risk',f.out.rewardRisk==null?'Unavailable':num(f.out.rewardRisk,2)+'R / min '+num(Number(state.settings.minRr)||1.5,2)+'R','Use the configured minimum reward/risk.', 'Reward/risk = (target − entry) / (entry − stop), before costs. Do not tighten a stop merely to pass.','Possible reward must justify the planned price risk.',!f.out.invalid&&f.out.rewardRisk!=null,false);
     add('Reach','Target reach',quoteKnown?'Reference '+priceGbp(recentHighPx(),4):'Cached · fetch first','Existing recent-high check, including 0.5% tolerance.','Reference is the maximum of up to 16 daily closes and current provider day high, not every intraday high over 16 days. It is not a forecast or a price ceiling.','A target can be outside this screening range without being impossible.',quoteKnown&&recentHighPx()>0,false);
     var tideSource=t.trend==='UP'||t.trend==='DOWN'?'daily':'hourly fallback';
     add('Tide','Tide filter',quoteKnown?(t.tide+' · '+tideSource):'Cached · fetch first','Existing Tide-down filter waits. Daily direction is used when UP/DOWN; otherwise the existing hourly fallback is used.','The calculation is unchanged. Improving hourly structure does not override a DOWN Tide result.','A short recovery and a weak broader trend can coexist.',quoteKnown&&(t.trend==='UP'||t.trend==='DOWN'||c.ready),true);
-    add('Hour','Hourly RSI',quoteKnown&&c.ready&&t.hourRsi!=null?num(t.hourRsi,1)+' / below 60':'Unknown / unverified','Below 60 when the hourly RSI input is available.','Missing hourly RSI is NON-BLOCKING in the existing engine. This tile can also be unknown when a cached RSI exists but hourly context validation fails. The actual engine result is not overridden by this display.','A missing reading is not a passed reading.',quoteKnown&&c.ready&&t.hourRsi!=null,true);
-    add('Spot','Range position',quoteKnown&&t.high>t.low?num(t.locPct,1)+'% / below 50%':'Unknown / cached','Current quote must be below the provider day midpoint.','The gate evaluates the current quote, not the price of a cheaper proposed resting bid. Exactly 50% waits.','Where the price is now is different from where you hope to buy.',quoteKnown&&t.high>t.low&&t.low>0,true);
-    add('Score','Composite',quoteKnown?num(t.composite,1)+' / min 70':'Cached · fetch first','The existing composite gate requires at least 70.','This remains an existing timing check. The score is not a probability or a way to outvote another gate.','A high score is one check, not the whole checklist.',quoteKnown&&isFinite(t.composite),true);
+    add('Hour','Hourly RSI',quoteKnown&&c.ready&&t.hourRsi!=null?num(t.hourRsi,1)+' / below '+GATE.hourRsi:'Unknown / unverified','Below '+GATE.hourRsi+' when the hourly RSI input is available.','Missing hourly RSI is NON-BLOCKING in the existing engine. This tile can also be unknown when a cached RSI exists but hourly context validation fails. The actual engine result is not overridden by this display.','A missing reading is not a passed reading.',quoteKnown&&c.ready&&t.hourRsi!=null,true,hourIsWait?hourNeed():'','');
+    add('Spot','Range position',quoteKnown&&t.high>t.low?num(t.locPct,1)+'% / below '+GATE.spot+'%':'Unknown / cached','Current quote must be below the provider day midpoint.','The gate evaluates the current quote, not the price of a cheaper proposed resting bid. Exactly '+GATE.spot+'% waits.','Where the price is now is different from where you hope to buy.',quoteKnown&&t.high>t.low&&t.low>0,true,spotIsWait?spotNeed():'','');
+    add('Score','Composite',quoteKnown?num(t.composite,1)+' / min '+GATE.score:'Cached · fetch first','The existing composite gate requires at least '+GATE.score+'.','This remains an existing timing check. The score is not a probability or a way to outvote another gate.','A high score is one check, not the whole checklist.',quoteKnown&&isFinite(t.composite),true,scoreIsWait?scoreNeed():'',scoreIsWait?scoreCap():'');
     a.push(cdCue('In','Open-trade lock','entry',f.inWhy?'block':'pass',f.inWhy?'Open / waiting ticket':'No open ticket','No additional entry while a ticket blocks Log.',f.inWhy||'Journal is flat for the existing lock check. Exchange orders are not queried. Preview-as-flat never removes the real lock.','Do not start another ticket just because the market looks favourable.'));
     var account=f.session.halt||f.session.haltProfit||!!f.room;
     a.push(cdCue('Day','Day / risk room','entry',account?'block':'pass',f.session.haltProfit?'BANK':account?'Account limit active':'Within available risk room','Session and available-risk limits still apply.',[f.session.halt||f.session.haltProfit?f.session.reason:'',f.room].filter(Boolean).join(' ')||'Day limits and room check allow this ticket; that alone is not GO.','Keep the risk within the account allowance.'));
@@ -6150,12 +6205,12 @@
   function cdDataHtml(f){return '<details class="cd-fold" data-cd-fold="data"><summary>Data, observations & diagnostics<small>Provider · Signal history · Inspect / export</small></summary><div>'+p1FeedHtml(f.t)+bpFeedHtml()+'<button type="button" data-action="pc-open" data-ticker="'+esc(f.coin)+'">Pattern history & learning</button><div class="cd-actions"><button type="button" data-action="trend-history">Signal history</button><button type="button" data-action="trend-export">Inspect / export '+esc(f.coin)+'</button></div><details class="cd-fold" data-cd-fold="watch"><summary>Detailed T1 / C1 observations</summary><div>'+trendPanelHtml(f.t,f.v)+'</div></details></div></details>';}
   function cdLearnHtml(){return pcCatalog()+'<h3>Your ticket is the starting point</h3><p>Entry is your intended Bid. BP1 proposes only stop and target. Review, then Apply both prices together. Nothing is sent to Revolut.</p>'+p1PlanTraining()+p1Training('cd-lights','Read the instruments','One blocking check still matters even when other checks pass.','Green means that named check passes; blue is context, grey is missing or unverified. A complete proposal is required for BUY, but it is not enough by itself. Missing hourly RSI remains non-blocking under the original engine.','Use Why? for blockers. Candle data explains whether the feed is ready.')+p1Training('cd-scale','Readable chart','Fit market prevents a far-away draft from flattening the chart.','Excluded ticket lines are listed. Include levels restores them without changing prices. Grey cone is illustrative, not a forecast.','Inspect the confirmed high/low dots and compare your draft with market evidence.');}
 
-  function cdCueDetail(c){return '<div class="cd-cue-detail" tabindex="-1"><span class="cd-'+c.status+'">● '+cdStatusWord(c.status)+' · '+esc(c.group)+'</span><h3>'+esc(c.name)+'</h3><p>'+esc(c.value)+'</p><h4>Rule / role</h4><p>'+esc(c.rule)+'</p><h4>Evidence and limitations</h4><p>'+esc(c.detail)+'</p><h4>Simply explained</h4><p>'+esc(c.simple)+'</p><p class="cd-small">Read-only inspection. No data request, ticket edit or trading-rule override.</p></div>';}
+  function cdCueDetail(c){return '<div class="cd-cue-detail" tabindex="-1"><span class="cd-'+c.status+'">● '+cdStatusWord(c.status)+' · '+esc(c.group)+'</span><h3>'+esc(c.name)+'</h3><p>'+esc(c.value)+'</p><h4>Rule / role</h4><p>'+esc(c.rule)+'</p>'+(c.need?'<p class="cd-cue-need">'+esc(c.need)+'</p>':'')+(c.cap?'<p class="cd-cue-cap">'+esc(c.cap)+'</p>':'')+'<h4>Evidence and limitations</h4><p>'+esc(c.detail)+'</p><h4>Simply explained</h4><p>'+esc(c.simple)+'</p><p class="cd-small">Read-only inspection. No data request, ticket edit or trading-rule override.</p></div>';}
   function cdDeckFiltered(cues){return cues.filter(function(c){return cdFilter==='all'||(cdFilter==='attention'&&['block','wait','unknown'].indexOf(c.status)>=0)||(cdFilter==='pass'&&c.status==='pass');});}
-  function cdDeckCueButton(c,extra){return '<button type="button" class="cd-check-row cd-'+c.status+(c.id===cdSelected?' cd-selected':'')+'" data-action="cd-inspect" data-cue="'+esc(c.id)+'" data-cd-key="cue-'+esc(c.id)+'" aria-pressed="'+(c.id===cdSelected)+'"'+(extra||'')+'><span class="cd-check-mark" aria-hidden="true">●</span><span class="cd-check-main"><b>'+esc(c.name)+'</b><small>'+esc(c.value)+'</small></span><span class="cd-check-status">'+cdStatusWord(c.status)+'</span><span class="cd-check-arrow" aria-hidden="true">›</span></button>';}
+  function cdDeckCueButton(c,extra){return '<button type="button" class="cd-check-row cd-'+c.status+(c.id===cdSelected?' cd-selected':'')+'" data-action="cd-inspect" data-cue="'+esc(c.id)+'" data-cd-key="cue-'+esc(c.id)+'" aria-pressed="'+(c.id===cdSelected)+'"'+(extra||'')+'><span class="cd-check-mark" aria-hidden="true">●</span><span class="cd-check-main"><b>'+esc(c.name)+'</b><small>'+esc(c.value)+'</small>'+(c.need?'<span class="cd-check-need">'+cdToneSign('warn')+'<b>'+esc(c.need)+'</b></span>':'')+(c.cap?'<span class="cd-check-cap">'+cdToneSign('bad')+'<b>'+esc(c.cap)+'</b></span>':'')+'</span><span class="cd-check-status">'+cdStatusWord(c.status)+'</span><span class="cd-check-arrow" aria-hidden="true">›</span></button>';}
   function cdDeckToolbar(){var views=[['list','List'],['focus','Focus'],['groups','Groups'],['rail','Rail']],filters=[['all','All'],['attention','Needs attention'],['pass','Pass']];return '<div class="cd-deck-toolbar"><div class="cd-deck-view-switch" role="tablist" aria-label="Cue Deck view">'+views.map(function(v){return '<button type="button" role="tab" class="cd-view-tab" data-action="cd-view" data-view="'+v[0]+'" data-cd-key="view-'+v[0]+'" aria-selected="'+(cdDeckView===v[0])+'">'+v[1]+'</button>';}).join('')+'</div><div class="cd-deck-filter-switch" role="group" aria-label="Cue filter">'+filters.map(function(v){return '<button type="button" data-action="cd-filter" data-filter="'+v[0]+'" data-cd-key="filter-'+v[0]+'" aria-pressed="'+(cdFilter===v[0])+'">'+v[1]+'</button>';}).join('')+'</div></div>';}
   function cdDeckListHtml(cues){var groups=[['entry','Entry checks'],['context','Market context · not entry approval'],['plan','Plan / data readiness']];return '<div class="cd-view-list" aria-label="Cue Deck list">'+groups.map(function(g){var rows=cues.filter(function(c){return c.group===g[0];});return '<section class="cd-list-group"><div class="cd-list-heading"><h3>'+g[1]+'</h3><span>'+rows.length+' shown</span></div><div class="cd-check-list">'+(rows.map(function(c){return cdDeckCueButton(c);}).join('')||'<p class="cd-small">No cues match this filter.</p>')+'</div></section>';}).join('')+'</div>';}
-  function cdDeckFocusHtml(cues,selected){if(!cues.length)return '<div class="cd-empty-state"><b>No cues match this filter.</b><p>Choose All or another filter to inspect the read-only checks.</p></div>';var index=Math.max(0,cues.indexOf(selected)),c=cues[index];return '<div class="cd-view-focus"><div class="cd-focus-meta"><span>Instrument '+(index+1)+' of '+cues.length+'</span><span>'+esc(c.group)+'</span></div><div class="cd-focus-nav"><button type="button" data-action="cd-focus-prev" data-cd-key="focus-prev"'+(cues.length<2?' disabled':'')+'>← Previous</button><button type="button" data-action="cd-focus-next" data-cd-key="focus-next"'+(cues.length<2?' disabled':'')+'>Next →</button></div><article class="cd-focus-card cd-'+c.status+'"><div class="cd-focus-status cd-'+c.status+'"><span>● '+cdStatusWord(c.status)+'</span><small>Read-only instrument</small></div><h3>'+esc(c.name)+'</h3><p class="cd-focus-value">'+esc(c.value)+'</p><div class="cd-focus-rule"><h4>Rule / role</h4><p>'+esc(c.rule)+'</p><h4>Evidence and limitations</h4><p>'+esc(c.detail)+'</p><h4>Simply explained</h4><p>'+esc(c.simple)+'</p></div></article><p class="cd-small cd-focus-hint">Use Previous / Next to scan the same filtered Cue Deck. Nothing is recalculated or edited.</p></div>';}
+  function cdDeckFocusHtml(cues,selected){if(!cues.length)return '<div class="cd-empty-state"><b>No cues match this filter.</b><p>Choose All or another filter to inspect the read-only checks.</p></div>';var index=Math.max(0,cues.indexOf(selected)),c=cues[index];return '<div class="cd-view-focus"><div class="cd-focus-meta"><span>Instrument '+(index+1)+' of '+cues.length+'</span><span>'+esc(c.group)+'</span></div><div class="cd-focus-nav"><button type="button" data-action="cd-focus-prev" data-cd-key="focus-prev"'+(cues.length<2?' disabled':'')+'>← Previous</button><button type="button" data-action="cd-focus-next" data-cd-key="focus-next"'+(cues.length<2?' disabled':'')+'>Next →</button></div><article class="cd-focus-card cd-'+c.status+'"><div class="cd-focus-status cd-'+c.status+'"><span>● '+cdStatusWord(c.status)+'</span><small>Read-only instrument</small></div><h3>'+esc(c.name)+'</h3><p class="cd-focus-value">'+esc(c.value)+'</p><div class="cd-focus-rule"><h4>Rule / role</h4><p>'+esc(c.rule)+'</p>'+(c.need?'<p class="cd-cue-need">'+esc(c.need)+'</p>':'')+(c.cap?'<p class="cd-cue-cap">'+esc(c.cap)+'</p>':'')+'<h4>Evidence and limitations</h4><p>'+esc(c.detail)+'</p><h4>Simply explained</h4><p>'+esc(c.simple)+'</p></div></article><p class="cd-small cd-focus-hint">Use Previous / Next to scan the same filtered Cue Deck. Nothing is recalculated or edited.</p></div>';}
   function cdDeckGroupsHtml(cues){var groups=[['block','BLOCK · log locked'],['wait','WAIT · review'],['unknown','UNKNOWN · evidence missing or stale'],['context','CONTEXT · informative'],['pass','PASS · check clear']];return '<div class="cd-view-groups" aria-label="Cue Deck status groups">'+groups.map(function(g){var rows=cues.filter(function(c){return c.status===g[0];});return '<details class="cd-status-group"'+(rows.length&&g[0]!=='pass'?' open':'')+'><summary><span class="cd-'+g[0]+'">● '+g[1].split(' · ')[0]+'</span><b>'+g[1].split(' · ')[1]+'</b><em>'+rows.length+'</em></summary><div class="cd-group-items">'+(rows.map(function(c){return cdDeckCueButton(c);}).join('')||'<p class="cd-small">No cues in this group for the current filter.</p>')+'</div></details>';}).join('')+'</div>';}
   function cdDeckRailHtml(cues){return '<div class="cd-view-rail-wrap"><div class="cd-view-rail" role="list" aria-label="Horizontally scrollable Cue Deck cards">'+(cues.map(function(c){return '<article class="cd-rail-card cd-'+c.status+(c.id===cdSelected?' cd-selected':'')+'" role="listitem"><button type="button" data-action="cd-inspect" data-cue="'+esc(c.id)+'" data-cd-key="cue-'+esc(c.id)+'" aria-pressed="'+(c.id===cdSelected)+'"><span class="cd-check-status">● '+cdStatusWord(c.status)+'</span><h3>'+esc(c.name)+'</h3><p>'+esc(c.value)+'</p><span class="cd-rail-more">Inspect read-only cue →</span></button></article>';}).join('')||'<div class="cd-empty-state"><b>No cues match this filter.</b><p>Choose All or another filter to inspect the rail.</p></div>')+'</div></div>';}
   function cdDeckViewHtml(cues,selected){if(cdDeckView==='focus')return cdDeckFocusHtml(cues,selected);if(cdDeckView==='groups')return cdDeckGroupsHtml(cues);if(cdDeckView==='rail')return cdDeckRailHtml(cues);return cdDeckListHtml(cues);}
@@ -13786,4 +13841,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42d6be58ede6a3d',t:'MTc5MDcxMDQyNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42dfc58af2aeb1c',t:'MTc5MDcxNjM0Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
