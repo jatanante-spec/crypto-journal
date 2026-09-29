@@ -7373,5 +7373,16 @@ body:not(.command-strip-mode) .sizer-screen{padding-bottom:calc(130px + env(safe
 .cd-metrics .cd-metric-thr{display:block;font-size:9.5px;color:var(--muted)}
 .cd-ticket .rr-targets{margin-top:9px}
 @media(max-width:760px){.cd-action-bar .btn{min-width:116px}.cd-more-meta{max-width:40%}}
+
+/* READY-1 · the per-coin gate mark on a Scout row: sign + count, never colour alone. */
+#main .triage-gate-mark{display:flex;align-items:center;justify-content:center;gap:3px;margin-top:4px;
+  padding:2px 4px;border-radius:5px;background:var(--input);font-size:8px;line-height:1.25;white-space:nowrap;
+  letter-spacing:.02em}
+#main .triage-gate-mark .triage-tone-sign{width:8px;height:8px}
+#main .triage-gate-mark.triage-tone-ok{background:var(--green-bg)}
+#main .triage-gate-mark.triage-tone-warn{background:var(--yellow-bg)}
+#main .triage-gate-mark.triage-tone-none{color:var(--muted)}
+/* READY-1 · the filter popover grew a row; keep it inside a 320px phone. */
+#main .triage-focus-pop{max-height:min(72vh,560px);overflow-y:auto;-webkit-overflow-scrolling:touch}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42e64bfeee08cad',t:'MTc5MDcyMDYxOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42ed253587797f8',t:'MTc5MDcyNTEwNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

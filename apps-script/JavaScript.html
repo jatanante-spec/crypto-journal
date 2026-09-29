@@ -3042,15 +3042,15 @@
     return verdict.why || "Do not buy this ticket.";
   }
 
-  function computeGoNoGo(tape, sizerOut, session, settings, ticketOverride) {
+  function computeGoNoGo(tape, sizerOut, session, settings, ticketOverride, opts) {
     var minRr = settings.minRr || 1.5;
     var rr = sizerOut.rewardRisk;
     var ticket = ticketOverride || state.sizer;
-    var reach = targetAboveRecent(ticket.target);
+    var reach = opts && opts.recentHigh != null ? targetAboveRecentAt(opts.recentHigh, ticket.target) : targetAboveRecent(ticket.target);
     var inWhy = alreadyInWhy();
     var preview = previewFlatOn();
     var room = preview ? dayRoomWhy(sizerOut, session) : roomWhy(sizerOut, session);
-    var fetchWhy = fetchBlockWhy();
+    var fetchWhy = opts && opts.fetchWhy !== undefined ? opts.fetchWhy : fetchBlockWhy();
     var dip = dipOk(tape);
     var weakTape = tape.action === "STAND ASIDE" || tape.action === "DON'T BUY";
     var checks = [
@@ -5205,8 +5205,8 @@
     var evidence=p.low&&p.high?'<p>'+esc('Hourly low '+priceGbp(p.low.price,4)+' · at '+p.low.at+' · confirmed '+p.low.confirmedAt)+'</p><p>'+esc('Hourly high '+priceGbp(p.high.price,4)+' · at '+p.high.at+' · confirmed '+p.high.confirmedAt)+'</p>':'<p>Confirmed hourly reference pair unavailable. No invented pivot timestamps.</p>';
     return teach('dipplan','<section class="dip-plan p1-plan" data-p1-version="BP1"><div class="dip-plan-head"><span>Your Bid · proposed stop + target</span><b class="'+(p.ok?'p1-wait':'p1-bad')+'">'+(p.ok?(reviewed?'Reviewed · ready for final checks':'Complete proposal available'):'Plan unavailable')+'</b></div><p class="p1-reason">'+esc(p.reason)+'</p>'+row('Your entry','entry','Fixed · not changed by Apply')+row('Stop','stop','Same hourly low + structure buffer / ATR floor')+row('Target','target',p.targetBasis?(p.targetBasis+' · '+num(p.rr,2)+'R'):'Needs reward within the same hourly structure')+'<p class="p1-note">'+esc(matches?'Current draft matches this complete plan. Final BUY still requires every entry check.':'Your current draft is retained. Apply the complete proposal before BUY can appear; no individual Set buttons can assemble a partial proposal.')+'</p><div class="p1-actions"><button type="button" class="btn secondary" data-action="p1-review" data-signature="'+esc(p.signature)+'"'+(!p.ok||locked?' disabled':'')+'>'+(reviewed?'Review again':'Review stop + target')+'</button><button type="button" class="btn" data-action="p1-apply" data-signature="'+esc(p.signature)+'"'+(!reviewed||locked?' disabled':'')+'>Apply stop + target</button></div>'+(locked?'<p class="p1-note">Application locked while fetching or managing an open trade.</p>':'')+'<details class="p1-evidence" data-p1-detail="plan-evidence"><summary>Source, calculations and legacy comparison</summary>'+evidence+'<p>'+esc('Fetch batch '+(p.fetchAt||'unavailable')+' · latest hourly observation '+(p.hourAt||'unavailable')+'. ATR metadata version '+String(state.market.atrDataVersion||'unavailable')+'. See Candle data below for BP1 source and validation.')+'</p><p>'+esc('Hourly ATR '+(p.atrHourly>0?priceGbp(p.atrHourly,5):'unavailable')+' · daily ATR '+(p.atrDaily>0?priceGbp(p.atrDaily,5):'unavailable')+' · zone pad '+(p.zonePad>0?priceGbp(p.zonePad,5):'unavailable')+' · structure pad '+(p.structurePad>0?priceGbp(p.structurePad,5):'unavailable'))+'</p><p>'+esc('Legacy prominence-ranked hourly low '+(tape.swingLow>0?priceGbp(tape.swingLow,4):'unavailable')+' / high '+(tape.swingHigh>0?priceGbp(tape.swingHigh,4):'unavailable')+'. Comparison only: not the source for this proposal.')+'</p><p>Daily timestamps are not retained; BP1 hourly provenance is shown under Candle data. A fresh batch is not independent proof of every provider component. No close-only ATR proxy is used here.</p></details>'+p1PlanTraining()+'</section>');
   }
-  function p1GateReasons(tape,out,session,verdict,plan){
-    var rows=[],checks=verdict.checks||[],preview=previewFlatOn();
+  function p1GateReasons(tape,out,session,verdict,plan,opts){
+    var rows=[],checks=verdict.checks||[],preview=previewFlatOn(); var optHigh=opts&&opts.recentHigh!=null?opts.recentHigh:recentHighPx(); var optFetch=opts&&opts.fetchWhy!==undefined?opts.fetchWhy:fetchBlockWhy();
     var planGate=cdPlanGate({plan:plan});
     if(verdict.go==='GO'&&!planGate.ok)add('Plan','No complete BUY setup',planGate.reason);
     function add(group,title,why){rows.push({group:group,title:title,why:why});}
@@ -5214,10 +5214,10 @@
     if(session.halt)add('Account','Day stop',session.reason||'Daily loss/streak limit is active.');
     if(session.haltProfit)add('Account','Day bank',session.reason||'Daily profit limit is active.');
     var room=roomWhy(out,session);if(room)add('Account','Risk room',room);
-    var labels={Ticket:['Ticket','Invalid entry / stop / target',out.invalidReason||'Review ticket geometry.'],'R:R':['Ticket','Reward/risk below minimum','Current '+(out.rewardRisk==null?'unavailable':num(out.rewardRisk,2)+'R')+'; minimum '+num(Number(state.settings.minRr)||1.5,2)+'R. Do not move the stop just to pass this test.'],Fetch:['Data','Quote sample / stale',fetchBlockWhy()],Reach:['Ticket','Target beyond recent reference','Typed target exceeds the existing recent-high check (reference '+priceGbp(recentHighPx(),4)+', 0.5% tolerance). The reference uses up to 16 daily closes plus the current 24h high—not all intraday highs from 16 days.'],Tide:['Timing','Daily Tide down','SMA7 vs SMA14 daily trend still waits; an improving hour does not override this gate.'],Score:['Timing','Composite below 70','Current score '+num(tape.composite,1)+'. This existing hard gate remains unchanged; it is not a probability.'],RSI:['Timing','Daily RSI hot','Daily RSI '+num(tape.rsi,1)+' is at least 70.'],Hour:['Timing','Hourly RSI not cool','Hourly RSI '+num(tape.hourRsi,1)+' must be below 60 under the existing rule.'],Spot:['Timing','Current quote in the upper half','Current provider range position '+num(tape.locPct,1)+'%. The existing gate checks live location, not the price of a proposed resting limit.']};
+    var labels={Ticket:['Ticket','Invalid entry / stop / target',out.invalidReason||'Review ticket geometry.'],'R:R':['Ticket','Reward/risk below minimum','Current '+(out.rewardRisk==null?'unavailable':num(out.rewardRisk,2)+'R')+'; minimum '+num(Number(state.settings.minRr)||1.5,2)+'R. Do not move the stop just to pass this test.'],Fetch:['Data','Quote sample / stale',fetchBlockWhy()],Reach:['Ticket','Target beyond recent reference','Typed target exceeds the existing recent-high check (reference '+priceGbp(optHigh,4)+', 0.5% tolerance). The reference uses up to 16 daily closes plus the current 24h high—not all intraday highs from 16 days.'],Tide:['Timing','Daily Tide down','SMA7 vs SMA14 daily trend still waits; an improving hour does not override this gate.'],Score:['Timing','Composite below 70','Current score '+num(tape.composite,1)+'. This existing hard gate remains unchanged; it is not a probability.'],RSI:['Timing','Daily RSI hot','Daily RSI '+num(tape.rsi,1)+' is at least 70.'],Hour:['Timing','Hourly RSI not cool','Hourly RSI '+num(tape.hourRsi,1)+' must be below 60 under the existing rule.'],Spot:['Timing','Current quote in the upper half','Current provider range position '+num(tape.locPct,1)+'%. The existing gate checks live location, not the price of a proposed resting limit.']};
     ['Fetch','Ticket','R:R','Reach','Tide','Score','RSI','Hour','Spot'].forEach(function(k){var test=checks.filter(function(x){return x.name===k;})[0];if(test&&!test.pass){var l=labels[k];add(l[0],l[1],l[2]);}});
     if(tape.action==='STAND ASIDE'||tape.action==="DON'T BUY")add('Timing','Tape action blocks entry',tape.reason||tape.action);
-    if(fetchBlockWhy())rows.forEach(function(r){if(r.group==='Timing')r.group='Cached timing · refresh to reassess';});
+    if(optFetch)rows.forEach(function(r){if(r.group==='Timing')r.group='Cached timing · refresh to reassess';});
     return rows;
   }
   function p1GatesHtml(tape,out,session,verdict,plan){
@@ -11538,6 +11538,90 @@
     out.chip='<small class="triage-pos '+out.k+'" title="'+esc(out.title)+'">'+esc(out.word)+'</small>';
     return out;
   }
+
+  /* ======================= READY-1 =======================
+     Per-coin readiness: the same gate engine, run against a coin's own saved book.
+     It answers one question only — "on this coin's own last fetch, do the gates
+     that can be judged without opening it pass?" — and it never touches the
+     active trading state, never writes, and never changes a rule.
+     The BP1 plan needs candle metadata that only the open coin can vouch for, so
+     for every other coin that one gate is left grey rather than guessed. */
+  var READY_CACHE = {};
+  function bookRecentHigh(book){ var m=(book&&book.market)||{}; var high=Number(m.high24h)||0; var closes=(book&&book.closes)||[]; var from=Math.max(0,closes.length-16); for(var i=from;i<closes.length;i++){var c=Number(closes[i]); if(c>high)high=c;} return high; }
+  function targetAboveRecentAt(high,target){ var t=Number(target); if(!(high>0)||!(t>0))return {far:false,high:high}; return {far:t>high*1.005,high:high}; }
+  function bookAtr(m,key){ m=m||{}; return m.atrDataVersion===2&&Number(m[key])>0?Number(m[key]):0; }
+  function bookFreshness(book){ var m=(book&&book.market)||{}; var at=m.lastFetchedAt; if(!at)return {kind:'sample',stale:true,label:'sample - tap Fetch'}; var age=Date.now()-new Date(at).getTime(); if(!(age>=0)||isNaN(age))return {kind:'sample',stale:true,label:'sample - tap Fetch'}; if(age>=STALE_MS)return {kind:'stale',stale:true,label:'stale'}; return {kind:'live',stale:false,label:'live'}; }
+  function bookFetchWhy(book){ return bookFreshness(book).stale?'Fetch is stale. Tap Fetch before you buy.':''; }
+  var READY_GROUP_KEY = { Ticket:'ticket', Timing:'timing', Account:'account', Plan:'plan', Data:'data' };
+  function scoutGateGroups(reasons,planJudged){
+    var g={ticket:'ok',timing:'ok',account:'ok',plan:planJudged?'ok':'none'};
+    (reasons||[]).forEach(function(r){
+      var k=READY_GROUP_KEY[r.group]||'timing';
+      if(k==='data')return;                       // handled as "no reading", never as a red gate
+      if(k==='plan'&&!planJudged)return;          // grey, not guessed
+      if(g[k]==='ok')g[k]=(k==='account')?'block':'wait';
+    });
+    return g;
+  }
+  function scoutReadiness(row,session){
+    var book=(row&&row.book)||{},m=book.market||{},ticket=book.sizer||{};
+    var closes=book.closes||[];
+    var key=[row&&row.pair&&row.pair.ticker,m.lastFetchedAt,m.price,m.high24h,m.low24h,m.change24h,m.atr14,m.atrHourly,
+             ticket.entry,ticket.stop,ticket.target,closes.length,(book.hourly||[]).length,
+             session&&session.halt?'halt':'',session&&session.haltProfit?'bank':'',
+             state.settings.minRr,state.settings.capitalGbp,state.settings.riskPct,state.settings.slipAllowPct,
+             alreadyInWhy()?'in':'flat',previewFlatOn()?'p':''].join('|');
+    if(READY_CACHE[key])return READY_CACHE[key];
+    var res={state:'nodata',groups:{ticket:'none',timing:'none',account:'none',plan:'none'},pass:0,judged:0,
+             rows:[],why:'',planJudged:false,title:''};
+    var done=function(){ if(Object.keys(READY_CACHE).length>240)READY_CACHE={}; READY_CACHE[key]=res; return res; };
+    try{
+      if(!(Number(m.price)>0)||!closes.length){ res.why='Not fetched yet.'; return done(); }
+      if(bookFreshness(book).stale){ res.why='Fetch is stale. Tap Fetch before judging this coin.'; return done(); }
+      var sess=session||computeSession(state.trades,state.settings);
+      var tape=computeTape(m,closes), high=bookRecentHigh(book), fetchWhy=bookFetchWhy(book);
+      var out=computeSizer(state.settings,ticket,tape.dailyRangePct,bookAtr(m,'atr14'),bookAtr(m,'atrHourly'));
+      var v=computeGoNoGo(tape,out,sess,state.settings,ticket,{recentHigh:high,fetchWhy:fetchWhy});
+      // The plan gate is only judged when this book carries candle metadata that
+      // matches the coin and the hour it was built for. Otherwise it stays grey.
+      /* The plan gate is judged exactly the way connectedDipPlan judges it: the
+         candle-metadata check applies only when this book actually carries that
+         metadata, and it is compared against THIS coin's id, never the active one.
+         A book with no metadata is judged on its hourly series alone, which is
+         what the open-coin path already does. */
+      var feed=m.hourlyFeed,coinId=(row.pair&&(row.pair.id||row.pair.coinId))||null;
+      var plan=deriveBidPlan(bookFreshness(book).stale?{ready:false}:triageContext(book),tape,bookAtr(m,'atrHourly'),
+                             bookAtr(m,'atr14'),Number(state.settings.minRr)||1.5,high,Number(ticket.entry));
+      if(feed&&feed.version===1&&(feed.status!=='READY'||(coinId&&feed.coinId!==coinId)||feed.barAt!==plan.hourAt)){
+        plan.ok=false; plan.status='DATA_MISSING';
+        plan.reason='Validated candle data is missing or does not match this coin and hourly series.';
+      }
+      if(!(Number(ticket.entry)>0)){ plan.ok=false; plan.status='ENTRY_NEEDED'; plan.reason='Enter your intended Bid in Your ticket first.'; }
+      var planJudged=true;
+      var reasons=p1GateReasons(tape,out,sess,v,plan,{recentHigh:high,fetchWhy:fetchWhy});
+      var g=scoutGateGroups(reasons,planJudged);
+      var judged=['ticket','timing','account'].concat(planJudged?['plan']:[]);
+      var pass=judged.filter(function(k){return g[k]==='ok';}).length;
+      var order=['ticket','timing','account','plan'];
+      var words={ticket:'Ticket',timing:'Timing',account:'Account',plan:'Plan'};
+      var marks={ok:'PASS',wait:'WAIT',block:'BLOCK',none:'on open'};
+      res.groups=g; res.pass=pass; res.judged=judged.length; res.planJudged=planJudged; res.rows=reasons;
+      res.state=pass===judged.length&&judged.length?'ready':(g.account==='block'?'blocked':'near');
+      res.why=(reasons[0]&&(reasons[0].title+' · '+reasons[0].why))||(res.state==='ready'?'All judged gates pass.':'');
+      res.title=order.map(function(k){return words[k]+' '+marks[g[k]];}).join(' · ');
+      return done();
+    }catch(err){ res.why='Could not be judged for this coin.'; return done(); }
+  }
+  function scoutGateMarkup(r){
+    var g=r&&(r.ready||(r.ready=scoutReadiness(r,null)));
+    if(!g||!g.judged)return '';
+    var tone=g.state==='ready'?'ok':(g.state==='blocked'?'warn':'warn');
+    var text=g.pass+' of '+g.judged;
+    var title=esc(g.title+(g.why?' · '+g.why:''));
+    return '<small class="triage-gate-mark triage-tone triage-tone-'+tone+'" title="'+title+
+           '" aria-label="Gates '+esc(text)+'. '+title+'">'+triageToneSign(tone)+
+           '<span class="triage-tone-val">'+esc(text)+'</span></small>';
+  }
   function triageSnapshot(pair,record){
     var book=triageBook(pair.ticker),m=book.market||{},c=triageContext(book),fresh=triageFreshness(book),hr=c.ready?rsiSeriesEnd(c.prices,c.prices.length-1,14):null;
     var tape={hourTrend:c.ready?computeTrend(c.prices).trend:null,hourHot:hr!=null&&hr>=70,nearHigh:Number(m.high24h)>Number(m.low24h)&&Number(m.price)>=Number(m.low24h)+(Number(m.high24h)-Number(m.low24h))*.75};
@@ -11564,7 +11648,8 @@
     var now=new Date().toISOString();store.events.push({algorithm:TREND_VERSION,coin:key,observedAt:now,kind:prior?'OBSERVATION':'BASELINE',code:o.code,trend:o.trend,watch:o.watch,reason:o.reason,barAt:o.barAt,pivotConfirmedAt:o.confirmedAt,reference:o.reference,previousReference:o.priorReference,fetchAt:m.lastFetchedAt||null,entry:'NOT_EVALUATED_SCOUT',blocked:[],acknowledgedAt:null,evidence:{lastClose:c.ready?Number(c.prices[c.prices.length-1]):null,ema20:c.ready?Number(c.ema[c.ema.length-1]):null,chartLow:c.ready&&c.low?c.low.px:null,chartHigh:c.ready&&c.high?c.high.px:null,price:row.price,higherLow:c.ready?!!c.hl:null}});
     store.coins[key]={identity:identity,code:o.code,reference:o.reference||o.priorReference,watch:o.watch,observedAt:now,barAt:o.barAt};trendPersist();
   }
-  function triageMatches(rows){var q=triageQuery.trim().toLowerCase();return rows.filter(function(r){return (triageFilter==='all'||triageFilter==='review'&&r.review||triageFilter==='quality'&&!r.context.ready||triageFilter==='draft'&&r.mismatch)&&(triageKind==='any'||r.kind===triageKind)&&(!triageFav||state.settings.watchlist.indexOf(r.pair.ticker)>=0)&&(!q||(r.pair.ticker+' '+r.pair.name+' '+r.watch).toLowerCase().indexOf(q)>=0);}).sort(function(a,b){if(triageSort==='az')return a.pair.ticker.localeCompare(b.pair.ticker);if(triageSort==='change')return (b.change==null?-Infinity:b.change)-(a.change==null?-Infinity:a.change)||a.pair.ticker.localeCompare(b.pair.ticker);var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};return rank(a)-rank(b)||a.pair.ticker.localeCompare(b.pair.ticker);});}
+  function triageMatches(rows){var q=triageQuery.trim().toLowerCase();return rows.filter(function(r){return (triageFilter==='all'||triageFilter==='review'&&r.review||triageFilter==='quality'&&!r.context.ready||triageFilter==='draft'&&r.mismatch||triageFilter==='gates'&&scoutGateMarkup(r)&&r.ready&&r.ready.state==='ready')&&(triageKind==='any'||r.kind===triageKind)&&(!triageFav||state.settings.watchlist.indexOf(r.pair.ticker)>=0)&&(!q||(r.pair.ticker+' '+r.pair.name+' '+r.watch).toLowerCase().indexOf(q)>=0);}).sort(function(a,b){if(triageSort==='az')return a.pair.ticker.localeCompare(b.pair.ticker);if(triageSort==='change')return (b.change==null?-Infinity:b.change)-(a.change==null?-Infinity:a.change)||a.pair.ticker.localeCompare(b.pair.ticker);if(triageSort==='green'){var gr=function(r){var g=r.ready||(r.ready=scoutReadiness(r,null));return (g&&g.judged?g.pass:-1);};return gr(b)-gr(a)||a.pair.ticker.localeCompare(b.pair.ticker);}
+var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};return rank(a)-rank(b)||a.pair.ticker.localeCompare(b.pair.ticker);});}
 /* ======================= COIN-STATE-TONE-1 =======================
    One colour language for state, used by the coin record, the Scout rows and the
    coin-focus rows. It extends the four tones the market climate already uses
@@ -11681,7 +11766,7 @@
     var list=triageCache||[],star=(state.settings&&state.settings.watchlist)||[];
     return {all:list.length,
       quality:list.filter(function(r){return !r.context.ready;}).length,
-      ready:list.filter(function(r){return r.context.ready&&!r.mismatch;}).length,
+      ready:list.filter(function(r){return r.context.ready&&!r.mismatch;}).length, gates:list.filter(function(r){var g=r.ready||(r.ready=scoutReadiness(r,null));return g&&g.state==='ready';}).length,
       starred:list.filter(function(r){return star.indexOf(r.pair.ticker)>=0;}).length,
       locked:list.filter(function(r){return !!scoutLockFor(r.pair.ticker);}).length};
   }
@@ -11706,8 +11791,8 @@
   }
   function triagePageControlsHtml(){
     var scopeCap=unifiedScoutScope==='shortlist'?'Shortlist':unifiedScoutScope==='find'?'Find':'All';
-    var filterCap=triageFilter==='quality'?'Attention':triageFilter==='ready'?'Ready':triageFilter==='starred'?'Starred':triageFilter==='locked'?'Locked':'All';
-    var sortCap=triageSort==='az'?'A–Z':triageSort==='change'?'24h':'Priority';
+    var filterCap=triageFilter==='quality'?'Attention':triageFilter==='ready'?'Ready':triageFilter==='gates'?'Can buy':triageFilter==='starred'?'Starred':triageFilter==='locked'?'Locked':'All';
+    var sortCap=triageSort==='az'?'A–Z':triageSort==='change'?'24h':triageSort==='green'?'Closest':'Priority';
     return '<div class="triage-combined-controls">'+
       '<div class="triage-rail" role="group" aria-label="Scout controls">'+
         triageFocusIconBtn({act:'triage-search-toggle',icon:'search',label:'Search or find a coin',on:!!triageQuery})+
@@ -11741,11 +11826,11 @@
         return item('triage-scope','data-scope',o[0],o[1],null,unifiedScoutScope===o[0]);}));
     }else if(kind==='filter'){
       var c=triageFocusCounts();
-      out=group('Filter',[['all','All',c.all],['quality','Needs attention',c.quality],['ready','Research ready',c.ready],
+      out=group('Filter',[['all','All',c.all],['quality','Needs attention',c.quality],['ready','Research ready',c.ready],['gates','Can buy now',c.gates],
         ['starred','★ Starred',c.starred],['locked','🔒 Locked',c.locked]].map(function(o){
         return item('triage-filter','data-filter',o[0],o[1],o[2],triageFilter===o[0]);}));
     }else if(kind==='sort'){
-      out=group('Sort',[['priority','Review priority'],['az','Symbol A–Z'],['change','24h change']].map(function(o){
+      out=group('Sort',[['priority','Review priority'],['green','Closest to green'],['az','Symbol A–Z'],['change','24h change']].map(function(o){
         return item('triage-focus-sort','data-sort',o[0],o[1],null,triageSort===o[0]);}));
     }else if(kind==='view'){
       if(withDensity)out=group('Rows',[['compact','Compact'],['comfortable','Comfortable']].map(function(o){
@@ -11840,8 +11925,8 @@
       if(b&&text!=null)b.textContent=text;
       el.classList.toggle('on',!!on);}
     cap('[data-pop="scope"]',unifiedScoutScope==='shortlist'?'Shortlist':unifiedScoutScope==='find'?'Find':'All',unifiedScoutScope!=='all');
-    cap('[data-pop="filter"]',triageFilter==='quality'?'Attention':triageFilter==='ready'?'Ready':triageFilter==='starred'?'Starred':triageFilter==='locked'?'Locked':'All',triageFilter!=='all');
-    cap('[data-pop="sort"]',triageSort==='az'?'A–Z':triageSort==='change'?'24h':'Priority',triageSort!=='priority');
+    cap('[data-pop="filter"]',triageFilter==='quality'?'Attention':triageFilter==='ready'?'Ready':triageFilter==='gates'?'Can buy':triageFilter==='starred'?'Starred':triageFilter==='locked'?'Locked':'All',triageFilter!=='all');
+    cap('[data-pop="sort"]',triageSort==='az'?'A–Z':triageSort==='change'?'24h':triageSort==='green'?'Closest':'Priority',triageSort!=='priority');
     cap('[data-pop="view"]','Header',triageFocusHeaderMode==='auto');
     triagePageSyncSearch();
     if(triagePagePop)triagePagePopOpen(triagePagePop);
@@ -11919,8 +12004,8 @@
   function triageFocusOverlayHtml(){
     var n=libraryPairs().length;
     var scopeCap=unifiedScoutScope==='shortlist'?'Shortlist':unifiedScoutScope==='find'?'Find':'All';
-    var filterCap=triageFilter==='quality'?'Attention':triageFilter==='ready'?'Ready':triageFilter==='starred'?'Starred':triageFilter==='locked'?'Locked':'All';
-    var sortCap=triageSort==='az'?'A–Z':triageSort==='change'?'24h':'Priority';
+    var filterCap=triageFilter==='quality'?'Attention':triageFilter==='ready'?'Ready':triageFilter==='gates'?'Can buy':triageFilter==='starred'?'Starred':triageFilter==='locked'?'Locked':'All';
+    var sortCap=triageSort==='az'?'A–Z':triageSort==='change'?'24h':triageSort==='green'?'Closest':'Priority';
     var densityCap=triageFocusDensity==='compact'?'Compact':'Comfortable';
     return '<aside id="triage-focus" class="triage-focus'+(triageFocusHeaderMode==='auto'?' triage-focus-foldable':'')+'" hidden role="dialog" aria-modal="true" aria-labelledby="triage-focus-title">'+
       '<header class="triage-focus-head">'+
@@ -11950,8 +12035,8 @@
       var b=el.querySelector('b');if(b&&text!=null)b.textContent=text;
       el.classList.toggle('on',!!on);}
     cap('[data-pop="scope"]',unifiedScoutScope==='shortlist'?'Shortlist':unifiedScoutScope==='find'?'Find':'All',unifiedScoutScope!=='all');
-    cap('[data-pop="filter"]',triageFilter==='quality'?'Attention':triageFilter==='ready'?'Ready':triageFilter==='starred'?'Starred':triageFilter==='locked'?'Locked':'All',triageFilter!=='all');
-    cap('[data-pop="sort"]',triageSort==='az'?'A–Z':triageSort==='change'?'24h':'Priority',triageSort!=='priority');
+    cap('[data-pop="filter"]',triageFilter==='quality'?'Attention':triageFilter==='ready'?'Ready':triageFilter==='gates'?'Can buy':triageFilter==='starred'?'Starred':triageFilter==='locked'?'Locked':'All',triageFilter!=='all');
+    cap('[data-pop="sort"]',triageSort==='az'?'A–Z':triageSort==='change'?'24h':triageSort==='green'?'Closest':'Priority',triageSort!=='priority');
     var view=box.querySelector('.triage-focus-icon[data-pop="view"]');
     if(view)view.setAttribute('aria-label','Rows: '+(triageFocusDensity==='compact'?'Compact':'Comfortable')+' · header options');
     cap('[data-pop="view"]',triageFocusDensity==='compact'?'Compact':'Comfortable',triageFocusDensity!=='compact');
@@ -13361,13 +13446,14 @@
     var q=String(triageQuery||'').trim().toLowerCase();
     return rows.filter(function(r){
       var t=r.pair.ticker,scope=unifiedScoutScope==='shortlist'?state.settings.watchlist.indexOf(t)>=0:true;
-      var filter=triageFilter==='all'||triageFilter==='review'&&r.review||triageFilter==='quality'&&!r.context.ready||triageFilter==='ready'&&r.context.ready&&!r.mismatch||triageFilter==='draft'&&r.mismatch||triageFilter==='starred'&&state.settings.watchlist.indexOf(t)>=0||triageFilter==='locked'&&!!scoutLockFor(t);
+      var filter=triageFilter==='all'||triageFilter==='review'&&r.review||triageFilter==='quality'&&!r.context.ready||triageFilter==='ready'&&r.context.ready&&!r.mismatch||triageFilter==='draft'&&r.mismatch||triageFilter==='starred'&&state.settings.watchlist.indexOf(t)>=0||triageFilter==='locked'&&!!scoutLockFor(t)||triageFilter==='gates'&&(function(){var g=r.ready||(r.ready=scoutReadiness(r,null));return g&&g.state==='ready';})();
       var kind=triageKind==='any'||r.kind===triageKind;
       var search=!q||(t+' '+String(r.pair.name||'')+' '+String(r.watch||'')).toLowerCase().indexOf(q)>=0;
       return scope&&filter&&kind&&search;
     }).sort(function(a,b){
       if(triageSort==='az')return a.pair.ticker.localeCompare(b.pair.ticker);
       if(triageSort==='change')return (b.change==null?-Infinity:b.change)-(a.change==null?-Infinity:a.change)||a.pair.ticker.localeCompare(b.pair.ticker);
+      if(triageSort==='green'){var gr=function(r){var g=r.ready||(r.ready=scoutReadiness(r,null));return (g&&g.judged?g.pass:-1);};return gr(b)-gr(a)||a.pair.ticker.localeCompare(b.pair.ticker);}
       var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};
       return rank(a)-rank(b)||a.pair.ticker.localeCompare(b.pair.ticker);
     });
@@ -13428,18 +13514,19 @@
     var healthTone=triageHealthTone(r),healthMarkup='<span class="triage-unified-health '+healthClass+' triage-tone triage-tone-'+healthTone+'" title="'+esc(triageToneWord(healthTone))+'">'+triageToneSign(healthTone)+'<span class="triage-tone-val">'+esc(health)+'</span></span>';
     var starAction='<button type="button" class="triage-unified-star '+(star?'on':'')+'" data-action="triage-star" data-ticker="'+ticker+'" aria-pressed="'+star+'" aria-label="'+(star?'Remove '+ticker+' from shortlist':'Add '+ticker+' to shortlist')+'">'+(star?'★':'☆')+'</button>';
     var lockAction='<button type="button" class="triage-unified-lock '+(locked?'on':'')+'" data-action="triage-lock" data-reason="HODL / existing exposure" data-ticker="'+ticker+'" aria-label="'+(locked?'Keep '+ticker+' locked':'Lock '+ticker+' in Scout')+'" title="'+(locked?esc(lock.reason):'Manual Scout lock')+'">'+(locked?'🔒':'Lock')+'</button>';
+    var gateMarkup=scoutGateMarkup(r);
     var removeAction=triageEdit?'<button type="button" class="triage-unified-remove" data-action="triage-remove" data-ticker="'+ticker+'" aria-label="Remove '+name+' from Scout">−</button>':'';
     var actions=removeAction+starAction+lockAction+'<button type="button" class="triage-unified-open '+openClass+'" data-action="triage-open" data-page-target="sizer" data-ticker="'+ticker+'" aria-label="'+(locked?'Locked · open checks for '+ticker:'Open '+ticker+' in Sizer')+'">'+openLabel+'</button>';
     var reviewActions=removeAction+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+ticker:'Inspect '+ticker)+'">'+(locked?'Research':'Inspect')+'</button>';
     if(scoutTriageLayoutValue()==='glance'){
-      return '<article class="triage-unified-row triage-combined-row '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-combined-main" data-action="triage-row" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-combined-head">'+combinedCoin+healthMarkup+'</span><span class="triage-combined-observation"><span><b>'+esc(trend)+'</b><span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span><em>'+watch+'</em></span></span><span class="triage-combined-next"><span><b>Observe</b> → test evidence · '+location+'</span><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</strong></span></button><div class="triage-combined-actions">'+reviewActions+'</div>'+
+      return '<article class="triage-unified-row triage-combined-row '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-combined-main" data-action="triage-row" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-combined-head">'+combinedCoin+healthMarkup+gateMarkup+'</span><span class="triage-combined-observation"><span><b>'+esc(trend)+'</b><span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span><em>'+watch+'</em></span></span><span class="triage-combined-next"><span><b>Observe</b> → test evidence · '+location+'</span><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</strong></span></button><div class="triage-combined-actions">'+reviewActions+'</div>'+
       (triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
     }
     if(scoutTriageLayoutValue()==='ledger'){
-      return '<article class="triage-unified-row triage-ledger-row '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-ledger-main" data-action="triage-row" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-ledger-identity">'+combinedCoin+'</span><span class="triage-ledger-signal"><b>'+esc(trend)+' <span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span></b><small>'+watch+'</small></span><span class="triage-ledger-health">'+healthMarkup+'</span><span class="triage-ledger-meta"><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong><small>'+location+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button><div class="triage-ledger-actions">'+reviewActions+'</div>'+
+      return '<article class="triage-unified-row triage-ledger-row '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-ledger-main" data-action="triage-row" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-ledger-identity">'+combinedCoin+'</span><span class="triage-ledger-signal"><b>'+esc(trend)+' <span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span></b><small>'+watch+'</small></span><span class="triage-ledger-health">'+healthMarkup+gateMarkup+'</span><span class="triage-ledger-meta"><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong><small>'+location+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button><div class="triage-ledger-actions">'+reviewActions+'</div>'+
       (triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
     }
-    return '<article class="triage-unified-row triage-scan-row '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-scan-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-scan-head">'+coin+healthMarkup+'</span><span class="triage-scan-evidence">'+evidence+'</span><span class="triage-scan-meta">'+changeMarkup+'<small>· '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button>'+actions+'</article>';
+    return '<article class="triage-unified-row triage-scan-row '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-scan-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-scan-head">'+coin+healthMarkup+gateMarkup+'</span><span class="triage-scan-evidence">'+evidence+'</span><span class="triage-scan-meta">'+changeMarkup+'<small>· '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button>'+actions+'</article>';
   }
   /* SCOUT-HUB-1 · add / remove / message plumbing for the rebuilt Scout.
      scoutToast is the only way a Scout message can reach the screen now that the Library
@@ -13905,4 +13992,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42e647c4b178cad',t:'MTc5MDcyMDYwOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42ed2074d7c97f8',t:'MTc5MDcyNTA5NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
