@@ -11446,13 +11446,83 @@
     store.coins[key]={identity:identity,code:o.code,reference:o.reference||o.priorReference,watch:o.watch,observedAt:now,barAt:o.barAt};trendPersist();
   }
   function triageMatches(rows){var q=triageQuery.trim().toLowerCase();return rows.filter(function(r){return (triageFilter==='all'||triageFilter==='review'&&r.review||triageFilter==='quality'&&!r.context.ready||triageFilter==='draft'&&r.mismatch)&&(triageKind==='any'||r.kind===triageKind)&&(!triageFav||state.settings.watchlist.indexOf(r.pair.ticker)>=0)&&(!q||(r.pair.ticker+' '+r.pair.name+' '+r.watch).toLowerCase().indexOf(q)>=0);}).sort(function(a,b){if(triageSort==='az')return a.pair.ticker.localeCompare(b.pair.ticker);if(triageSort==='change')return (b.change==null?-Infinity:b.change)-(a.change==null?-Infinity:a.change)||a.pair.ticker.localeCompare(b.pair.ticker);var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};return rank(a)-rank(b)||a.pair.ticker.localeCompare(b.pair.ticker);});}
+/* ======================= COIN-STATE-TONE-1 =======================
+   One colour language for state, used by the coin record, the Scout rows and the
+   coin-focus rows. It extends the four tones the market climate already uses
+   (good / mid / bad / unknown -> green / amber / red / grey) rather than inventing a
+   second vocabulary, and it keeps the rule that made that scale honest:
+
+     · no reading is grey, never red — every coin starts unfetched, and a screen that
+       is entirely red the first time you open it has no way left to say "bad"
+     · red is reserved for the two things that say "do not rely on this": a stored
+       draft more than 15% from the quote, and an episode whose hourly data was revised
+     · colour marks the state of the DATA, never a trade decision — a record can hold
+       a green reading and a red one at the same time
+     · colour is never the only signal: every coloured value keeps its word and carries
+       a sign, so the record still reads in greyscale, in bright sun, and to the
+       roughly 1 in 12 men who cannot separate red from green.
+*/
+  var TRIAGE_TONE_SIGN={ok:'M20 6L9 17l-5-5',warn:'M12 8.5v4.5M12 16.4v.01',bad:'M12 3.6l8.4 14.8H3.6zM12 9.6v3.6M12 16.1v.01',none:'M6.5 12h11'};
+  function triageToneSign(kind){
+    var d=TRIAGE_TONE_SIGN[kind];if(!d)return '';
+    return '<svg class="triage-tone-sign" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="'+d+'"/></svg>';
+  }
+  function triageToneWord(kind){
+    return kind==='ok'?'As intended':kind==='warn'?'Usable but dated':kind==='bad'?'Do not rely on it':kind==='none'?'No reading yet':'';
+  }
+  /* a value and its sign, in the colour of its state */
+  function triageTone(kind,text){
+    if(!kind)return esc(text);
+    return '<span class="triage-tone triage-tone-'+kind+'" title="'+esc(triageToneWord(kind))+'">'+triageToneSign(kind)+'<b>'+esc(text)+'</b></span>';
+  }
+  /* the same thing inside a chip that already has its own class */
+  function triageToneChip(kind,text,cls,extra){
+    return '<span class="'+cls+' triage-tone triage-tone-'+kind+'"'+(extra||'')+' title="'+esc(triageToneWord(kind))+'">'+
+      triageToneSign(kind)+'<b>'+esc(text)+'</b></span>';
+  }
+  function triageStaleMs(){return typeof STALE_MS!=='undefined'?STALE_MS:15*60*1000;}
+  /* quote freshness: live inside the app's own staleness window, stale past it,
+     grey when there is no quote at all */
+  function triageFreshTone(row){
+    var m=(row&&row.book&&row.book.market)||{},at=m.lastFetchedAt;
+    if(!at||!row.price)return 'none';
+    var age=Date.now()-new Date(at).getTime();
+    if(!(age>=0)||isNaN(age))return 'none';
+    return age>=triageStaleMs()?'warn':'ok';
+  }
+  /* the row / record verdict: a draft discrepancy is the one thing that is red */
+  function triageHealthTone(row){
+    if(!row)return 'none';
+    if(scoutLockFor(row.pair.ticker))return 'warn';
+    if(row.mismatch)return 'bad';
+    if(row.scanStatus==='failed')return 'warn';
+    if(row.scanStatus&&row.scanStatus!=='done')return 'none';
+    if(row.context&&row.context.ready)return 'ok';
+    return triageFreshTone(row)==='ok'?'warn':'none';
+  }
+  /* continuation: revised or broken structure is red, older or extended data amber,
+     "waiting" and "unavailable" are no reading */
+  function triageContTone(code){
+    if(code==='REVISED_BAR'||code==='STRUCTURE_BROKEN')return 'bad';
+    if(code==='OLDER_DATA'||code==='TOO_EXTENDED'||code==='ALREADY_ABOVE'||code==='BREAK_FAILED'||code==='EXPIRED')return 'warn';
+    if(!code||code==='DATA_UNAVAILABLE'||code==='ATR_UNAVAILABLE'||code==='WAIT_REFERENCE'||code==='WAIT_BREAK'||code==='OBSERVATIONS_MISSED')return 'none';
+    return 'ok';
+  }
+  /* the completed hour the reading rests on */
+  function triageBarTone(row){
+    var o=(row&&row.observation)||{};
+    if(!o.barAt)return 'none';
+    var age=Date.now()-new Date(o.barAt).getTime();
+    if(!(age>=0)||isNaN(age))return 'ok';
+    return age>=triageStaleMs()*4?'warn':'ok';
+  }
   function triageFocusRowHtml(r){
     var c=r.pair,scanPending=r.scanStatus&&r.scanStatus!=='done',scanFailed=r.scanStatus==='failed',lock=scoutLockFor(c.ticker),locked=!!lock,trend=scanFailed?'Outdated':scanPending?'Refreshing…':r.context.ready?(r.observation.trend||'Observed'):'Unknown',change=!scanPending&&!scanFailed&&r.change!=null?(r.change>=0?'+':'')+num(r.change,1)+'%':'—',star=state.settings.watchlist.indexOf(c.ticker)>=0,health=locked?'Locked':scanFailed?'Refresh incomplete':scanPending?'Pending':r.mismatch?'Check draft':r.context.ready?'Ready':'Needs data',healthClass=locked?'attention':r.context.ready&&!r.mismatch?'ready':r.mismatch?'attention':'unknown',ticker=esc(c.ticker),name=esc(c.name||c.ticker),price=esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched'),watch=scoutCueMarkup(unifiedScoutCompactWatch(r)),signalClass=scoutSignalClass(r,trend),location=esc(r.pos&&r.pos.word||'not checked');
     var starAction='<button type="button" class="triage-unified-star '+(star?'on':'')+'" data-action="triage-star" data-ticker="'+ticker+'" aria-pressed="'+star+'" aria-label="'+(star?'Remove '+ticker+' from shortlist':'Add '+ticker+' to shortlist')+'">'+(star?'★':'☆')+'</button>';
     var lockAction='<button type="button" class="triage-unified-lock '+(locked?'on':'')+'" data-action="triage-lock" data-reason="HODL / existing exposure" data-ticker="'+ticker+'" aria-label="'+(locked?'Keep '+ticker+' locked':'Lock '+ticker+' in Scout')+'" title="'+(locked?esc(lock.reason):'Manual Scout lock')+'">'+(locked?'🔒':'Lock')+'</button>';
     var reviewAction='<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+ticker:'Inspect '+ticker)+'">'+(locked?'Research':'Inspect')+'</button>';
     return '<article class="triage-focus-row '+signalClass+' '+(locked?'locked':'')+'" data-ticker="'+ticker+'">'+
-      '<span class="triage-focus-swipe" aria-hidden="true">Swipe right to refresh</span>'+'<button type="button" class="triage-focus-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-focus-identity"><b>'+ticker+'</b><small>'+price+'</small></span><span class="triage-focus-signal"><b>'+esc(trend)+' <span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span></b><small>'+watch+'</small></span><span class="triage-focus-health triage-unified-health '+healthClass+'">'+esc(health)+'</span><span class="triage-focus-meta"><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong><small>'+location+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button><div class="triage-focus-actions">'+starAction+lockAction+reviewAction+'</div></article>';
+      '<span class="triage-focus-swipe" aria-hidden="true">Swipe right to refresh</span>'+'<button type="button" class="triage-focus-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-focus-identity"><b>'+ticker+'</b><small>'+price+'</small></span><span class="triage-focus-signal"><b>'+esc(trend)+' <span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span></b><small>'+watch+'</small></span><span class="triage-focus-health triage-unified-health '+healthClass+' '+'triage-tone triage-tone-'+triageHealthTone(r)+'" title="'+esc(triageToneWord(triageHealthTone(r)))+'">'+triageToneSign(triageHealthTone(r))+'<b>'+esc(health)+'</b></span><span class="triage-focus-meta"><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong><small>'+location+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button><div class="triage-focus-actions">'+starAction+lockAction+reviewAction+'</div></article>';
   }
   /* COIN-FOCUS-RAIL-1 · the top of coin focus was five stacked rows of labelled controls
      (eyebrow + title + summary, search + sort + density, scope tabs, filter pills, status):
@@ -13234,9 +13304,9 @@
     var c=r.pair,scanPending=r.scanStatus&&r.scanStatus!=='done',scanFailed=r.scanStatus==='failed',lock=scoutLockFor(c.ticker),locked=!!lock,trend=scanFailed?'Outdated':scanPending?'Refreshing…':r.context.ready?(r.observation.trend||'Observed'):'Unknown',change=!scanPending&&!scanFailed&&r.change!=null?(r.change>=0?'+':'')+num(r.change,1)+'%':'—',star=state.settings.watchlist.indexOf(c.ticker)>=0,health=locked?'Locked':scanFailed?'Refresh incomplete':scanPending?'Pending':r.mismatch?'Check draft':r.context.ready?'Ready':'Needs data',healthClass=locked?'attention':r.context.ready&&!r.mismatch?'ready':r.mismatch?'attention':'unknown',ticker=esc(c.ticker),name=esc(c.name||c.ticker),price=esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched'),watchText=unifiedScoutCompactWatch(r),watch=scoutCueMarkup(watchText),signalClass=scoutSignalClass(r,trend),location=esc(r.pos&&r.pos.word||'not checked'),reason=locked?'<small class="triage-lock-note">🔒 '+esc(lock.reason)+'</small>':'',openClass=locked?'locked':'',openLabel=locked?'🔒 Locked':'Open';
     var coin='<span class="triage-unified-coin"><b>'+ticker+'</b><small>'+price+'</small>'+reason+'</span>';
     var combinedCoin='<span class="triage-unified-coin"><b>'+ticker+'</b><small>'+price+'</small></span>';
-    var evidence='<span class="triage-unified-watch"><b>'+esc(trend)+'</b><small>'+watch+'</small></span>';
+    var trendTone=scanFailed?'warn':scanPending?'none':(r.context&&r.context.ready)?'ok':'none',evidence='<span class="triage-unified-watch"><b class="triage-tone triage-tone-'+trendTone+'" title="'+esc(triageToneWord(trendTone))+'">'+triageToneSign(trendTone)+esc(trend)+'</b><small>'+watch+'</small></span>';
     var changeMarkup='<span class="triage-unified-change '+(r.change>0?'up':r.change<0?'down':'')+'"><b>'+esc(change)+'</b><small>'+location+'</small></span>';
-    var healthMarkup='<span class="triage-unified-health '+healthClass+'">'+esc(health)+'</span>';
+    var healthTone=triageHealthTone(r),healthMarkup='<span class="triage-unified-health '+healthClass+' triage-tone triage-tone-'+healthTone+'" title="'+esc(triageToneWord(healthTone))+'">'+triageToneSign(healthTone)+'<b>'+esc(health)+'</b></span>';
     var starAction='<button type="button" class="triage-unified-star '+(star?'on':'')+'" data-action="triage-star" data-ticker="'+ticker+'" aria-pressed="'+star+'" aria-label="'+(star?'Remove '+ticker+' from shortlist':'Add '+ticker+' to shortlist')+'">'+(star?'★':'☆')+'</button>';
     var lockAction='<button type="button" class="triage-unified-lock '+(locked?'on':'')+'" data-action="triage-lock" data-reason="HODL / existing exposure" data-ticker="'+ticker+'" aria-label="'+(locked?'Keep '+ticker+' locked':'Lock '+ticker+' in Scout')+'" title="'+(locked?esc(lock.reason):'Manual Scout lock')+'">'+(locked?'🔒':'Lock')+'</button>';
     var removeAction=triageEdit?'<button type="button" class="triage-unified-remove" data-action="triage-remove" data-ticker="'+ticker+'" aria-label="Remove '+name+' from Scout">−</button>':'';
@@ -13375,7 +13445,7 @@
     scoutToast(r.ticker + " restored.");
   }
   function unifiedScoutFindRowHtml(p){
-    return '<article class="triage-unified-row triage-find-row" data-ticker="'+esc(p.ticker)+'"><div class="triage-unified-main"><span class="triage-unified-coin"><b>'+esc(p.ticker)+'</b><small>'+esc(p.name||p.ticker)+'</small></span><span class="triage-unified-watch"><b>Available to add</b><small>Quote research starts only after Save / Peek</small></span><span class="triage-unified-change">—<small>not saved</small></span><span class="triage-unified-health unknown">Not saved</span></div><button type="button" class="triage-unified-open add" data-action="triage-add" data-ticker="'+esc(p.ticker)+'">＋ Add</button></article>';
+    return '<article class="triage-unified-row triage-find-row" data-ticker="'+esc(p.ticker)+'"><div class="triage-unified-main"><span class="triage-unified-coin"><b>'+esc(p.ticker)+'</b><small>'+esc(p.name||p.ticker)+'</small></span><span class="triage-unified-watch"><b>Available to add</b><small>Quote research starts only after Save / Peek</small></span><span class="triage-unified-change">—<small>not saved</small></span><span class="triage-unified-health triage-tone triage-tone-none" title="'+esc(triageToneWord('none'))+'">'+triageToneSign('none')+'<b>Not saved</b></span></div><button type="button" class="triage-unified-open add" data-action="triage-add" data-ticker="'+esc(p.ticker)+'">＋ Add</button></article>';
   }
   function renderTriage(){
     var compact=scoutPhoneLayout();
@@ -13480,15 +13550,15 @@
     var btn=panel&&panel.querySelector('[data-action="triage-record-step"]');
     if(btn)btn.focus({preventScroll:true});
   }
-  function triageRecordSection(key,label,hint,inner){
+  function triageRecordSection(key,label,hint,inner,hintTone){
     var open=!!triageRecordSections[key];
     return '<div class="triage-record-section'+(open?' open':'')+'">'+
       '<button type="button" class="triage-record-sec" data-action="triage-record-sec" data-key="'+key+'" aria-expanded="'+(open?'true':'false')+'">'+
-        '<span>'+esc(label)+(hint?'<em>'+esc(hint)+'</em>':'')+'</span><i>&rsaquo;</i></button>'+
+        '<span>'+esc(label)+(hint?'<em'+(hintTone?' class="triage-tone triage-tone-'+hintTone+'"':'')+'>'+(hintTone?triageToneSign(hintTone):'')+esc(hint)+'</em>':'')+'</span><i>&rsaquo;</i></button>'+
       (open?'<div class="triage-record-sec-in">'+inner+'</div>':'')+'</div>';
   }
   function triageRecordNote(text){return '<p class="triage-record-note">'+esc(text)+'</p>';}
-  function triageRecordKv(label,value){return '<div class="triage-record-kv"><span>'+esc(label)+'</span><b>'+esc(value)+'</b></div>';}
+  function triageRecordKv(label,value,tone){return '<div class="triage-record-kv"><span>'+esc(label)+'</span><span class="triage-tone'+(tone?' triage-tone-'+tone:'')+'"'+(tone?' title="'+esc(triageToneWord(tone))+'"':'')+'>'+(tone?triageToneSign(tone):'')+'<b>'+esc(value)+'</b></span></div>';}
 
   function triageInspectorHtml(r){
     if(!r)return '<div class="triage-empty"><b>Select a saved coin to inspect.</b><p>Find / add records can be added to the same inventory without opening another library.</p></div>';
@@ -13508,7 +13578,7 @@
         visible=triageRecordRows(),
         at=-1,i;
     for(i=0;i<visible.length;i++)if(visible[i].pair.ticker===r.pair.ticker){at=i;break;}
-    var pos=visible.length>1&&at>=0?' · '+(at+1)+' of '+visible.length:'';
+    var verdictTone=triageHealthTone(r),pos=visible.length>1&&at>=0?' · '+(at+1)+' of '+visible.length:'';
 
     /* --- lock ------------------------------------------------------------- */
     var reasons=['HODL / existing exposure','Do not open','Research only'],
@@ -13516,25 +13586,27 @@
           return '<button type="button" data-action="triage-lock" data-ticker="'+esc(r.pair.ticker)+'" data-reason="'+esc(reason)+'"'+
             (lock&&lock.reason===reason?' class="selected"':'')+'>'+esc(reason)+'</button>';
         }).join(''),
-        lockInner=triageRecordKv('State',lock?('🔒 Locked · '+lock.reason):'Not manually locked')+
+        lockInner=triageRecordKv('State',lock?('🔒 Locked · '+lock.reason):'Not manually locked',lock?'warn':'none')+
           '<p class="triage-record-note">'+esc(lock?'This lock is independent of Journal history. Research remains available; the Sizer handoff is guarded.':'Set a manual lock even when no Journal log exists. It is saved with the account and follows you across devices.')+'</p>'+
           '<div class="triage-lock-options">'+lockButtons+'</div>'+
           (lock?'<button type="button" class="triage-unlock" data-action="triage-unlock" data-ticker="'+esc(r.pair.ticker)+'">Unlock for Sizer review</button>':'')+
           triageRecordNote('Manual locks are Scout workflow controls, not Journal rows. Market remains available for research; Sizer is deliberately guarded until unlock.');
 
     /* --- evidence --------------------------------------------------------- */
-    var evidenceInner=triageRecordKv('Structure reference',ref)+
-      triageRecordKv('Continuation',continuation)+
-      triageRecordKv('Draft audit',r.mismatch?'Needs review':'Not evaluated in Scout')+
-      triageRecordKv('Observed hour',bar)+
+    var contTone=triageContTone(r.continuation&&r.continuation.code),barTone=triageBarTone(r),
+        evidenceInner=triageRecordKv('Structure reference',ref,ref==='unavailable'?'none':'ok')+
+      triageRecordKv('Continuation',continuation,contTone)+
+      triageRecordKv('Draft audit',r.mismatch?'Needs review':'Not evaluated in Scout',r.mismatch?'bad':'none')+
+      triageRecordKv('Observed hour',bar,barTone)+
       triageRecordNote('Evidence is read-only — inspecting a coin sends no market request. A stored draft more than 15% from the quote is an audit flag, not a trade rule; no draft is rewritten.');
 
     /* --- how this reads --------------------------------------------------- */
-    var methodInner='<ul class="triage-record-steps">'+
-      '<li><i>1 · Observed</i><span>'+esc(obs)+'</span><em>Completed hour: '+esc(bar)+'</em></li>'+
-      '<li><i>2 · Test</i><span>'+esc(test)+'</span><em>Later completed data can confirm or reject it.</em></li>'+
-      '<li><i>3 · Feasibility</i><span>'+esc(health)+'</span><em>'+esc(source)+' · '+esc(r.fresh.label)+'</em></li>'+
-      '<li><i>4 · Practical</i><span>'+esc(practical)+'</span><em>No ticket, order or risk change is made here.</em></li>'+
+    var freshTone=triageFreshTone(r),obsTone=ready?'ok':'none',
+        methodInner='<ul class="triage-record-steps">'+
+      '<li><i>1 · Observed</i><span class="triage-tone triage-tone-'+obsTone+'" title="'+esc(triageToneWord(obsTone))+'">'+triageToneSign(obsTone)+'<b>'+esc(obs)+'</b></span><em>Completed hour: '+esc(bar)+'</em></li>'+
+      '<li><i>2 · Test</i><span class="triage-tone triage-tone-'+contTone+'" title="'+esc(triageToneWord(contTone))+'">'+triageToneSign(contTone)+'<b>'+esc(test)+'</b></span><em>Later completed data can confirm or reject it.</em></li>'+
+      '<li><i>3 · Feasibility</i><span class="triage-tone triage-tone-'+freshTone+'" title="'+esc(triageToneWord(freshTone))+'">'+triageToneSign(freshTone)+'<b>'+esc(health)+'</b></span><em>'+esc(source)+' · '+esc(r.fresh.label)+'</em></li>'+
+      '<li><i>4 · Practical</i><span class="triage-tone triage-tone-none" title="'+esc(triageToneWord('none'))+'">'+triageToneSign('none')+'<b>'+esc(practical)+'</b></span><em>No ticket, order or risk change is made here.</em></li>'+
     '</ul>'+triageRecordNote('Watch cues are hypotheses, not entry approval.');
 
     /* --- the jump list ---------------------------------------------------- */
@@ -13544,7 +13616,7 @@
         return '<button type="button" data-action="triage-record-jump-to" data-ticker="'+esc(row.pair.ticker)+'"'+
           (row.pair.ticker===r.pair.ticker?' class="current"':'')+'>'+
           '<b>'+esc(row.pair.ticker)+'</b><small>'+esc(row.pair.name||'')+'</small>'+
-          '<span class="triage-record-chip '+triageRecordHealthClass(row)+'">'+esc(triageRecordHealth(row))+'</span></button>';
+          triageToneChip(triageHealthTone(row),triageRecordHealth(row),'triage-record-chip')+'</button>';
       }).join('');
       jumpHtml='<div class="triage-record-jump">'+
         '<div class="triage-record-jump-head"><b>Jump to a coin</b>'+
@@ -13562,16 +13634,16 @@
         '<button type="button" class="triage-record-ico'+(star?' on':'')+'" data-action="triage-star" data-ticker="'+esc(r.pair.ticker)+'" aria-pressed="'+star+'" aria-label="'+(star?'Remove from shortlist':'Add to shortlist')+'">'+(star?'★':'☆')+'</button>'+
         '<button type="button" class="triage-record-ico triage-inspector-close" data-action="triage-close" aria-label="Close inspector">×</button>'+
       '</header>'+
-      '<div class="triage-record-price"><b>'+esc(price)+'</b><small>'+esc(fresh)+'</small></div>'+
+      '<div class="triage-record-price"><b>'+esc(price)+'</b>'+triageToneChip(triageFreshTone(r),fresh,'triage-record-chip')+'</div>'+
       '<div class="triage-record-chips">'+
-        '<span class="triage-record-chip '+healthClass+'">'+esc(health)+'</span>'+
+        triageToneChip(verdictTone,health,'triage-record-chip')+
         '<span class="triage-record-chip info">Read-only</span>'+
-        (lock?'<span class="triage-record-chip attention">🔒 Locked · Sizer guarded</span>':'')+
+        (lock?triageToneChip('warn','🔒 Locked · Sizer guarded','triage-record-chip'):'')+
       '</div>'+
       '<div class="triage-record-hyp"><small>Hypothesis</small><b>'+esc(hypothesis)+'</b></div>'+
       '<div class="triage-record-body" id="triage-record-body">'+
         (triageRecordJump?jumpHtml:
-          triageRecordSection('lock','Scout lock',lock?('locked · '+lock.reason):'not locked',lockInner)+
+          triageRecordSection('lock','Scout lock',lock?('locked · '+lock.reason):'not locked',lockInner,lock?'warn':'none')+
           triageRecordSection('evidence','Evidence','4 readings',evidenceInner)+
           triageRecordSection('method','How this reads','4 steps',methodInner))+
       '</div>'+
@@ -13714,4 +13786,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42b68322eb4eb1a',t:'MTc5MDY4OTMwMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42bdbda5da2ccb2',t:'MTc5MDY5NDA0MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

@@ -7278,5 +7278,45 @@ body.command-strip-mode:not(.training) #main{padding-bottom:calc(8px + env(safe-
 #main #triage-record-refresh.pri{border-color:var(--accent);background:var(--accent);color:#fff}
 #main #triage-record-sizer.locked{border-color:var(--yellow);background:var(--yellow-bg);color:var(--yellow)}
 
+/* ---------- COIN-STATE-TONE-1 · one colour language for state ----------
+   Four tones, the same ones the market climate already uses. No reading is grey,
+   never red: every coin starts unfetched, and a screen that is red the first time
+   you open it has nothing left to say "bad" with. Colour marks the state of the
+   data, never a trade decision, and it is never the only signal — every value keeps
+   its word and carries a sign. */
+#main .triage-tone{display:inline-flex;align-items:center;gap:3px;min-width:0}
+#main .triage-tone>b{font-weight:600;min-width:0}
+#main .triage-tone-sign{width:10px;height:10px;flex:0 0 auto}
+#main .triage-tone-ok{color:var(--green)}
+#main .triage-tone-warn{color:var(--yellow)}
+#main .triage-tone-bad{color:var(--red)}
+#main .triage-tone-none{color:var(--muted)}
+/* chips: the state owns the chip, so the tone has to beat the chip's own colour */
+#main .triage-record-chip.triage-tone-ok{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+#main .triage-record-chip.triage-tone-warn{background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow)}
+#main .triage-record-chip.triage-tone-bad{background:#3a1620;color:var(--red);border-color:var(--red)}
+#main .triage-record-chip.triage-tone-none{background:#16233a;color:var(--muted);border-color:var(--line)}
+#main .triage-unified-health.triage-tone-bad{background:#3a1620;color:var(--red)}
+#main .triage-unified-health.triage-tone-ok{background:var(--green-bg);color:var(--green)}
+#main .triage-unified-health.triage-tone-warn{background:var(--yellow-bg);color:var(--yellow)}
+#main .triage-unified-health.triage-tone-none{background:var(--input);color:var(--muted)}
+/* a long value — a fetched timestamp, for instance — wraps onto a second line rather
+   than being cut off: the chip is the only place that date is written */
+#main .triage-record-chip.triage-tone{white-space:normal;max-width:100%;overflow-wrap:anywhere}
+#main .triage-record-sec em.triage-tone{display:inline-flex;align-items:center;gap:3px}
+#main .triage-record-sec em .triage-tone-sign{width:9px;height:9px}
+/* places where the page already sets a colour more specifically than a single tone
+   class can reach — the tone has to meet the selector that owns it and beat it */
+#main .triage-record-kv span.triage-tone-ok,#main .triage-record-sec em.triage-tone-ok,#main .triage-unified-watch b.triage-tone-ok{color:var(--green)}
+#main .triage-record-kv span.triage-tone-warn,#main .triage-record-sec em.triage-tone-warn,#main .triage-unified-watch b.triage-tone-warn{color:var(--yellow)}
+#main .triage-record-kv span.triage-tone-bad,#main .triage-record-sec em.triage-tone-bad,#main .triage-unified-watch b.triage-tone-bad{color:var(--red)}
+#main .triage-record-kv span.triage-tone-none,#main .triage-record-sec em.triage-tone-none,#main .triage-unified-watch b.triage-tone-none{color:var(--muted)}
+/* the health chip is a fixed width, so the sign has to earn its 9px without pushing
+   the word onto a second line */
+#main .triage-unified-health .triage-tone{justify-content:center;gap:2px;max-width:100%}
+#main .triage-unified-health .triage-tone-sign{width:9px;height:9px}
+#main .triage-unified-health .triage-tone>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#main .triage-unified-watch b.triage-tone,#main .triage-focus-signal b.triage-tone{gap:3px}
+
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42b686f6ddfeb1a',t:'MTc5MDY4OTMxMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42bdc34ae29ccb2',t:'MTc5MDY5NDA1NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
