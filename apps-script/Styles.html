@@ -7315,5 +7315,21 @@ body.command-strip-mode:not(.training) #main{padding-bottom:calc(8px + env(safe-
 #main .triage-unified-health .triage-tone-val{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #main .triage-unified-watch b.triage-tone,#main .triage-focus-signal b.triage-tone{gap:3px}
 
+
+/* ---------- CUE-DISTANCE-1 · what a waiting gate is waiting for ----------
+   A gate reading "82.9 / below 60" leaves the arithmetic to you. These two lines state
+   the distance and, where the score cannot reach its gate today, say so. Descriptive
+   only: what the gate is waiting for, never a price to act on. */
+.cd-check-need,.cd-check-cap{display:flex;align-items:flex-start;gap:5px;margin-top:5px;
+  padding:5px 7px;border-radius:7px;font-size:10px;line-height:1.45;text-align:left;
+  overflow-wrap:anywhere}
+.cd-check-need{background:#101725;border:1px dashed var(--line);color:var(--yellow)}
+.cd-check-cap{background:rgba(255,113,142,.12);border:1px solid #6e2437;color:var(--red)}
+.cd-check-need b,.cd-check-cap b{font-weight:600}
+.cd-check-need .triage-tone-sign,.cd-check-cap .triage-tone-sign{width:9px;height:9px;
+  flex:0 0 auto;margin-top:3px}
+.cd-cue-need,.cd-cue-cap{margin:8px 0 0;padding:8px 10px;border-radius:8px;font-size:11.5px;line-height:1.5}
+.cd-cue-need{background:#101725;border:1px dashed var(--line);color:var(--yellow)}
+.cd-cue-cap{background:rgba(255,113,142,.12);border:1px solid #6e2437;color:var(--red)}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42d5b501e5f6ab1',t:'MTc5MDcwOTc0Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42d6c8cc8736a3d',t:'MTc5MDcxMDQ1Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
