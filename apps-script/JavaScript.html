@@ -11454,9 +11454,189 @@
     return '<article class="triage-focus-row '+signalClass+' '+(locked?'locked':'')+'" data-ticker="'+ticker+'">'+
       '<span class="triage-focus-swipe" aria-hidden="true">Swipe right to refresh</span>'+'<button type="button" class="triage-focus-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-focus-identity"><b>'+ticker+'</b><small>'+price+'</small></span><span class="triage-focus-signal"><b>'+esc(trend)+' <span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span></b><small>'+watch+'</small></span><span class="triage-focus-health triage-unified-health '+healthClass+'">'+esc(health)+'</span><span class="triage-focus-meta"><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong><small>'+location+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button><div class="triage-focus-actions">'+starAction+lockAction+reviewAction+'</div></article>';
   }
-  function triageFocusOverlayHtml(){
-    return '<aside id="triage-focus" class="triage-focus" hidden role="dialog" aria-modal="true" aria-labelledby="triage-focus-title"><header class="triage-focus-head"><div class="triage-focus-title"><div><small>SCOUT · COIN FOCUS</small><h2 id="triage-focus-title">Coin focus</h2><p id="triage-focus-summary">'+libraryPairs().length+' saved records · compact comparison view</p></div><button type="button" class="triage-focus-close" data-action="triage-focus-close">Close</button></div><div class="triage-focus-tools"><div class="triage-focus-search"><input id="triage-focus-search" type="search" placeholder="Search coins…" aria-label="Search coins in focus list" value="'+esc(triageQuery)+'"><button type="button" data-action="triage-focus-clear" aria-label="Clear focus search">×</button></div><select id="triage-focus-sort" class="triage-focus-sort" aria-label="Sort coins">'+[['priority','Priority'],['az','A–Z'],['change','24h']].map(function(o){return '<option value="'+o[0]+'"'+(triageSort===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select><button type="button" class="triage-focus-density" data-action="triage-focus-density" aria-pressed="true">Comfortable</button></div><div class="triage-focus-scope" role="tablist" aria-label="Coin record scope">'+[['shortlist','Shortlist'],['all','All coins'],['find','Find / add']].map(function(o){return '<button type="button" data-action="triage-scope" data-scope="'+o[0]+'" role="tab" aria-selected="'+(unifiedScoutScope===o[0])+'">'+o[1]+'</button>';}).join('')+'</div><div class="triage-focus-filters"><button type="button" data-action="triage-filter" data-filter="all">All · '+libraryPairs().length+'</button><button type="button" data-action="triage-filter" data-filter="quality">Needs attention</button><button type="button" data-action="triage-filter" data-filter="ready">Research ready</button><button type="button" data-action="triage-filter" data-filter="starred">★ Starred</button><button type="button" data-action="triage-filter" data-filter="locked">🔒 Locked</button></div></header><div class="triage-focus-status"><span id="triage-focus-status-text">All coins · scrollable list</span><span id="triage-focus-count">Showing '+libraryPairs().length+' of '+libraryPairs().length+'</span></div><div id="triage-focus-rows" class="triage-focus-rows" tabindex="0" aria-label="Full-screen Scout coin records"></div><div class="triage-focus-progress" id="triage-focus-progress" role="status" aria-live="polite" hidden></div><div class="triage-focus-bar" id="triage-focus-bar"><button id="triage-focus-refresh" type="button" data-action="triage-refresh">Refresh all</button><button id="triage-focus-retry" type="button" class="ghost" data-action="triage-retry" hidden>Retry failed</button><button id="triage-focus-cancel" type="button" class="ghost" data-action="triage-cancel" hidden>Cancel queued</button></div><footer class="triage-focus-footer">Research is read-only · Scout locks do not create Journal rows · <b>'+libraryPairs().length+' total records</b></footer></aside>';
+  /* COIN-FOCUS-RAIL-1 · the top of coin focus was five stacked rows of labelled controls
+     (eyebrow + title + summary, search + sort + density, scope tabs, filter pills, status):
+     236px of an 844px screen before the first coin. Everything is now one 34px rail of
+     icon buttons. Each button carries a 7px caption with its current value, so no state
+     is hidden — you can always see that you are on Shortlist, or filtered to Attention —
+     and each opens one small menu that carries the words that used to sit on the row.
+     The search box only exists while you are using it; collapsing it clears the query
+     rather than leaving a filter you cannot see. Option B from the review (fold the rail
+     away while you scroll) is kept in the Rows / Header menu, off by default. */
+  var triageFocusSearchOpen=false,triageFocusPop='',triageFocusFolded=false,triageFocusHeaderMode='fixed';
+  try{triageFocusHeaderMode=(localStorage.getItem('cj.focus.headermode')==='auto')?'auto':'fixed';}catch(err){}
+  function triageIcon(name){
+    var p='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">';
+    if(name==='search')return p+'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.7-3.7"/></svg>';
+    if(name==='scope')return p+'<rect x="3.5" y="7.5" width="11" height="11" rx="2"/><path d="M8.5 7.5V5.5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2"/></svg>';
+    if(name==='filter')return p+'<path d="M3.5 5.5h17l-6.7 7.7v5.8l-3.6 1.8v-7.6z"/></svg>';
+    if(name==='sort')return p+'<path d="M7 4.5v15M4 16.5l3 3 3-3M14 6.5h6M14 11.5h4.5M14 16.5h2.5"/></svg>';
+    if(name==='density')return p+'<path d="M4 6.5h16M4 12h16M4 17.5h16"/></svg>';
+    if(name==='close')return p+'<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>';
+    return '';
   }
+  /* inline SVG, not text glyphs: the embedded font subset has no arrows or funnel, and a
+     missing glyph would leave a blank button on a phone we cannot test on. */
+  function triageFocusIconBtn(o){
+    return '<button type="button" class="triage-focus-icon'+(o.on?' on':'')+(o.cls?' '+o.cls:'')+'" data-action="'+o.act+'"'+
+      (o.pop?' data-pop="'+o.pop+'" aria-haspopup="true"':'')+' aria-expanded="false" aria-label="'+esc(o.label)+'" title="'+esc(o.label)+'">'+
+      triageIcon(o.icon)+'<b>'+esc(o.cap||'')+'</b></button>';
+  }
+  function triageFocusSearchRow(){
+    return '<div class="triage-focus-searchrow" id="triage-focus-searchrow" hidden><div class="triage-focus-search">'+
+      '<input id="triage-focus-search" type="search" placeholder="Search coins…" aria-label="Search coins in focus list" value="'+esc(triageQuery)+'">'+
+      '<button type="button" data-action="triage-focus-clear" aria-label="Clear focus search">×</button></div></div>';
+  }
+  function triageFocusCounts(){
+    var list=triageCache||[],star=(state.settings&&state.settings.watchlist)||[];
+    return {all:list.length,
+      quality:list.filter(function(r){return !r.context.ready;}).length,
+      ready:list.filter(function(r){return r.context.ready&&!r.mismatch;}).length,
+      starred:list.filter(function(r){return star.indexOf(r.pair.ticker)>=0;}).length,
+      locked:list.filter(function(r){return !!scoutLockFor(r.pair.ticker);}).length};
+  }
+  function triageFocusPopHtml(kind){
+    function item(act,attr,val,label,count,on){
+      return '<button type="button" role="menuitemradio" aria-checked="'+(on?'true':'false')+'" class="triage-focus-popitem'+(on?' on':'')+
+        '" data-action="'+act+'" '+attr+'="'+val+'"><span>'+label+'</span>'+(count==null?'':'<b>'+count+'</b>')+'</button>';
+    }
+    function group(title,rows){return '<div class="triage-focus-popgroup"><span>'+title+'</span>'+rows.join('')+'</div>';}
+    var out='';
+    if(kind==='scope'){
+      out=group('Scope',[['shortlist','Shortlist'],['all','All coins'],['find','Find / add']].map(function(o){
+        return item('triage-scope','data-scope',o[0],o[1],null,unifiedScoutScope===o[0]);}));
+    }else if(kind==='filter'){
+      var c=triageFocusCounts();
+      out=group('Filter',[['all','All',c.all],['quality','Needs attention',c.quality],['ready','Research ready',c.ready],
+        ['starred','★ Starred',c.starred],['locked','🔒 Locked',c.locked]].map(function(o){
+        return item('triage-filter','data-filter',o[0],o[1],o[2],triageFilter===o[0]);}));
+    }else if(kind==='sort'){
+      out=group('Sort',[['priority','Review priority'],['az','Symbol A–Z'],['change','24h change']].map(function(o){
+        return item('triage-focus-sort','data-sort',o[0],o[1],null,triageSort===o[0]);}));
+    }else if(kind==='view'){
+      out=group('Rows',[['compact','Compact'],['comfortable','Comfortable']].map(function(o){
+        return item('triage-focus-density-set','data-density',o[0],o[1],null,triageFocusDensity===o[0]);}))
+        +group('Header',[['fixed','Always show'],['auto','Fold away while scrolling']].map(function(o){
+        return item('triage-focus-header-set','data-header',o[0],o[1],null,triageFocusHeaderMode===o[0]);}));
+    }
+    return out+'<button type="button" class="triage-focus-popclose" data-action="triage-focus-pop-close">Close menu</button>';
+  }
+  function triageFocusPopOpen(kind){
+    var box=document.getElementById('triage-focus'),pop=document.getElementById('triage-focus-pop');
+    if(!box||!pop)return;
+    triageFocusPop=kind;
+    pop.innerHTML=triageFocusPopHtml(kind);
+    pop.hidden=false;
+    box.querySelectorAll('.triage-focus-icon[data-pop]').forEach(function(b){
+      var on=b.getAttribute('data-pop')===kind;
+      b.setAttribute('aria-expanded',on?'true':'false');
+      b.classList.toggle('open',on);});
+  }
+  function triageFocusPopClose(){
+    triageFocusPop='';
+    var pop=document.getElementById('triage-focus-pop');
+    if(pop){pop.hidden=true;pop.innerHTML='';}
+    var box=document.getElementById('triage-focus');
+    if(box)box.querySelectorAll('.triage-focus-icon[data-pop]').forEach(function(b){b.setAttribute('aria-expanded','false');b.classList.remove('open');});
+  }
+  function triageFocusSyncSearch(){
+    var row=document.getElementById('triage-focus-searchrow');
+    if(!row)return;
+    var show=!!(triageFocusSearchOpen||triageQuery);
+    row.hidden=!show;
+    var btn=document.querySelector('#triage-focus [data-action="triage-focus-search-toggle"]');
+    if(btn){btn.setAttribute('aria-expanded',show?'true':'false');btn.classList.toggle('on',!!triageQuery);}
+  }
+  function triageFocusSearchToggle(){
+    triageFocusPopClose();
+    var row=document.getElementById('triage-focus-searchrow');
+    if(row&&!row.hidden){
+      /* collapsing a search that still holds text would leave a filter you cannot see */
+      if(triageQuery){triageQuery='';triageFocusSearchOpen=false;triageUpdate(false);return;}
+      triageFocusSearchOpen=false;triageFocusSyncSearch();
+    }else{
+      triageFocusSearchOpen=true;triageFocusSyncSearch();
+      var input=document.getElementById('triage-focus-search');
+      if(input)input.focus({preventScroll:true});
+    }
+  }
+  var triageFocusFoldAt=0;
+  function triageFocusFold(on){
+    var box=document.getElementById('triage-focus');
+    if(!box)return;
+    if(!!on===triageFocusFolded&&box.classList.contains('folded')===triageFocusFolded)return;
+    triageFocusFolded=!!on;
+    box.classList.toggle('folded',triageFocusFolded);
+    /* Folding changes the height of the list, so the browser clamps scrollTop and fires
+       another scroll event. Without this stamp that second event reads as a scroll up and
+       unfolds again — an oscillation that looked like the fold simply not working. */
+    triageFocusFoldAt=Date.now();
+    if(triageFocusFolded)triageFocusPopClose();
+  }
+  function triageFocusWireScroll(){
+    var rows=document.getElementById('triage-focus-rows');
+    if(!rows||rows.getAttribute('data-foldwired'))return;
+    rows.setAttribute('data-foldwired','1');
+    var last=0;
+    rows.addEventListener('scroll',function(){
+      var top=rows.scrollTop;
+      if(Date.now()-triageFocusFoldAt<280){last=top;return;}   /* our own reflow, not the reader */
+      if(triageFocusHeaderMode!=='auto'){if(triageFocusFolded)triageFocusFold(false);last=top;return;}
+      if(top<=40)triageFocusFold(false);
+      else if(top>last+4)triageFocusFold(true);
+      else if(top<last-4)triageFocusFold(false);
+      last=top;
+    },{passive:true});
+  }
+  function triageFocusOverlayHtml(){
+    var n=libraryPairs().length;
+    var scopeCap=unifiedScoutScope==='shortlist'?'Shortlist':unifiedScoutScope==='find'?'Find':'All';
+    var filterCap=triageFilter==='quality'?'Attention':triageFilter==='ready'?'Ready':triageFilter==='starred'?'Starred':triageFilter==='locked'?'Locked':'All';
+    var sortCap=triageSort==='az'?'A–Z':triageSort==='change'?'24h':'Priority';
+    var densityCap=triageFocusDensity==='compact'?'Compact':'Comfortable';
+    return '<aside id="triage-focus" class="triage-focus'+(triageFocusHeaderMode==='auto'?' triage-focus-foldable':'')+'" hidden role="dialog" aria-modal="true" aria-labelledby="triage-focus-title">'+
+      '<header class="triage-focus-head">'+
+        '<div class="triage-focus-titleline" data-action="triage-focus-fold"><h2 id="triage-focus-title">Coin focus</h2><p id="triage-focus-summary">'+n+' coins</p></div>'+
+        '<div class="triage-focus-rail" role="group" aria-label="Coin focus controls">'+
+          triageFocusIconBtn({act:'triage-focus-search-toggle',icon:'search',label:'Search coins',on:!!triageQuery})+
+          triageFocusIconBtn({act:'triage-focus-pop',pop:'scope',icon:'scope',label:'Scope',cap:scopeCap,on:unifiedScoutScope!=='all'})+
+          triageFocusIconBtn({act:'triage-focus-pop',pop:'filter',icon:'filter',label:'Filter',cap:filterCap,on:triageFilter!=='all'})+
+          triageFocusIconBtn({act:'triage-focus-pop',pop:'sort',icon:'sort',label:'Sort',cap:sortCap,on:triageSort!=='priority'})+
+          triageFocusIconBtn({act:'triage-focus-view',pop:'view',icon:'density',label:'Rows and header',cap:densityCap,on:triageFocusDensity!=='compact'})+
+          triageFocusIconBtn({act:'triage-focus-close',icon:'close',label:'Close coin focus',cls:'triage-focus-close'})+
+        '</div>'+
+        triageFocusSearchRow()+
+        '<div class="triage-focus-pop" id="triage-focus-pop" role="menu" aria-label="Coin focus options" hidden></div>'+
+      '</header>'+
+      '<div class="triage-focus-status"><span id="triage-focus-status-text">All coins · swipe a row right to refresh it</span><span id="triage-focus-count">Showing '+n+' of '+n+'</span></div>'+
+      '<div id="triage-focus-rows" class="triage-focus-rows'+(triageFocusDensity==='compact'?' compact':'')+'" tabindex="0" aria-label="Full-screen Scout coin records"></div>'+
+      '<div class="triage-focus-progress" id="triage-focus-progress" role="status" aria-live="polite" hidden></div>'+
+      '<div class="triage-focus-bar" id="triage-focus-bar"><button id="triage-focus-refresh" type="button" data-action="triage-refresh">Refresh all</button><button id="triage-focus-retry" type="button" class="ghost" data-action="triage-retry" hidden>Retry failed</button><button id="triage-focus-cancel" type="button" class="ghost" data-action="triage-cancel" hidden>Cancel queued</button></div>'+
+      '<footer class="triage-focus-footer">Read-only research · <b>'+n+' records</b></footer>'+
+    '</aside>';
+  }
+  function triageFocusSyncRail(){
+    var box=document.getElementById('triage-focus');if(!box)return;
+    function cap(sel,text,on){
+      var el=box.querySelector('.triage-focus-icon'+sel);if(!el)return;
+      var b=el.querySelector('b');if(b&&text!=null)b.textContent=text;
+      el.classList.toggle('on',!!on);}
+    cap('[data-pop="scope"]',unifiedScoutScope==='shortlist'?'Shortlist':unifiedScoutScope==='find'?'Find':'All',unifiedScoutScope!=='all');
+    cap('[data-pop="filter"]',triageFilter==='quality'?'Attention':triageFilter==='ready'?'Ready':triageFilter==='starred'?'Starred':triageFilter==='locked'?'Locked':'All',triageFilter!=='all');
+    cap('[data-pop="sort"]',triageSort==='az'?'A–Z':triageSort==='change'?'24h':'Priority',triageSort!=='priority');
+    var view=box.querySelector('.triage-focus-icon[data-pop="view"]');
+    if(view)view.setAttribute('aria-label','Rows: '+(triageFocusDensity==='compact'?'Compact':'Comfortable')+' · header options');
+    cap('[data-pop="view"]',triageFocusDensity==='compact'?'Compact':'Comfortable',triageFocusDensity!=='compact');
+  }
+
+  /* a tap anywhere outside the menu dismisses it; taps on a rail button or inside the
+     menu are the main handler's business, not this one's */
+  document.addEventListener('click',function(e){
+    if(!triageFocusPop)return;
+    var t=e.target;
+    if(t&&t.closest&&(t.closest('#triage-focus-pop')||t.closest('.triage-focus-icon[data-pop]')))return;
+    triageFocusPopClose();
+  });
   /* COIN-FOCUS-REFRESH-1 · the full-screen coin focus overlay had no way to start,
      retry or steer a refresh: the only toolbar that existed was the one it covers on
      the page underneath. This mirrors that toolbar inside the overlay. The progress
@@ -11577,12 +11757,16 @@
     document.body.classList.add('triage-focus-open');
     document.body.style.overflow='hidden';
     triageFocusUpdate(unifiedScoutMatches(triageCache),unifiedScoutScope==='find'?unifiedScoutFindPairs():[]);
+    if(triageFocusSearchFocus)triageFocusSearchOpen=true;
+    triageFocusSyncSearch();
     var rows=document.getElementById('triage-focus-rows');
     if(rows&&triageFocusScroll)rows.scrollTop=triageFocusScroll;
     if(triageFocusSearchFocus){
       var input=document.getElementById('triage-focus-search');
       if(input){input.focus({preventScroll:true});try{input.setSelectionRange(triageFocusCaret,triageFocusCaret);}catch(err){}}
     }
+    if(triageFocusPop)triageFocusPopOpen(triageFocusPop);
+    triageFocusWireScroll();
   }
   function triageFocusKeepState(){
     if(!triageFocusMode)return;
@@ -11601,7 +11785,7 @@
     host.innerHTML=html||'<p class="triage-empty"><b>No records match this view.</b><br>Change the search or filter. No result is also useful information.</p>';
     host.classList.toggle('compact',triageFocusDensity==='compact');
     var search=document.getElementById('triage-focus-search');if(search&&search.value!==triageQuery)search.value=triageQuery;
-    var density=document.querySelector('#triage-focus [data-action="triage-focus-density"]');if(density){density.textContent=triageFocusDensity==='compact'?'Comfortable':'Compact';density.setAttribute('aria-pressed',triageFocusDensity==='compact');}
+    triageFocusSyncSearch();triageFocusSyncRail();
     document.querySelectorAll('#triage-focus [data-action="triage-filter"]').forEach(function(b){b.classList.toggle('on',b.dataset.filter===triageFilter);b.setAttribute('aria-pressed',b.dataset.filter===triageFilter);});
     /* COIN-FOCUS-SCOPE-1 · scope used to be reachable only by closing coin focus */
     document.querySelectorAll('#triage-focus [data-action="triage-scope"]').forEach(function(b){
@@ -11609,17 +11793,19 @@
     var sortEl=document.getElementById('triage-focus-sort');
     if(sortEl&&sortEl.value!==triageSort)sortEl.value=triageSort;
     var summary=document.getElementById('triage-focus-summary'),status=document.getElementById('triage-focus-status-text'),count=document.getElementById('triage-focus-count');
-    if(summary)summary.textContent=(unifiedScoutScope==='find'?source.length:triageCache.length)+' saved records · '+(triageFocusDensity==='compact'?'compact':'comfortable')+' comparison view';
+    if(summary)summary.textContent=(unifiedScoutScope==='find'?source.length+' found':triageCache.length+' coins'+(source.length!==triageCache.length?' · '+source.length+' shown':''));
     if(status)status.textContent=unifiedScoutScope==='find'?'Find / add · scrollable list':(triageFilter==='all'?'All coins':'Filtered view')+' · swipe a row right to refresh it';
     if(count)count.textContent='Showing '+source.length+' of '+(unifiedScoutScope==='find'?findRows.length:triageCache.length);
     triageFocusSyncBar(source);
+    if(triageFocusPop)triageFocusPopOpen(triageFocusPop);
+    triageFocusWireScroll();
   }
   function triageFocusOpenMode(){
     var box=document.getElementById('triage-focus');if(!box)return;
-    triageFocusReturn=document.activeElement;triageFocusOldOverflow=document.body.style.overflow;triageFocusMode=true;triageFocusScroll=0;triageFocusSearchFocus=false;document.body.classList.add('triage-focus-open');document.body.style.overflow='hidden';box.hidden=false;box.classList.add('open');triageFocusUpdate(unifiedScoutMatches(triageCache),unifiedScoutScope==='find'?unifiedScoutFindPairs():[]);var close=box.querySelector('[data-action="triage-focus-close"]');if(close)close.focus();
+    triageFocusReturn=document.activeElement;triageFocusOldOverflow=document.body.style.overflow;triageFocusMode=true;triageFocusScroll=0;triageFocusSearchFocus=false;triageFocusSearchOpen=false;triageFocusPop='';triageFocusFolded=false;document.body.classList.add('triage-focus-open');document.body.style.overflow='hidden';box.hidden=false;box.classList.add('open');triageFocusUpdate(unifiedScoutMatches(triageCache),unifiedScoutScope==='find'?unifiedScoutFindPairs():[]);var close=box.querySelector('[data-action="triage-focus-close"]');if(close)close.focus();
   }
   function triageFocusClose(){
-    var box=document.getElementById('triage-focus');if(box){box.hidden=true;box.classList.remove('open');}
+    var box=document.getElementById('triage-focus');if(box){box.hidden=true;box.classList.remove('open','folded');}triageFocusPop='';triageFocusSearchOpen=false;triageFocusFolded=false;
     if(triageSheet)triageClose();
     if(!triageFocusMode)return;
     triageFocusMode=false;triageFocusSearchFocus=false;document.body.classList.remove('triage-focus-open');document.body.style.overflow=triageFocusOldOverflow||'';if(triageFocusReturn&&triageFocusReturn.isConnected)triageFocusReturn.focus({preventScroll:true});triageFocusReturn=null;
@@ -11740,13 +11926,21 @@
     watchlistToast='Refreshing selected snapshot: '+list.length+' coins. Filters do not change this queued list.';drainScoutPeekQueue();triageUpdate(false);
   }
   document.addEventListener('click',function(e){var b=e.target.closest('[data-action]');if(!b)return;var a=b.getAttribute('data-action');if(a.indexOf('triage-')!==0)return;e.preventDefault();e.stopImmediatePropagation();var t=b.getAttribute('data-ticker');
-    if(a==='triage-scope'){unifiedScoutScope=b.dataset.scope||'all';triageFav=unifiedScoutScope==='shortlist';triageFilter='all';triageKind='any';triageUpdate(false);document.getElementById('triage-rows').scrollTop=0;triageFocusScroll=0;var fr=document.getElementById('triage-focus-rows');if(fr)fr.scrollTop=0;}
+    if(a==='triage-scope'){unifiedScoutScope=b.dataset.scope||'all';triageFav=unifiedScoutScope==='shortlist';triageFilter='all';triageKind='any';triageFocusPopClose();triageUpdate(false);document.getElementById('triage-rows').scrollTop=0;triageFocusScroll=0;var fr=document.getElementById('triage-focus-rows');if(fr)fr.scrollTop=0;}
     else if(a==='triage-add'){var addPair=pairByTicker(t);if(addPair){upsertCustomCoin(addPair);ensureCoinBook(t);unifiedScoutScope='all';triageSelected=t;triageQuery='';triageRemoved=null;save();render();scoutToast(t+' added to Scout. Nothing is fetched until you refresh it.');}}
-    else if(a==='triage-filter'){triageFilter=b.dataset.filter;triageKind='any';triageUpdate(false);document.getElementById('triage-rows').scrollTop=0;}
+    else if(a==='triage-filter'){triageFilter=b.dataset.filter;triageKind='any';triageFocusPopClose();triageUpdate(false);document.getElementById('triage-rows').scrollTop=0;}
     else if(a==='triage-kind'){triageKind=b.dataset.kind;triageUpdate(false);}
     else if(a==='triage-fav'){triageFav=!triageFav;triageUpdate(false);}
     else if(a==='triage-clear'){triageQuery='';document.getElementById('triage-search').value='';triageUpdate(false);document.getElementById('triage-search').focus();}
     else if(a==='triage-focus-open')triageFocusOpenMode();
+    else if(a==='triage-focus-search-toggle')triageFocusSearchToggle();
+    else if(a==='triage-focus-pop'){var popKind=b.getAttribute('data-pop');if(triageFocusPop===popKind)triageFocusPopClose();else triageFocusPopOpen(popKind);}
+    else if(a==='triage-focus-view'){if(triageFocusPop==='view')triageFocusPopClose();else triageFocusPopOpen('view');}
+    else if(a==='triage-focus-pop-close')triageFocusPopClose();
+    else if(a==='triage-focus-density-set'){triageFocusDensity=b.getAttribute('data-density')==='comfortable'?'comfortable':'compact';triageFocusPopClose();triageFocusUpdate(unifiedScoutMatches(triageCache),unifiedScoutScope==='find'?unifiedScoutFindPairs():[]);}
+    else if(a==='triage-focus-header-set'){triageFocusHeaderMode=b.getAttribute('data-header')==='auto'?'auto':'fixed';try{localStorage.setItem('cj.focus.headermode',triageFocusHeaderMode);}catch(err){}triageFocusPopClose();var fbox=document.getElementById('triage-focus');if(fbox)fbox.classList.toggle('triage-focus-foldable',triageFocusHeaderMode==='auto');if(triageFocusHeaderMode!=='auto')triageFocusFold(false);}
+    else if(a==='triage-focus-sort'){triageSort=b.getAttribute('data-sort')||'priority';triageFocusPopClose();triageUpdate(false);}
+    else if(a==='triage-focus-fold'){if(triageFocusHeaderMode==='auto')triageFocusFold(!triageFocusFolded);}
     else if(a==='triage-focus-close')triageFocusClose();
     else if(a==='triage-focus-density')triageFocusToggleDensity();
     else if(a==='triage-focus-clear'){triageQuery='';var focusSearch=document.getElementById('triage-focus-search');if(focusSearch)focusSearch.value='';triageUpdate(false);if(focusSearch)focusSearch.focus();}
@@ -11781,7 +11975,7 @@
   document.addEventListener('keydown',function(e){if(!triageSheet)return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();triageClose();}else if(e.key==='Tab'){var list=Array.prototype.slice.call(document.querySelectorAll('#triage-inspector button:not([disabled])')),first=list[0],last=list[list.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}},true);
   document.addEventListener('keydown',function(e){
     if(!triageFocusMode||triageSheet)return;
-    if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();triageFocusClose();return;}
+    if(e.key==='Escape'){if(triageFocusPop){e.preventDefault();e.stopImmediatePropagation();triageFocusPopClose();return;}e.preventDefault();e.stopImmediatePropagation();triageFocusClose();return;}
     if(e.key==='Tab'){
       var items=Array.prototype.slice.call(document.querySelectorAll('#triage-focus button:not([disabled]),#triage-focus input:not([disabled]),#triage-focus [tabindex="0"]')).filter(function(el){return !el.hidden&&el.getClientRects().length;}),first=items[0],last=items[items.length-1];
       if(!first)return;
@@ -13199,4 +13393,4 @@
   pullCloud();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4269cc5f945a5d0',t:'MTc5MDYzOTAyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42a11ddecee8cad',t:'MTc5MDY3NTI4MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
