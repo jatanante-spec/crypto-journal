@@ -7285,12 +7285,15 @@ body.command-strip-mode:not(.training) #main{padding-bottom:calc(8px + env(safe-
    data, never a trade decision, and it is never the only signal — every value keeps
    its word and carries a sign. */
 #main .triage-tone{display:inline-flex;align-items:center;gap:3px;min-width:0}
-#main .triage-tone>b{font-weight:600;min-width:0}
+/* The value takes nothing from the container it sits in. Several containers style <b>
+   and <span> by element (the price row sets 21px, the record sheet 12px) and inherited
+   values lose to any matching rule, so the value carries its own class and resets. */
+#main .triage-tone>.triage-tone-val{font:inherit;font-weight:600;color:inherit;line-height:inherit;letter-spacing:inherit;text-align:inherit;text-transform:inherit;min-width:0}
 #main .triage-tone-sign{width:10px;height:10px;flex:0 0 auto}
-#main .triage-tone-ok{color:var(--green)}
-#main .triage-tone-warn{color:var(--yellow)}
-#main .triage-tone-bad{color:var(--red)}
-#main .triage-tone-none{color:var(--muted)}
+#main .triage-tone.triage-tone-ok{color:var(--green)}
+#main .triage-tone.triage-tone-warn{color:var(--yellow)}
+#main .triage-tone.triage-tone-bad{color:var(--red)}
+#main .triage-tone.triage-tone-none{color:var(--muted)}
 /* chips: the state owns the chip, so the tone has to beat the chip's own colour */
 #main .triage-record-chip.triage-tone-ok{background:var(--green-bg);color:var(--green);border-color:var(--green)}
 #main .triage-record-chip.triage-tone-warn{background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow)}
@@ -7305,18 +7308,12 @@ body.command-strip-mode:not(.training) #main{padding-bottom:calc(8px + env(safe-
 #main .triage-record-chip.triage-tone{white-space:normal;max-width:100%;overflow-wrap:anywhere}
 #main .triage-record-sec em.triage-tone{display:inline-flex;align-items:center;gap:3px}
 #main .triage-record-sec em .triage-tone-sign{width:9px;height:9px}
-/* places where the page already sets a colour more specifically than a single tone
-   class can reach — the tone has to meet the selector that owns it and beat it */
-#main .triage-record-kv span.triage-tone-ok,#main .triage-record-sec em.triage-tone-ok,#main .triage-unified-watch b.triage-tone-ok{color:var(--green)}
-#main .triage-record-kv span.triage-tone-warn,#main .triage-record-sec em.triage-tone-warn,#main .triage-unified-watch b.triage-tone-warn{color:var(--yellow)}
-#main .triage-record-kv span.triage-tone-bad,#main .triage-record-sec em.triage-tone-bad,#main .triage-unified-watch b.triage-tone-bad{color:var(--red)}
-#main .triage-record-kv span.triage-tone-none,#main .triage-record-sec em.triage-tone-none,#main .triage-unified-watch b.triage-tone-none{color:var(--muted)}
 /* the health chip is a fixed width, so the sign has to earn its 9px without pushing
    the word onto a second line */
 #main .triage-unified-health .triage-tone{justify-content:center;gap:2px;max-width:100%}
 #main .triage-unified-health .triage-tone-sign{width:9px;height:9px}
-#main .triage-unified-health .triage-tone>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#main .triage-unified-health .triage-tone-val{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #main .triage-unified-watch b.triage-tone,#main .triage-focus-signal b.triage-tone{gap:3px}
 
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42beb92ee194482',t:'MTc5MDY5NDY4NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a42c113acb25b78a',t:'MTc5MDY5NjIyNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
