@@ -7396,85 +7396,120 @@ body:not(.command-strip-mode) .sizer-screen{padding-bottom:calc(130px + env(safe
 #main .triage-compact-page .triage-combined-observation b{font-size:12px;font-weight:700}
 #main .triage-compact-page .triage-combined-observation .triage-gate-mark{font-size:11px;font-weight:700;white-space:nowrap}
 
-/* ===== MERGED SCOUT HEADER BAR — one card replaces three stacked blocks ===== */
-/* Saves ~62px of chrome above the coin list on phones. All existing IDs, data-action
-   attributes, and querySelector targets are preserved inside the merged bar. */
-#main .triage-compact-page .triage-merged-bar{
-  border:1px solid var(--line);border-radius:12px;
-  background:var(--panel);padding:6px 8px;margin-bottom:5px;
-  position:relative
+/* ===== WHISPER BAR — ultra-slim single-row scout header ===== */
+/* One 36px row + one 18px sub-row ≈ 54px total. Search is always visible inline.
+   All existing IDs, data-action attributes, and querySelector targets preserved. */
+#main .triage-compact-page .triage-whisper-bar{position:relative;margin-bottom:4px}
+/* Main row: left title | center search+filters | right actions */
+#main .triage-compact-page .triage-whisper-main{
+  display:flex;align-items:center;gap:0;height:36px;
+  border-bottom:1px solid rgba(30,53,88,.4);background:rgba(10,18,32,.6)
 }
-/* Row 1: title + live counts + Plans / Edit pills */
-#main .triage-compact-page .triage-merged-top{
-  display:flex;align-items:center;gap:6px;min-height:26px
+/* Left: title + badge */
+#main .triage-compact-page .triage-whisper-left{
+  display:flex;align-items:center;gap:5px;padding:0 10px;height:100%;
+  border-right:1px solid rgba(30,53,88,.3)
 }
-#main .triage-compact-page .triage-merged-top h2{
-  font-size:14px;font-weight:700;letter-spacing:-.03em;
-  margin:0;flex:0 0 auto;line-height:1
+#main .triage-compact-page .triage-whisper-left h2{
+  font-size:11px;font-weight:700;letter-spacing:-.03em;margin:0;white-space:nowrap;line-height:1
 }
-#main .triage-compact-page .triage-merged-counts{
-  flex:1;min-width:0;font-size:9px;color:var(--muted);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+#main .triage-compact-page .triage-whisper-badge{
+  font-size:7px;color:var(--muted);font-family:var(--mono);
+  padding:2px 5px;border-radius:4px;background:rgba(30,53,88,.3);white-space:nowrap
 }
-#main .triage-compact-page .triage-merged-top-actions{
-  display:flex;align-items:center;gap:4px;flex:0 0 auto
+/* Center: search + filter chips — .triage-combined-controls so sync functions find it */
+#main .triage-compact-page .triage-whisper-center{
+  flex:1;min-width:0;display:flex;align-items:center;gap:4px;padding:0 8px;height:100%
 }
-#main .triage-compact-page .triage-merged-top .triage-plans-button{
-  padding:4px 8px;font-size:8px;min-height:24px;
-  border:1px solid var(--line);border-radius:8px;
-  background:var(--panel-2);color:var(--muted);font-weight:750;white-space:nowrap
+#main .triage-compact-page .triage-whisper-search{
+  flex:1;min-width:0;display:flex;align-items:center;gap:4px;
+  height:24px;padding:0 6px;border:1px solid transparent;border-radius:6px;
+  background:transparent;transition:all .15s
 }
-#main .triage-compact-page .triage-merged-top .triage-plans-button:hover{border-color:var(--accent)}
-#main .triage-compact-page .triage-merged-top .triage-edit-button{
-  padding:4px 8px;font-size:8px;min-height:24px;
-  border:1px solid var(--line);border-radius:8px;
-  background:var(--panel-2);color:var(--muted);font-weight:750;white-space:nowrap
+#main .triage-compact-page .triage-whisper-search:focus-within{
+  border-color:rgba(61,125,255,.3);background:rgba(17,31,53,.5)
 }
-#main .triage-compact-page .triage-merged-top .triage-edit-button.on{
-  border-color:var(--accent);background:rgba(61,125,255,.2);color:var(--text)
+#main .triage-compact-page .triage-whisper-search svg{flex:0 0 auto;width:11px;height:11px;color:#4a6080}
+#main .triage-compact-page .triage-whisper-search input{
+  flex:1;min-width:0;border:0;background:transparent;color:var(--text);
+  font-size:9px;font-family:inherit;outline:none;height:100%
 }
-#main .triage-compact-page .triage-merged-top .triage-edit-button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-/* Row 2: strip the controls rail of its card chrome — it sits inside the merged bar */
-#main .triage-compact-page .triage-merged-bar .triage-combined-controls{
-  border:none;border-radius:0;background:transparent;
-  padding:4px 0 0;margin-bottom:0
+#main .triage-compact-page .triage-whisper-search input::placeholder{color:#4a6080}
+/* Override triage-focus-icon for whisper chip style */
+#main .triage-compact-page .triage-whisper-center .triage-focus-icon{
+  flex:0 0 auto;height:24px;padding:0 6px;min-width:0;min-height:0;
+  border:1px solid transparent;border-radius:6px;
+  background:transparent;color:var(--muted);
+  font-size:8px;font-weight:700;
+  display:flex;flex-direction:row;align-items:center;gap:2px
 }
-/* Smaller icon buttons inside the merged bar */
-#main .triage-compact-page .triage-merged-bar .triage-focus-icon{
-  min-height:28px;padding:2px 2px;border-radius:6px
+#main .triage-compact-page .triage-whisper-center .triage-focus-icon svg{width:10px;height:10px;flex:0 0 auto}
+#main .triage-compact-page .triage-whisper-center .triage-focus-icon b{font-size:8px;max-width:100%;overflow:hidden;white-space:nowrap}
+#main .triage-compact-page .triage-whisper-center .triage-focus-icon:hover{border-color:rgba(30,53,88,.6);color:var(--text)}
+#main .triage-compact-page .triage-whisper-center .triage-focus-icon.on{color:#b8d0ff;background:rgba(61,125,255,.08)}
+#main .triage-compact-page .triage-whisper-center .triage-focus-icon.open{color:#b8d0ff;background:rgba(61,125,255,.15)}
+#main .triage-compact-page .triage-whisper-center .triage-focus-icon.triage-add-jump{
+  color:var(--accent);font-size:13px;width:24px;padding:0;justify-content:center;border-color:transparent
 }
-#main .triage-compact-page .triage-merged-bar .triage-focus-icon svg{width:13px;height:13px}
-#main .triage-compact-page .triage-merged-bar .triage-focus-icon b{font-size:6.5px}
-/* Row 3: strip the status bar chrome */
-#main .triage-compact-page .triage-merged-bar .triage-combined-status{padding:3px 0 0}
-/* Compact status action buttons inside merged bar — two ids beat the command-strip
-   :not() clauses that would otherwise force 38px height */
-#main .triage-compact-page .triage-merged-bar #triage-focus-open,
-#main .triage-compact-page .triage-merged-bar #triage-refresh,
-#main .triage-compact-page .triage-merged-bar #triage-retry,
-#main .triage-compact-page .triage-merged-bar #triage-cancel{
-  min-height:24px!important;padding:2px 6px!important;
-  border:1px solid #3d67a0!important;border-radius:6px!important;
-  background:#17335b!important;color:#dceaff!important;font-size:8px!important;
-  white-space:nowrap
+/* Right: focus + refresh */
+#main .triage-compact-page .triage-whisper-right{
+  display:flex;align-items:center;gap:3px;padding:0 8px;height:100%;
+  border-left:1px solid rgba(30,53,88,.3)
 }
-/* Toast row sits outside the merged bar */
+#main .triage-compact-page .triage-whisper-micro{
+  height:24px;padding:0 6px;border:0;border-radius:6px;
+  background:transparent;color:var(--muted);font-size:8px;font-weight:600;
+  font-family:inherit;cursor:pointer;white-space:nowrap;transition:all .15s
+}
+#main .triage-compact-page .triage-whisper-micro:hover{color:var(--text);background:rgba(30,53,88,.3)}
+#main .triage-compact-page .triage-whisper-micro.pri{color:var(--accent);font-weight:700}
+#main .triage-compact-page .triage-whisper-micro:disabled{opacity:.4}
+/* Two ids beat the command-strip :not() clauses */
+#main .triage-compact-page #triage-focus-open,
+#main .triage-compact-page #triage-refresh,
+#main .triage-compact-page #triage-retry,
+#main .triage-compact-page #triage-cancel{
+  height:24px!important;padding:0 6px!important;border:0!important;
+  border-radius:6px!important;background:transparent!important;
+  color:var(--muted)!important;font-size:8px!important;font-weight:600!important;white-space:nowrap
+}
+#main .triage-compact-page #triage-focus-open{color:var(--accent)!important;font-weight:700!important}
+/* Sub row: counts + plans/edit */
+#main .triage-compact-page .triage-whisper-sub{
+  display:flex;align-items:center;gap:4px;padding:2px 10px 3px;
+  font-size:7px;color:#4a6080;background:rgba(10,18,32,.6);
+  border-bottom:1px solid rgba(30,53,88,.2)
+}
+#main .triage-compact-page .triage-whisper-sub-actions{display:flex;gap:3px;margin-left:auto}
+#main .triage-compact-page .triage-whisper-sub .triage-plans-button{
+  height:18px;padding:0 5px;font-size:7px;border:1px solid var(--line);
+  border-radius:5px;background:transparent;color:var(--muted);font-weight:700;white-space:nowrap
+}
+#main .triage-compact-page .triage-whisper-sub .triage-plans-button:hover{border-color:var(--accent)}
+#main .triage-compact-page .triage-whisper-sub .triage-edit-button{
+  height:18px;padding:0 5px;font-size:7px;border:1px solid var(--line);
+  border-radius:5px;background:transparent;color:var(--muted);font-weight:700;white-space:nowrap
+}
+#main .triage-compact-page .triage-whisper-sub .triage-edit-button.on{
+  border-color:var(--accent);background:rgba(61,125,255,.15);color:var(--text)
+}
+/* Pop menu: relative to whisper-center (has position via .triage-combined-controls) */
+#main .triage-compact-page .triage-whisper-center{position:relative}
+#main .triage-compact-page .triage-whisper-center .triage-pop{
+  position:absolute;top:100%;left:8px;right:8px;z-index:40;margin-top:4px;padding:4px;
+  border:1px solid #315c9a;border-radius:10px;background:#122a4b;
+  box-shadow:0 16px 34px rgba(0,0,0,.55)
+}
+/* Toast row */
 #main .triage-compact-page .triage-toast-row{margin:4px 0}
-/* Hide plans button on very small screens */
-@media(max-width:650px){
-  #main .triage-compact-page .triage-merged-top .triage-plans-button{display:none}
+/* Fold: hide entire whisper bar when scrolling */
+#main .triage-page.folded .triage-whisper-bar{display:none}
+/* Responsive */
+@media(max-width:500px){
+  #main .triage-compact-page .triage-whisper-left{padding:0 6px}
+  #main .triage-compact-page .triage-whisper-right{padding:0 5px}
+  #main .triage-compact-page .triage-whisper-sub .triage-plans-button{display:none}
 }
-/* Override individual fold rules inside merged bar — the bar itself handles fold.
-   Without this override, .foldable limits inner elements to 70px and the merged bar
-   would show a gap below them. */
-#main .triage-compact-page .triage-merged-bar .triage-rail,
-#main .triage-compact-page .triage-merged-bar .triage-searchrow,
-#main .triage-compact-page .triage-merged-bar .triage-combined-status{
-  max-height:none!important;transition:none!important;
-  opacity:1!important;overflow:visible!important
-}
-/* Fold the entire merged bar when the "fold away while scrolling" setting is active */
-#main .triage-page.folded .triage-merged-bar{display:none}
 
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a432e23e5e8714fb',t:'MTc5MDc2NzcwMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a43647a8fcebeb18',t:'MTc5MDgwMzMxNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a432e23e5e8714fb',t:'MTc5MDc2NzcwMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4368bd5eefe88d3',t:'MTc5MDgwNjEwNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

@@ -1,4 +1,4 @@
-<script>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=Cx8NRYSOppZe4_FNFNO3QKO-sCugfnV9PkcmpMp3_1GJbPoJY-nVuk3c3Tj6btpGjjv1BtzcfSYW6Z5MUEEAkTDi1X-qnsR8vZ0jlPFXRz-nNV564PmvqiDOF24nym2aHGRO-HxvJ7EJdnjUz1vQ8g" charset="UTF-8"></script><script>
 (function () {
   var KEY = "crypto-scalping-journal-v1";
   /* Startup surface is a device-local presentation preference. It remembers only the
@@ -13672,9 +13672,46 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
       ? triagePageStatusHtml()
       : '<div class="triage-scanbar"><span id="triage-scan-status"></span><button id="triage-refresh" type="button" data-action="triage-refresh">Refresh visible</button><button id="triage-all" type="button" data-action="triage-all">Refresh all saved</button><button id="triage-retry" type="button" data-action="triage-retry">Retry failed</button><button id="triage-resume" type="button" data-action="triage-resume" hidden>Resume queue</button><button id="triage-cancel" type="button" data-action="triage-cancel">Cancel queued</button></div>';
     if(compact){
+      var scopeCap=unifiedScoutScope==='shortlist'?'List':unifiedScoutScope==='find'?'Find':'All';
+      var filterCap=triageFilter==='quality'?'Attn':triageFilter==='ready'?'Ready':triageFilter==='gates'?'Buy':triageFilter==='starred'?'★':triageFilter==='locked'?'🔒':'All';
+      var sortCap=triageSort==='az'?'A–Z':triageSort==='change'?'24h':triageSort==='green'?'Near':'Pri';
+      var whisperBar='<div class="triage-whisper-bar">'+
+        '<div class="triage-whisper-main">'+
+          '<div class="triage-whisper-left">'+
+            '<h2>Scout</h2>'+
+            '<span class="triage-whisper-badge" id="triage-hub-counts">'+
+              libraryPairs().length+' saved · '+state.settings.watchlist.length+' ★</span>'+
+          '</div>'+
+          '<div class="triage-whisper-center triage-combined-controls">'+
+            '<div class="triage-whisper-search">'+
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.7-3.7"/></svg>'+
+              '<input id="triage-search" type="search" placeholder="Search coins…" aria-label="Search coins" value="'+esc(triageQuery)+'">'+
+            '</div>'+
+            triageFocusIconBtn({act:'triage-pop',pop:'scope',icon:'scope',label:'Scope',cap:scopeCap,on:unifiedScoutScope!=='all'})+
+            triageFocusIconBtn({act:'triage-pop',pop:'filter',icon:'filter',label:'Filter',cap:filterCap,on:triageFilter!=='all'})+
+            triageFocusIconBtn({act:'triage-pop',pop:'sort',icon:'sort',label:'Sort',cap:sortCap,on:triageSort!=='priority'})+
+            triageFocusIconBtn({act:'triage-add-jump',icon:'plus',label:'Add a coin',cls:'triage-add-jump'})+
+          '</div>'+
+          '<div class="triage-whisper-right">'+
+            '<button id="triage-focus-open" type="button" class="triage-whisper-micro pri" data-action="triage-focus-open" aria-label="Open full-screen coin focus">⛶ Focus</button>'+
+            '<button id="triage-refresh" type="button" class="triage-whisper-micro" data-action="triage-refresh">↻ Refresh</button>'+
+            '<button id="triage-retry" type="button" class="triage-whisper-micro" data-action="triage-retry" hidden>Retry</button>'+
+            '<button id="triage-cancel" type="button" class="triage-whisper-micro" data-action="triage-cancel" hidden>Cancel</button>'+
+          '</div>'+
+        '</div>'+
+        '<div class="triage-whisper-sub">'+
+          '<span id="triage-combined-summary">0 shown</span>'+
+          '<span id="triage-scan-status" hidden></span>'+
+          '<div class="triage-whisper-sub-actions">'+
+            '<button type="button" class="triage-plans-button" data-action="plans-jump">Plans <b>'+normalisePlans(state.plans).length+'</b></button>'+
+            '<button type="button" class="triage-edit-button'+(triageEdit?' on':'')+'" data-action="triage-edit" aria-pressed="'+triageEdit+'">'+(triageEdit?'Done':'Edit')+'</button>'+
+          '</div>'+
+        '</div>'+
+        '<div class="triage-pop" id="triage-pop" role="menu" aria-label="Scout options" hidden></div>'+
+      '</div>';
       return '<section class="triage-page triage-compact-page'+(triageFocusHeaderMode==='auto'?' foldable':'')+'">'+
         '<div id="triage-scrim" hidden data-action="triage-close"></div>'+
-        '<div class="triage-merged-bar">'+head+tools+status+'</div>'+
+        whisperBar+
         '<div class="triage-toast-row" id="triage-toast-row"'+((watchlistToast||triageRemoved)?'':' hidden')+'>'+
           '<p id="triage-toast" class="triage-toast" role="status" aria-live="polite">'+esc(watchlistToast||'')+'</p>'+
           '<button id="triage-undo-remove" type="button" data-action="triage-undo"'+(triageRemoved?'':' hidden')+'>Undo</button>'+
@@ -14017,4 +14054,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a432f29b6e70a14b',t:'MTc5MDc2ODM3Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a436471d1b3eeb18',t:'MTc5MDgwMzI5MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a432f29b6e70a14b',t:'MTc5MDc2ODM3Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4368ba35b8788d3',t:'MTc5MDgwNjA5OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
