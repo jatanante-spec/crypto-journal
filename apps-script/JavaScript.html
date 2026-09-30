@@ -1,4 +1,4 @@
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=L_sO_-Qb0RT1INu71Bjv2lyi4dHlNo23lnNbvp7Y5SJnut_1dRQ0R6-yFXZwSDbP0UOI0yIXzRtlkEZgw_0Dc9x0lu7jbU1eAqmJQT5wRDUxDF7rCVerzjePHr-cNHbPlderZLOAfKqYBWP3pRmv1Q" charset="UTF-8"></script><script>
+<script>
 (function () {
   var KEY = "crypto-scalping-journal-v1";
   /* Startup surface is a device-local presentation preference. It remembers only the
@@ -11793,27 +11793,25 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
     var scopeCap=unifiedScoutScope==='shortlist'?'Shortlist':unifiedScoutScope==='find'?'Find':'All';
     var filterCap=triageFilter==='quality'?'Attention':triageFilter==='ready'?'Ready':triageFilter==='gates'?'Can buy':triageFilter==='starred'?'Starred':triageFilter==='locked'?'Locked':'All';
     var sortCap=triageSort==='az'?'A–Z':triageSort==='change'?'24h':triageSort==='green'?'Closest':'Priority';
-    return '<div class="triage-combined-controls" style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#0a1120;border:1px solid #1a2840;">'+
-      '<div class="triage-rail" role="group" aria-label="Scout controls" style="display:flex;gap:6px;flex-wrap:wrap;">'+
-        triageFocusIconBtn({act:'triage-search-toggle',icon:'search',label:'Search',on:!!triageQuery})+
+    return '<div class="triage-combined-controls">'+
+      '<div class="triage-rail" role="group" aria-label="Scout controls">'+
+        triageFocusIconBtn({act:'triage-search-toggle',icon:'search',label:'Search or find a coin',on:!!triageQuery})+
+        triageFocusIconBtn({act:'triage-pop',pop:'scope',icon:'scope',label:'Scope',cap:scopeCap,on:unifiedScoutScope!=='all'})+
         triageFocusIconBtn({act:'triage-pop',pop:'filter',icon:'filter',label:'Filter',cap:filterCap,on:triageFilter!=='all'})+
-      '</div>'+
-      '<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;border:1px solid #2a3d5a;background:#15243f;color:#8896ab;font-size:10px;font-family:inherit;font-family:monospace;">'+
-        '<span>21 need attention</span>'+
-        '<span style="color:#4adeb2;font-weight:700;">·</span>'+
-        '<span>'+libraryPairs().length+' saved</span>'+
-      '</div>'+
-      '</div>';
+        triageFocusIconBtn({act:'triage-pop',pop:'sort',icon:'sort',label:'Sort',cap:sortCap,on:triageSort!=='priority'})+
+        triageFocusIconBtn({act:'triage-pop',pop:'view',icon:'density',label:'Header options',cap:'Header',on:triageFocusHeaderMode==='auto'})+
+        triageFocusIconBtn({act:'triage-add-jump',icon:'plus',label:'Add a coin',cls:'triage-add-jump'})+
+      '</div>'+triagePageSearchRow()+
+      '<div class="triage-pop" id="triage-pop" role="menu" aria-label="Scout options" hidden></div></div>';
   }
   function triagePageStatusHtml(){
-    return '<div class="triage-combined-status" id="triage-combined-summary" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 10px;border-radius:8px;background:#0a1120;border:1px solid #1a2840;font-size:11px;color:#8896ab;font-family:monospace;">'+
-      '<span style="font-weight:600;color:#fff;letter-spacing:-0.01em;">Scout</span>'+
-      '<span style="color:#4adeb2;font-weight:600;">21 need attention</span>'+
-      '<div style="display:flex;gap:6px;">'+
-        '<button id="triage-refresh" type="button" data-action="triage-refresh" style="padding:5px 8px;border-radius:6px;border:1px solid #2a3d5a;background:transparent;color:#b7c5dc;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;">↻ Refresh</button>'+
-        '<button id="triage-cancel" type="button" data-action="triage-cancel" hidden style="padding:5px 8px;border-radius:6px;border:1px solid #2a3d5a;background:transparent;color:#b7c5dc;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;">✕ Cancel</button>'+
-      '</div>'+
-    '</div>';
+    return '<div class="triage-combined-status"><span id="triage-combined-summary">0 shown</span>'+
+      '<div class="triage-combined-status-actions">'+
+        '<button id="triage-focus-open" type="button" class="triage-focus-open" data-action="triage-focus-open" aria-label="Open full-screen coin focus">⛶ Focus</button>'+
+        '<button id="triage-refresh" type="button" data-action="triage-refresh">Refresh visible</button>'+
+        '<button id="triage-retry" type="button" data-action="triage-retry" hidden>Retry</button>'+
+        '<button id="triage-cancel" type="button" data-action="triage-cancel" hidden>Cancel</button>'+
+      '</div><span id="triage-scan-status" hidden></span></div>';
   }
   /* one menu implementation, two hosts: coin focus and the Scout page */
   function triagePopContent(kind,withDensity){
@@ -13658,7 +13656,12 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
   function renderTriage(){
     var compact=scoutPhoneLayout();
     var head=compact
-      ? '<header class="triage-head triage-head-compact triage-hub-head" style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 14px;background:#0a1120;border:1px solid #1a2840;border-radius:10px;"><div><h2 style="font-size:16px;font-weight:800;color:#fff;letter-spacing:-0.02em;margin:0;">Scout</h2><span style="font-size:11px;color:#4adeb2;font-family:monospace;font-weight:600;margin-top:2px;display:block;">'+state.settings.watchlist.length+' ★ · '+libraryPairs().length+' saved</span></div><div style="display:flex;gap:6px;flex-wrap:wrap;"><button type="button" class="triage-plans-button" data-action="plans-jump" style="padding:5px 8px;border-radius:6px;border:1px solid #2a3d5a;background:#15243f;color:#b7c5dc;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;">P · '+normalisePlans(state.plans).length+'</button><button type="button" class="triage-edit-button'+(triageEdit?' on':'')+'" data-action="triage-edit" aria-pressed="'+triageEdit+'" style="padding:5px 8px;border-radius:6px;border:1px solid #2a3d5a;background:#15243f;color:#b7c5dc;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;">'+(triageEdit?'Done':'✎')+'</button></div></header>'
+      ? '<header class="triage-head triage-head-compact triage-hub-head"><div><h2>Scout</h2>'+
+        '<p id="triage-hub-counts">'+libraryPairs().length+' saved · '+state.settings.watchlist.length+' ★</p></div>'+
+        '<div class="triage-head-tools">'+
+          '<button type="button" class="triage-plans-button" data-action="plans-jump">Plans <b>'+normalisePlans(state.plans).length+'</b></button>'+
+          '<button type="button" class="triage-edit-button'+(triageEdit?' on':'')+'" data-action="triage-edit" aria-pressed="'+triageEdit+'">'+(triageEdit?'Done':'Edit')+'</button>'+
+        '</div></header>'
       : '<header class="triage-head"><div><div class="triage-kicker">Scout · unified coin workspace</div><h2>Coin Desk</h2><p>One record per coin: discover, test the evidence, shortlist, and open the existing workspace. Watch cues are not entry approval.</p></div><button type="button" class="triage-plans-button" data-action="plans-jump">Plans <b>'+normalisePlans(state.plans).length+'</b></button></header><div class="triage-method"><span><b>One source of truth</b> saved · shortlisted · found are record states</span><span><b>Scientific loop</b> observe → test → practical next action</span><span><b>Feasibility</b> freshness · coverage · source shown before promotion</span></div><div class="triage-stats"><button type="button" data-action="triage-scope" data-scope="shortlist"><b id="triage-count-review">—</b> Shortlist <small>quick review set</small></button><button type="button" data-action="triage-filter" data-filter="quality"><b id="triage-count-quality">—</b> Needs attention <small>stale or incomplete</small></button><button type="button" data-action="triage-filter" data-filter="ready"><b id="triage-count-ready">—</b> Research ready <small>usable evidence</small></button><button type="button" data-action="triage-scope" data-scope="all"><b id="triage-count-all">—</b> All coins <small>one saved inventory</small></button><span id="triage-count-draft" hidden>0</span></div>';
     var countCache=compact?'<div class="triage-count-cache triage-stats" hidden><span id="triage-count-review">0</span><span id="triage-count-quality">0</span><span id="triage-count-ready">0</span><span id="triage-count-all">0</span><span id="triage-count-draft">0</span></div>':'';
     var tools=compact
@@ -14001,4 +14004,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a432f29b6e70a14b',t:'MTc5MDc2ODM3Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a43478322b67ada5',t:'MTc5MDc4NDMzMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a432f29b6e70a14b',t:'MTc5MDc2ODM3Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4347ca7dc87ada5',t:'MTc5MDc4NDUxMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
