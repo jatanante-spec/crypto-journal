@@ -7396,5 +7396,85 @@ body:not(.command-strip-mode) .sizer-screen{padding-bottom:calc(130px + env(safe
 #main .triage-compact-page .triage-combined-observation b{font-size:12px;font-weight:700}
 #main .triage-compact-page .triage-combined-observation .triage-gate-mark{font-size:11px;font-weight:700;white-space:nowrap}
 
+/* ===== MERGED SCOUT HEADER BAR — one card replaces three stacked blocks ===== */
+/* Saves ~62px of chrome above the coin list on phones. All existing IDs, data-action
+   attributes, and querySelector targets are preserved inside the merged bar. */
+#main .triage-compact-page .triage-merged-bar{
+  border:1px solid var(--line);border-radius:12px;
+  background:var(--panel);padding:6px 8px;margin-bottom:5px;
+  position:relative
+}
+/* Row 1: title + live counts + Plans / Edit pills */
+#main .triage-compact-page .triage-merged-top{
+  display:flex;align-items:center;gap:6px;min-height:26px
+}
+#main .triage-compact-page .triage-merged-top h2{
+  font-size:14px;font-weight:700;letter-spacing:-.03em;
+  margin:0;flex:0 0 auto;line-height:1
+}
+#main .triage-compact-page .triage-merged-counts{
+  flex:1;min-width:0;font-size:9px;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+#main .triage-compact-page .triage-merged-top-actions{
+  display:flex;align-items:center;gap:4px;flex:0 0 auto
+}
+#main .triage-compact-page .triage-merged-top .triage-plans-button{
+  padding:4px 8px;font-size:8px;min-height:24px;
+  border:1px solid var(--line);border-radius:8px;
+  background:var(--panel-2);color:var(--muted);font-weight:750;white-space:nowrap
+}
+#main .triage-compact-page .triage-merged-top .triage-plans-button:hover{border-color:var(--accent)}
+#main .triage-compact-page .triage-merged-top .triage-edit-button{
+  padding:4px 8px;font-size:8px;min-height:24px;
+  border:1px solid var(--line);border-radius:8px;
+  background:var(--panel-2);color:var(--muted);font-weight:750;white-space:nowrap
+}
+#main .triage-compact-page .triage-merged-top .triage-edit-button.on{
+  border-color:var(--accent);background:rgba(61,125,255,.2);color:var(--text)
+}
+#main .triage-compact-page .triage-merged-top .triage-edit-button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* Row 2: strip the controls rail of its card chrome — it sits inside the merged bar */
+#main .triage-compact-page .triage-merged-bar .triage-combined-controls{
+  border:none;border-radius:0;background:transparent;
+  padding:4px 0 0;margin-bottom:0
+}
+/* Smaller icon buttons inside the merged bar */
+#main .triage-compact-page .triage-merged-bar .triage-focus-icon{
+  min-height:28px;padding:2px 2px;border-radius:6px
+}
+#main .triage-compact-page .triage-merged-bar .triage-focus-icon svg{width:13px;height:13px}
+#main .triage-compact-page .triage-merged-bar .triage-focus-icon b{font-size:6.5px}
+/* Row 3: strip the status bar chrome */
+#main .triage-compact-page .triage-merged-bar .triage-combined-status{padding:3px 0 0}
+/* Compact status action buttons inside merged bar — two ids beat the command-strip
+   :not() clauses that would otherwise force 38px height */
+#main .triage-compact-page .triage-merged-bar #triage-focus-open,
+#main .triage-compact-page .triage-merged-bar #triage-refresh,
+#main .triage-compact-page .triage-merged-bar #triage-retry,
+#main .triage-compact-page .triage-merged-bar #triage-cancel{
+  min-height:24px!important;padding:2px 6px!important;
+  border:1px solid #3d67a0!important;border-radius:6px!important;
+  background:#17335b!important;color:#dceaff!important;font-size:8px!important;
+  white-space:nowrap
+}
+/* Toast row sits outside the merged bar */
+#main .triage-compact-page .triage-toast-row{margin:4px 0}
+/* Hide plans button on very small screens */
+@media(max-width:650px){
+  #main .triage-compact-page .triage-merged-top .triage-plans-button{display:none}
+}
+/* Override individual fold rules inside merged bar — the bar itself handles fold.
+   Without this override, .foldable limits inner elements to 70px and the merged bar
+   would show a gap below them. */
+#main .triage-compact-page .triage-merged-bar .triage-rail,
+#main .triage-compact-page .triage-merged-bar .triage-searchrow,
+#main .triage-compact-page .triage-merged-bar .triage-combined-status{
+  max-height:none!important;transition:none!important;
+  opacity:1!important;overflow:visible!important
+}
+/* Fold the entire merged bar when the "fold away while scrolling" setting is active */
+#main .triage-page.folded .triage-merged-bar{display:none}
+
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a432e23e5e8714fb',t:'MTc5MDc2NzcwMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a432e23e5e8714fb',t:'MTc5MDc2NzcwMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a43647a8fcebeb18',t:'MTc5MDgwMzMxNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
