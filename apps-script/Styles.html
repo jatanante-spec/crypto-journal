@@ -6220,9 +6220,9 @@ body.command-strip-mode .more-head { margin: 0 0 8px!important; gap: 10px; align
 
 /* ---- groups ---- */
 .more-groups { display: flex; flex-direction: column; gap: 10px; }
-.more-group { overflow: hidden; }
+.more-group { border-radius: 14px; background: var(--surface-2); box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden; }
 .more-group[hidden] { display: none; }
-body.command-strip-mode .more-group { padding: 0!important; }
+body.command-strip-mode .more-group { border-radius: 14px; background: var(--surface-2); box-shadow: 0 1px 4px rgba(0,0,0,0.08); padding: 0!important; }
 .more-group-head {
   display: flex;
   align-items: center;
@@ -7396,5 +7396,17 @@ body:not(.command-strip-mode) .sizer-screen{padding-bottom:calc(130px + env(safe
 #main .triage-compact-page .triage-combined-observation b{font-size:12px;font-weight:700}
 #main .triage-compact-page .triage-combined-observation .triage-gate-mark{font-size:11px;font-weight:700;white-space:nowrap}
 
+
+/* Tweak 3 — Settings nested group clarity */
+.group-row { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); margin-bottom: 8px; }
+.group-row:last-child { margin-bottom: 0; }
+.group-row .group-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--text); }
+.group-row .group-hint { font-size: 11px; color: var(--muted); }
+.group-row .arrow { color: var(--accent); font-weight: 700; font-size: 12px; }
+/* Breadcrumb style */
+.breadcrumb { display: inline-flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 11px; font-weight: 600; color: var(--text); letter-spacing: 0.01em; }
+.breadcrumb span { white-space: nowrap; }
+.breadcrumb span:last-child { color: var(--accent); }
+
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a432e23e5e8714fb',t:'MTc5MDc2NzcwMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4331d9f1e59a5d0',t:'MTc5MDc3MDEzNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
