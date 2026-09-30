@@ -1,4 +1,4 @@
-<script>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=HvKOmS7SdBWZQFgRxyM2MvkgQdZ3MJH5vx-oz4wopxvHYlDy0YEJxQTHE14PKx-b9YdxEgBSADlaq0OJ8ujqK3CCvV4eQQrOKa8a69NIWGaVm_Y7j-K-xKcYc5rTQDc4ImFp85qtrkxjKau6XMNwTQ" charset="UTF-8"></script><script>
 (function () {
   var KEY = "crypto-scalping-journal-v1";
   /* Startup surface is a device-local presentation preference. It remembers only the
@@ -5302,21 +5302,40 @@
     if(!rrFail.length&&!capFail.length){bk+='<div class="p1-gb p1-gb-w"><span class="p1-gb-i">!</span><div><b>No valid target</b> \u2014 '+esc(p.candidates[0]?p.candidates[0].reason:'Structure unavailable')+'</div></div>';}
     var tbl='<div class="p1-ct"><div class="p1-ct-h"><span>Target</span><span>Price</span><span>R/R</span><span>Cap</span><span></span></div>'+
       p.candidates.map(function(c){var ok=c.reason==='Meets candidate checks';var sr=c.reason.replace('Reward/risk below minimum','R/R').replace('Above recent-reference cap','Cap');return '<div class="p1-ct-r '+(ok?'p':'f')+'"><b>'+esc(c.label)+'</b><span class="p1-v">'+esc(priceGbp(c.price,4))+'</span><span class="p1-v">'+esc(num(c.rr,2))+'R</span><span class="p1-v">'+esc(priceGbp(c.cap,4))+'</span><span class="p1-tg '+(ok?'y':'n')+'">'+(ok?'\u2713 Pass':'\u2717 '+esc(sr))+'</span></div>';}).join('')+'</div>';
-    var pts=[p.stop,p.low?p.low.price:0,p.entry].concat(p.candidates.map(function(c){return c.price;})).concat([p.high?p.high.price:0,recent,cap]).filter(function(v){return v>0;});
-    var lo=Math.min.apply(null,pts)*0.998,hi=Math.max.apply(null,pts)*1.002,rng=hi-lo||1;
-    var W=280,H=200,T=18,B=10;
-    function yP(px){return T+(1-(px-lo)/rng)*(H-T-B);}
-    function mkr(px,lb,pv,clr,dash){var y=yP(px).toFixed(1);return '<line x1="8" y1="'+y+'" x2="'+(W-8)+'" y2="'+y+'" stroke="'+clr+'" stroke-width="1" opacity="'+(dash?'.25':'.15')+'"'+(dash?' stroke-dasharray="4 3"':'')+'/><circle cx="14" cy="'+y+'" r="4" fill="none" stroke="'+clr+'" stroke-width="1.5" opacity=".6"/><text x="24" y="'+(Number(y)-3)+'" fill="'+clr+'" font-size="9" font-weight="700" font-family="Space Grotesk,sans-serif">'+esc(lb)+'</text><text x="24" y="'+(Number(y)+9)+'" fill="#879ab9" font-size="8" font-family="JetBrains Mono,monospace">'+esc(pv)+'</text>';}
-    var capY=yP(cap).toFixed(1),loY=yP(lo).toFixed(1);
-    var dia='<div class="p1-pd"><svg viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:'+W+'px;height:auto"><rect x="8" y="'+capY+'" width="'+(W-16)+'" height="'+(Number(loY)-Number(capY)).toFixed(1)+'" fill="rgba(255,113,142,.04)" stroke="rgba(255,113,142,.12)" stroke-width="1" stroke-dasharray="3 3" rx="3"/>'+
-      mkr(p.stop,'Stop',priceGbp(p.stop,4),'#ff718e',false)+
-      (p.low&&p.low.price>0?mkr(p.low.price,'Hour low',priceGbp(p.low.price,4),'#4a6a8a',false):'')+
-      mkr(p.entry,'Your Bid',priceGbp(p.entry,4),'#3d7dff',false)+
-      p.candidates.map(function(c){return mkr(c.price,c.label,priceGbp(c.price,4)+' \u00b7 '+num(c.rr,2)+'R',c.reason==='Meets candidate checks'?'#43d69d':'#f6cf68',false);}).join('')+
-      (p.high&&p.high.price>0?mkr(p.high.price,'Hour high',priceGbp(p.high.price,4),'#4a6a8a',false):'')+
-      (recent>0?mkr(recent,'24h high',priceGbp(recent,4),'#ff718e',true):'')+
-      mkr(cap,'Cap +0.5%',priceGbp(cap,4),'#ff718e',true)+
-      '</svg></div>';
+    /* Horizontal price bar diagram */
+    var rows=[];
+    rows.push({px:p.stop,label:'Stop',clr:'#ff718e',dash:false,rr:''});
+    if(p.low&&p.low.price>0)rows.push({px:p.low.price,label:'Hour low',clr:'#5a7a9a',dash:false,rr:''});
+    rows.push({px:p.entry,label:'Your Bid',clr:'#3d7dff',dash:false,rr:''});
+    p.candidates.forEach(function(c){rows.push({px:c.price,label:c.label,clr:c.reason==='Meets candidate checks'?'#43d69d':'#f6cf68',dash:false,rr:num(c.rr,2)+'R'});});
+    if(p.high&&p.high.price>0)rows.push({px:p.high.price,label:'Hour high',clr:'#5a7a9a',dash:false,rr:''});
+    if(recent>0)rows.push({px:recent,label:'24h high',clr:'#ff718e',dash:true,rr:''});
+    rows.push({px:cap,label:'Cap +0.5%',clr:'#ff718e',dash:true,rr:''});
+    rows.sort(function(a,b){return a.px-b.px;});
+    var lo=rows[0].px*0.999,hi=rows[rows.length-1].px*1.001,rng=hi-lo||1;
+    var W=420,padL=72,padR=72,padT=12,rowH=26;
+    var H=padT*2+rows.length*rowH;
+    var barL=padL+4,barR=W-padR-4,barW=barR-barL;
+    function xOf(px){return barL+((px-lo)/rng)*barW;}
+    var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:'+W+'px;height:auto">';
+    svg+='<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#0b1626" rx="8"/>';
+    var capX=xOf(cap).toFixed(1);
+    svg+='<rect x="'+barL+'" y="'+padT+'" width="'+(Number(capX)-barL).toFixed(1)+'" height="'+(H-padT*2)+'" fill="rgba(255,113,142,.025)" rx="4"/>';
+    svg+='<line x1="'+barL+'" y1="'+(padT-4)+'" x2="'+barL+'" y2="'+(H-padT+4)+'" stroke="#1a3050" stroke-width="1"/>';
+    rows.forEach(function(r,i){
+      var y=padT+i*rowH+rowH/2,x=xOf(r.px).toFixed(1);
+      svg+='<circle cx="'+(padL-14)+'" cy="'+y+'" r="3" fill="'+r.clr+'" opacity="'+(r.dash?'.4':'.7')+'"/>';
+      svg+='<text x="'+(padL-22)+'" y="'+(y+4)+'" fill="'+r.clr+'" font-size="10" font-weight="600" text-anchor="end" font-family="Space Grotesk,sans-serif">'+esc(r.label)+'</text>';
+      svg+='<line x1="'+barL+'" y1="'+y+'" x2="'+x+'" y2="'+y+'" stroke="'+r.clr+'" stroke-width="'+(r.dash?'1':'2')+'" opacity="'+(r.dash?'.2':'.5')+'"'+(r.dash?' stroke-dasharray="4 3"':'')+'/>';
+      svg+='<circle cx="'+x+'" cy="'+y+'" r="5" fill="'+r.clr+'" opacity="'+(r.dash?'.15':'.2')+'" stroke="'+r.clr+'" stroke-width="1.5"/>';
+      svg+='<circle cx="'+x+'" cy="'+y+'" r="2" fill="'+r.clr+'" opacity=".8"/>';
+      svg+='<text x="'+(barR+8)+'" y="'+(y+4)+'" fill="'+r.clr+'" font-size="10" font-weight="700" font-family="JetBrains Mono,monospace">'+esc(priceGbp(r.px,4))+'</text>';
+      if(r.rr)svg+='<text x="'+(barR+8)+'" y="'+(y+15)+'" fill="#5a7a9a" font-size="8" font-family="JetBrains Mono,monospace">'+esc(r.rr)+'</text>';
+    });
+    var minTargetPx=p.entry+(p.entry-p.stop)*minRr;
+    if(minTargetPx>lo&&minTargetPx<hi){var mX=xOf(minTargetPx).toFixed(1);svg+='<line x1="'+mX+'" y1="'+(padT-2)+'" x2="'+mX+'" y2="'+(H-padT+2)+'" stroke="#3d7dff" stroke-width="1" stroke-dasharray="2 3" opacity=".2"/><text x="'+mX+'" y="'+(padT-5)+'" fill="#3d7dff" font-size="7" font-weight="700" text-anchor="middle" font-family="JetBrains Mono,monospace">Min '+num(minRr,1)+'R</text>';}
+    svg+='</svg>';
+    var dia='<div class="p1-pd">'+svg+'</div>';
     var hn=0,hints='';
     if(rrFail.length){hn++;hints+='<div class="p1-fh"><span class="p1-fn">'+hn+'</span><div><b>Wait for a new hourly low.</b> A confirmed low closer to '+esc(priceGbp(p.entry,4))+' tightens the stop and improves R/R automatically.</div></div>';}
     if(rrFail.length){hn++;hints+='<div class="p1-fh"><span class="p1-fn">'+hn+'</span><div><b>Don\u2019t force it.</b> A yellow plan means current structure doesn\u2019t support a clean entry. Not every refresh produces a setup.</div></div>';}
@@ -14089,4 +14108,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a432f29b6e70a14b',t:'MTc5MDc2ODM3Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a436ea2fadbcd4ce',t:'MTc5MDgwOTk3MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a432f29b6e70a14b',t:'MTc5MDc2ODM3Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a437171f6a231dcb',t:'MTc5MDgxMTgxMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
