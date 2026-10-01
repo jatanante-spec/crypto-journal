@@ -1,4 +1,4 @@
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=vTrX_mS0DvZXQ-8cdKdJeDq3ZEyI8MN4t6cdDdI8VtaPGU7VLmjzRArYiJDbOrXA5LSPtefh1SYCSVXsK-rxuHMEpOGgphToK9HbGAvtU3QtFhltnxL2cVi9sMYV8SIpr-d4D4GmDs__z3fTpAZIoQ" charset="UTF-8"></script><script>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=oRoK_AWE6zx7xSbeXwCAN3QWXZGxvGIVAYqsxTa-dOh_H1rJTKYO8RY7bUJ2Ed-79-WxsZlG6sgoidSuD06B9x1n5wo2JeiajuxHeS9mGD5N4q8hj6PVZDvlUxCbkkh8GOUbFcDuMYWUNmitrwQXHQ" charset="UTF-8"></script><script>
 (function () {
   var KEY = "crypto-scalping-journal-v1";
   /* Startup surface is a device-local presentation preference. It remembers only the
@@ -10593,7 +10593,16 @@
            note, a half-typed number and the scroll position all survive a filter change.
      ===================================================================================== */
   var MORE_GROUPS = ["account", "fees", "rules", "look", "tools", "data"];
+  var MORE_SECTION_META = {
+    account: { icon: "◈", label: "Account & pair", desc: "Capital, risk %, active coin", color: "clr-account" },
+    fees:    { icon: "◎", label: "Fees & fills",   desc: "Maker/taker, fill allowance, training", color: "clr-fees" },
+    rules:   { icon: "⚑", label: "Session rules",  desc: "R:R, loss cap, profit target, hold hours", color: "clr-rules" },
+    look:    { icon: "◐", label: "Look",            desc: "Palette, Coin Desk layout, Scout layout, climate layout", color: "clr-look" },
+    tools:   { icon: "⌘", label: "Tools",           desc: "Scout, Plans, Updates, Manual, Trend", color: "clr-tools" },
+    data:    { icon: "⇅", label: "Data",            desc: "Sync, backup, reset", color: "clr-data" }
+  };
   var moreFilter = "all";
+  var moreSheetOpen = null; /* null = closed, or group id string */
   var moreInfo = {};
   var MORE_THEME_SHORT = { signal: "Amber", electric: "Blue", graphite: "Coral" };
   var MORE_SCOUT_SHORT = { glance: "Glance", ledger: "Ledger" };
@@ -10652,6 +10661,82 @@
       (sum ? '<span class="more-sum">' + sum + "</span>" : "") +
       '</header><div class="more-group-body">' + body + "</div></section>";
   }
+  function moreSectionSum(id) {
+    if (id === "account") return moreAccountSum();
+    if (id === "fees") return moreFeesSum();
+    if (id === "rules") return moreRulesSum();
+    if (id === "look") return moreLookSum();
+    if (id === "tools") return moreToolsSum(normalisePlans(state.plans).length);
+    if (id === "data") return moreDataSum();
+    return "";
+  }
+  function moreSectionListHtml() {
+    return MORE_GROUPS.map(function (id) {
+      var m = MORE_SECTION_META[id]; if (!m) return "";
+      var show = moreFilter === "all" || moreFilter === id;
+      if (!show) return "";
+      var sum = moreSectionSum(id);
+      return '<div class="more-section" data-action="more-section-open" data-section="' + id + '">' +
+        '<span class="sec-icon ' + m.color + '">' + m.icon + '</span>' +
+        '<div class="sec-body"><h3>' + esc(m.label) + '</h3><p>' + esc(m.desc) + '</p></div>' +
+        (sum ? '<span class="sec-summary">' + esc(sum) + '</span>' : '') +
+        '<span class="sec-arrow">&rsaquo;</span></div>';
+    }).join("");
+  }
+  function moreSheetPanelHtml() {
+    return '<div class="more-sheet-scrim" id="moreSheetScrim"></div>' +
+      '<div class="more-sheet-panel" id="moreSheetPanel">' +
+        '<div class="more-sheet-head">' +
+          '<button type="button" id="moreSheetPrev" aria-label="Previous section">&lsaquo;</button>' +
+          '<div class="more-sheet-title"><h3 id="moreSheetTitle"></h3><small id="moreSheetSub"></small></div>' +
+          '<button type="button" id="moreSheetNext" aria-label="Next section">&rsaquo;</button>' +
+          '<button type="button" id="moreSheetClose" aria-label="Close">&times;</button>' +
+        '</div>' +
+        '<div class="more-sheet-body" id="moreSheetBody"></div>' +
+        '<div class="more-sheet-foot"><button type="button" id="moreSheetFootClose">Close</button></div>' +
+      '</div>';
+  }
+  function moreSheetBodyFor(id) {
+    var planCount = normalisePlans(state.plans).length;
+    if (id === "account") return moreAccountBody();
+    if (id === "fees") return moreFeesBody();
+    if (id === "rules") return moreRulesBody();
+    if (id === "look") return moreLookBody();
+    if (id === "tools") return moreToolsBody(planCount);
+    if (id === "data") return moreDataBody();
+    return "";
+  }
+  function moreSheetNavigate(id) {
+    moreSheetOpen = id;
+    var m = MORE_SECTION_META[id]; if (!m) return;
+    var title = document.getElementById("moreSheetTitle");
+    var sub = document.getElementById("moreSheetSub");
+    var body = document.getElementById("moreSheetBody");
+    var prev = document.getElementById("moreSheetPrev");
+    var next = document.getElementById("moreSheetNext");
+    if (title) title.textContent = m.label;
+    if (sub) sub.textContent = m.desc;
+    if (body) body.innerHTML = moreSheetBodyFor(id);
+    var idx = MORE_GROUPS.indexOf(id);
+    if (prev) { prev.disabled = idx <= 0; prev.style.opacity = idx <= 0 ? ".3" : "1"; }
+    if (next) { next.disabled = idx >= MORE_GROUPS.length - 1; next.style.opacity = idx >= MORE_GROUPS.length - 1 ? ".3" : "1"; }
+    if (body && id === "account") fitCoinNavigation();
+  }
+  function moreSheetShow(id) {
+    var scrim = document.getElementById("moreSheetScrim");
+    var panel = document.getElementById("moreSheetPanel");
+    if (!scrim || !panel) return;
+    moreSheetNavigate(id);
+    scrim.classList.add("open");
+    panel.classList.add("open");
+  }
+  function moreSheetHide() {
+    var scrim = document.getElementById("moreSheetScrim");
+    var panel = document.getElementById("moreSheetPanel");
+    if (scrim) scrim.classList.remove("open");
+    if (panel) panel.classList.remove("open");
+    moreSheetOpen = null;
+  }
   function moreSetFilter(next) {
     moreFilter = (next && MORE_GROUPS.indexOf(next) >= 0) ? next : "all";
     Array.prototype.forEach.call(document.querySelectorAll(".more-filter-rail .more-chip"), function (b) {
@@ -10659,10 +10744,13 @@
       b.classList.toggle("on", on);
       b.setAttribute("aria-selected", on ? "true" : "false");
     });
+    /* update the compact section list */
+    var list = document.querySelector(".more-section-list");
+    if (list) list.innerHTML = moreSectionListHtml();
+    /* also keep old expanded groups in sync */
     Array.prototype.forEach.call(document.querySelectorAll("[data-more-group]"), function (g) {
       g.hidden = !(moreFilter === "all" || g.getAttribute("data-more-group") === moreFilter);
     });
-    /* The coin navigation is inside Account; it can only be measured while it is visible. */
     if (moreFilter === "all" || moreFilter === "account") fitCoinNavigation();
     moreSyncRailTop();
   }
@@ -10679,6 +10767,7 @@
     var a = b.getAttribute("data-action"); if (a.indexOf("more-") !== 0) return;
     e.preventDefault(); e.stopImmediatePropagation();
     if (a === "more-filter") { moreSetFilter(b.getAttribute("data-filter")); return; }
+    if (a === "more-section-open") { moreSheetShow(b.getAttribute("data-section")); return; }
     if (a === "more-theme") { setColorTheme(b.getAttribute("data-theme")); return; }
     if (a === "more-preview-screen") {
       morePreviewScreen = b.getAttribute("data-screen") === "sizer" ? "sizer" : "scout";
@@ -10703,6 +10792,30 @@
       moreSyncRailTop();
     }
   }, true);
+  /* Sheet panel: close / prev / next / scrim */
+  document.addEventListener("click", function (e) {
+    if (!moreSheetOpen) return;
+    if (e.target.id === "moreSheetClose" || e.target.id === "moreSheetFootClose" || e.target.id === "moreSheetScrim") {
+      moreSheetHide(); return;
+    }
+    if (e.target.id === "moreSheetPrev") {
+      var idx = MORE_GROUPS.indexOf(moreSheetOpen);
+      if (idx > 0) moreSheetNavigate(MORE_GROUPS[idx - 1]);
+      return;
+    }
+    if (e.target.id === "moreSheetNext") {
+      var idx2 = MORE_GROUPS.indexOf(moreSheetOpen);
+      if (idx2 < MORE_GROUPS.length - 1) moreSheetNavigate(MORE_GROUPS[idx2 + 1]);
+      return;
+    }
+  });
+  document.addEventListener("keydown", function (e) {
+    if (!moreSheetOpen) return;
+    if (e.key === "Escape") { e.preventDefault(); moreSheetHide(); return; }
+    var idx = MORE_GROUPS.indexOf(moreSheetOpen);
+    if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); if (idx > 0) moreSheetNavigate(MORE_GROUPS[idx - 1]); }
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); if (idx < MORE_GROUPS.length - 1) moreSheetNavigate(MORE_GROUPS[idx + 1]); }
+  });
   window.addEventListener("resize", moreSyncRailTop);
 
   /* =====================================================================================
@@ -10993,7 +11106,8 @@
           '<button class="btn secondary more-updates" type="button" data-page="updates">Updates</button>' +
         "</div>" +
         moreFilterRailHtml() +
-        '<div class="more-groups">' +
+        '<div class="more-section-list">' + moreSectionListHtml() + "</div>" +
+        '<div class="more-groups has-section-list">' +
           moreGroup("account", "◈", "Account & pair", moreAccountSum(), moreAccountBody()) +
           moreGroup("fees", "◎", "Fees & fills", moreFeesSum(), moreFeesBody()) +
           moreGroup("rules", "⚑", "Session rules", moreRulesSum(), moreRulesBody()) +
@@ -11001,7 +11115,8 @@
           moreGroup("tools", "⌘", "Tools", moreToolsSum(planCount), moreToolsBody(planCount)) +
           moreGroup("data", "⇅", "Data", moreDataSum(), moreDataBody()) +
         "</div>" +
-      "</div>"
+      "</div>" +
+      moreSheetPanelHtml()
     );
   }
 
@@ -12479,6 +12594,7 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
     else if(a==='triage-inspect')triageInspect(t);
     else if(a==='triage-close')triageClose();
     else if(a==='triage-record-sec'){var rk=b.getAttribute('data-key');triageRecordSections[rk]=!triageRecordSections[rk];triageRenderInspector();var rsec=document.getElementById('triage-inspector').querySelector('[data-action="triage-record-sec"][data-key="'+rk+'"]');if(rsec)rsec.focus({preventScroll:true});}
+    else if(a==='triage-tab'){triageRecordActiveTab=b.getAttribute('data-key')||'evidence';triageRenderInspector();var pill=document.getElementById('triage-inspector').querySelector('[data-action="triage-tab"][data-key="'+triageRecordActiveTab+'"]');if(pill)pill.focus({preventScroll:true});}
     else if(a==='triage-record-jump'||a==='triage-record-jump-close'){triageRecordJump=(a==='triage-record-jump')?!triageRecordJump:false;triageRenderInspector();var rj=document.getElementById('triage-inspector').querySelector('[data-action="triage-record-jump"]');if(rj)rj.focus({preventScroll:true});}
     else if(a==='triage-record-jump-to'){triageSelected=b.getAttribute('data-ticker')||t;triageRecordJump=false;triageUpdate(false);var rbody=document.getElementById('triage-record-body');if(rbody)rbody.scrollTop=0;var rjump=document.getElementById('triage-inspector').querySelector('[data-action="triage-record-jump"]');if(rjump)rjump.focus({preventScroll:true});}
     else if(a==='triage-record-step')triageRecordStep(Number(b.getAttribute('data-step'))||1);
@@ -13840,6 +13956,7 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
    read-only warnings are now one chip plus the lines behind the sections they belong to.
 */
   var triageRecordSections={lock:false,evidence:false,method:false};
+  var triageRecordActiveTab="evidence";
   var triageRecordJump=false;
   var triageRecordDrag=null,triageRecordDragEnd=0;
 
@@ -13881,6 +13998,21 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
       '<button type="button" class="triage-record-sec" data-action="triage-record-sec" data-key="'+key+'" aria-expanded="'+(open?'true':'false')+'">'+
         '<span>'+esc(label)+(hint?'<em'+(hintTone?' class="triage-tone triage-tone-'+hintTone+'"':'')+'>'+(hintTone?triageToneSign(hintTone):'')+esc(hint)+'</em>':'')+'</span><i>&rsaquo;</i></button>'+
       (open?'<div class="triage-record-sec-in">'+inner+'</div>':'')+'</div>';
+  }
+  var TRIAGE_TAB_META=[
+    {key:'lock',label:'Lock'},
+    {key:'evidence',label:'Evidence'},
+    {key:'method',label:'How this reads'}
+  ];
+  function triageTabPillsHtml(){
+    return '<div class="triage-tab-pills" role="tablist">'+
+      TRIAGE_TAB_META.map(function(t){
+        var on=triageRecordActiveTab===t.key;
+        return '<button type="button" class="triage-tab-pill'+(on?' on':'')+'" data-action="triage-tab" data-key="'+t.key+'" role="tab" aria-selected="'+(on?'true':'false')+'">'+esc(t.label)+'</button>';
+      }).join('')+'</div>';
+  }
+  function triageTabContentHtml(key,inner){
+    return '<div class="triage-tab-content">'+inner+'</div>';
   }
   function triageRecordNote(text){return '<p class="triage-record-note">'+esc(text)+'</p>';}
   function triageRecordKv(label,value,tone){return '<div class="triage-record-kv"><span>'+esc(label)+'</span><span class="triage-tone'+(tone?' triage-tone-'+tone:'')+'"'+(tone?' title="'+esc(triageToneWord(tone))+'"':'')+'>'+(tone?triageToneSign(tone):'')+'<span class="triage-tone-val">'+esc(value)+'</span></span></div>';}
@@ -13968,9 +14100,13 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
       '<div class="triage-record-hyp"><small>Hypothesis</small><b>'+esc(hypothesis)+'</b></div>'+
       '<div class="triage-record-body" id="triage-record-body">'+
         (triageRecordJump?jumpHtml:
-          triageRecordSection('lock','Scout lock',lock?('locked · '+lock.reason):'not locked',lockInner,lock?'warn':'none')+
-          triageRecordSection('evidence','Evidence','4 readings',evidenceInner)+
-          triageRecordSection('method','How this reads','4 steps',methodInner))+
+          triageTabPillsHtml()+
+          (function(){
+            var t=triageRecordActiveTab;
+            if(t==='lock')return triageTabContentHtml('lock',lockInner);
+            if(t==='method')return triageTabContentHtml('method',methodInner);
+            return triageTabContentHtml('evidence',evidenceInner);
+          })())+
       '</div>'+
       '<div class="triage-record-bar">'+
         '<button type="button" id="triage-record-refresh" class="pri" data-action="triage-refresh-one" data-ticker="'+esc(r.pair.ticker)+'"'+(!canCloud()||busy||scoutPeekCount()||scoutPeekQueue.length?' disabled':'')+'>'+triageRecordIcon('refresh')+'<span>Refresh</span></button>'+

@@ -6417,6 +6417,46 @@ body.command-strip-mode .more-group-head h3 {
 .more-group-body > .coin-desk-layout-settings:first-child,
 .more-group-body > .scout-triage-layout-settings:first-child { margin-top: 0; }
 
+/* ── More page: compact section list + sheet ── */
+.more-section-list{display:flex;flex-direction:column;gap:6px;padding:0 0 20px}
+.more-section{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--panel);cursor:pointer;transition:all .15s}
+.more-section:hover{border-color:var(--accent);background:var(--panel-2)}
+.more-section:active{transform:scale(.99)}
+.more-section .sec-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:7px;font-size:16px;flex:none}
+.more-section .sec-body{flex:1;min-width:0}
+.more-section .sec-body h3{font-size:12px;font-weight:700;margin-bottom:1px}
+.more-section .sec-body p{font-size:9px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.more-section .sec-summary{font-size:9px;color:var(--muted);white-space:nowrap;flex:none}
+.more-section .sec-arrow{color:var(--muted);font-size:14px;flex:none;margin-left:4px}
+.sec-icon.clr-account{background:rgba(61,207,142,.12);color:var(--green)}
+.sec-icon.clr-fees{background:rgba(246,207,104,.12);color:var(--yellow)}
+.sec-icon.clr-rules{background:rgba(255,113,142,.12);color:var(--red)}
+.sec-icon.clr-look{background:rgba(61,125,255,.12);color:var(--accent)}
+.sec-icon.clr-tools{background:rgba(98,217,255,.12);color:var(--cyan)}
+.sec-icon.clr-data{background:rgba(190,160,255,.12);color:#bea0ff}
+/* hide old expanded groups when list mode is active */
+.more-groups.has-section-list{display:none}
+/* sheet scrim */
+.more-sheet-scrim{position:fixed;inset:0;z-index:170;background:#030918b8;opacity:0;pointer-events:none;transition:opacity .2s}
+.more-sheet-scrim.open{opacity:1;pointer-events:auto}
+/* sheet panel */
+.more-sheet-panel{position:fixed;top:0;right:0;bottom:0;z-index:175;width:min(420px,92vw);background:var(--bg);border-left:1px solid var(--line);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s ease;overscroll-behavior:contain}
+.more-sheet-panel.open{transform:translateX(0)}
+.more-sheet-head{display:flex;align-items:center;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line);flex:none}
+.more-sheet-head button{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:6px;background:var(--panel-2);color:var(--text);font-family:var(--font);font-size:16px;cursor:pointer;transition:all .15s;flex:none}
+.more-sheet-head button:hover{border-color:var(--accent);background:var(--accent-bg)}
+.more-sheet-head button:disabled{opacity:.3;cursor:default}
+.more-sheet-title{flex:1;text-align:center;min-width:0}
+.more-sheet-title h3{font-size:13px;font-weight:700;margin:0}
+.more-sheet-title small{font-size:9px;color:var(--muted)}
+.more-sheet-body{flex:1;overflow-y:auto;padding:14px}
+.more-sheet-foot{display:flex;gap:6px;padding:10px 12px;border-top:1px solid var(--line);flex:none}
+.more-sheet-foot button{flex:1;padding:8px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--text);font-family:var(--font);font-size:10px;font-weight:600;cursor:pointer;transition:all .15s}
+.more-sheet-foot button:hover{filter:brightness(1.1)}
+@media(max-width:650px){
+  .more-sheet-panel{width:100%}
+}
+
 @media (max-width: 400px) {
   .more-palette { gap: 6px; }
   .more-palette-option { min-height: 48px; padding: 8px; }
@@ -7295,6 +7335,11 @@ body.command-strip-mode:not(.training) #main{padding-bottom:calc(8px + env(safe-
 #main .triage-record-sec em{font-style:normal;color:var(--muted);font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #main .triage-record-sec i{font-style:normal;color:var(--muted);font-size:13px;transition:transform .15s}
 #main .triage-record-section.open .triage-record-sec i{transform:rotate(90deg)}
+#main .triage-tab-pills{display:flex;gap:5px;padding:8px 10px 0;overflow-x:auto}
+#main .triage-tab-pill{padding:4px 10px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--muted);font-family:var(--font,'Space Grotesk',sans-serif);font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s}
+#main .triage-tab-pill.on{background:var(--accent-bg);border-color:var(--accent);color:var(--text)}
+#main .triage-tab-pill:hover{border-color:var(--accent)}
+#main .triage-tab-content{padding:8px 10px 10px}
 #main .triage-record-sec-in{padding:2px 10px 10px;border-top:1px solid var(--line)}
 #main .triage-record-kv{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--line);font-size:10.5px}
 #main .triage-record-kv:last-of-type{border-bottom:0}
