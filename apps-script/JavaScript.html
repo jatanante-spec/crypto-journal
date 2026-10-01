@@ -1,4 +1,4 @@
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=5RtlOU2uvEHFqJOmCrCqdJ7uvBXvdL8rZJEskSfaGZU-jmCyLQVWqObm7WOJW3O3qMgExAjtsnmOftilWz_QIYA4J8-AXYUHl09obzA4QO1ljovT0Gy0mkyOJiue_hOdSarQ359otXRx5vKKqwztFw" charset="UTF-8"></script><script>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=2qWPlcVYlgYE3Vzc2uJpqmuI4UVzqWFUtspN66jOjPGbMHEXc67auvqpu3OHtx3womD1gOm5wsM5VF6afZaaqY0BZNLKKaiLRVUoT0-XPMGLAwkfjinAXSudexHP0uG8ChPjFWuVM8Efe0V6vIDpvg" charset="UTF-8"></script><script>
 (function () {
   var KEY = "crypto-scalping-journal-v1";
   /* Startup surface is a device-local presentation preference. It remembers only the
@@ -10725,6 +10725,14 @@
   function moreSheetShow(id) {
     var scrim = document.getElementById("moreSheetScrim");
     var panel = document.getElementById("moreSheetPanel");
+    /* create once on document.body so render() never destroys them */
+    if (!scrim || !panel) {
+      var wrap = document.createElement("div");
+      wrap.innerHTML = moreSheetPanelHtml();
+      while (wrap.firstChild) document.body.appendChild(wrap.firstChild);
+      scrim = document.getElementById("moreSheetScrim");
+      panel = document.getElementById("moreSheetPanel");
+    }
     if (!scrim || !panel) return;
     moreSheetNavigate(id);
     scrim.classList.add("open");
@@ -11115,8 +11123,7 @@
           moreGroup("tools", "⌘", "Tools", moreToolsSum(planCount), moreToolsBody(planCount)) +
           moreGroup("data", "⇅", "Data", moreDataSum(), moreDataBody()) +
         "</div>" +
-      "</div>" +
-      moreSheetPanelHtml()
+      "</div>"
     );
   }
 
@@ -12768,8 +12775,8 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
       observeCoinNavigation();
       if(quickSwitchOpen)renderQuickSwitch();
       cpFold();
-      /* restore the More sheet if it was open before render() destroyed it */
-      if(savedMoreSheet && page==='settings'){moreSheetShow(savedMoreSheet);}
+      /* if the More sheet was open, refresh its content without closing */
+      if(savedMoreSheet && page==='settings'){moreSheetNavigate(savedMoreSheet);}
     } catch (err) {
       main.innerHTML = '<p class="toast-error">Screen failed to draw: ' + esc(err && err.message ? err.message : String(err)) + "</p>";
     }
@@ -14262,4 +14269,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a432f29b6e70a14b',t:'MTc5MDc2ODM3Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a43ea2946927d404',t:'MTc5MDg5MDkyNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a432f29b6e70a14b',t:'MTc5MDc2ODM3Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
