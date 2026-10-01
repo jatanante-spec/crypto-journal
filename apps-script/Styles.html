@@ -5179,9 +5179,12 @@ body.command-strip-mode .coin-desk-layout-settings h3{margin:0!important;font-si
 body.command-strip-mode .coin-desk-layout-settings header p{margin:5px 0 0;max-width:680px;font-size:11px;line-height:1.45}
 body.command-strip-mode .layout-setting-badge{flex:0 0 auto;padding:5px 8px;border:1px solid var(--green);border-radius:999px;background:var(--green-bg);color:var(--green);font-size:9px;font-weight:800;white-space:nowrap}
 body.command-strip-mode .coin-desk-layout-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-body.command-strip-mode #main .coin-desk-layout-option{min-width:0;min-height:110px!important;padding:11px!important;border:1px solid var(--line)!important;border-radius:10px!important;background:var(--input)!important;color:var(--text)!important;text-align:left!important;box-shadow:none!important}
-body.command-strip-mode #main .coin-desk-layout-option:hover{border-color:var(--accent)!important;background:var(--panel-2)!important}
-body.command-strip-mode #main .coin-desk-layout-option.selected{border-color:var(--accent)!important;background:var(--panel-2)!important;box-shadow:inset 0 0 0 1px var(--accent)!important}
+body.command-strip-mode #main .coin-desk-layout-option,
+body.command-strip-mode .more-sheet-panel .coin-desk-layout-option{min-width:0;min-height:110px!important;padding:11px!important;border:1px solid var(--line)!important;border-radius:10px!important;background:var(--input)!important;color:var(--text)!important;text-align:left!important;box-shadow:none!important}
+body.command-strip-mode #main .coin-desk-layout-option:hover,
+body.command-strip-mode .more-sheet-panel .coin-desk-layout-option:hover{border-color:var(--accent)!important;background:var(--panel-2)!important}
+body.command-strip-mode #main .coin-desk-layout-option.selected,
+body.command-strip-mode .more-sheet-panel .coin-desk-layout-option.selected{border-color:var(--accent)!important;background:var(--panel-2)!important;box-shadow:inset 0 0 0 1px var(--accent)!important}
 body.command-strip-mode .layout-option-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
 body.command-strip-mode .layout-option-top b{font-size:11px}
 body.command-strip-mode .layout-option-top i{color:var(--green);font-size:8px;font-style:normal;font-weight:800;text-transform:uppercase;white-space:nowrap}
@@ -5196,7 +5199,8 @@ body.command-strip-mode .coin-library-chevron{color:var(--accent);font-weight:80
   body.command-strip-mode[data-coin-desk-layout="lab"] #main .triage-head{padding:12px 12px}
   body.command-strip-mode[data-coin-desk-layout="lab"] #main .triage-head h2{font-size:22px}
   body.command-strip-mode .coin-desk-layout-options{grid-template-columns:1fr}
-  body.command-strip-mode #main .coin-desk-layout-option{min-height:84px!important}
+  body.command-strip-mode #main .coin-desk-layout-option,
+  body.command-strip-mode .more-sheet-panel .coin-desk-layout-option{min-height:84px!important}
   body.command-strip-mode .coin-desk-layout-settings>header{display:block}
   body.command-strip-mode .layout-setting-badge{display:inline-block;margin-top:8px}
   body.command-strip-mode[data-coin-desk-layout="focus"] #main .triage-head{display:flex}
@@ -6437,8 +6441,8 @@ body.command-strip-mode .more-group-head h3 {
 /* hide old expanded groups when list mode is active */
 .more-groups.has-section-list{display:none}
 /* sheet scrim */
-.more-sheet-scrim{position:fixed;inset:0;z-index:170;background:#030918b8;opacity:0;pointer-events:none;transition:opacity .2s}
-.more-sheet-scrim.open{opacity:1;pointer-events:auto}
+.more-sheet-scrim{position:fixed;inset:0;z-index:170;background:rgba(3,9,24,.72);opacity:0;pointer-events:none;visibility:hidden}
+.more-sheet-scrim.open{opacity:1;pointer-events:auto;visibility:visible}
 /* sheet panel */
 .more-sheet-panel{position:fixed;top:0;right:0;bottom:0;z-index:175;width:min(420px,92vw);background:var(--bg);border-left:1px solid var(--line);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s ease;overscroll-behavior:contain}
 .more-sheet-panel.open{transform:translateX(0)}
@@ -6449,7 +6453,7 @@ body.command-strip-mode .more-group-head h3 {
 .more-sheet-title{flex:1;text-align:center;min-width:0}
 .more-sheet-title h3{font-size:13px;font-weight:700;margin:0}
 .more-sheet-title small{font-size:9px;color:var(--muted)}
-.more-sheet-body{flex:1;overflow-y:auto;padding:14px}
+.more-sheet-body{flex:1;overflow-y:auto;padding:14px;background:var(--bg)}
 .more-sheet-foot{display:flex;gap:6px;padding:10px 12px;border-top:1px solid var(--line);flex:none}
 .more-sheet-foot button{flex:1;padding:8px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--text);font-family:var(--font);font-size:10px;font-weight:600;cursor:pointer;transition:all .15s}
 .more-sheet-foot button:hover{filter:brightness(1.1)}

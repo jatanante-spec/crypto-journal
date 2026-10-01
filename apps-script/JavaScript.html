@@ -1,4 +1,4 @@
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=IE9kWTxSZL7m15NmUW4a7svcTMVmYyw00CFn3rs12SlLYLytD-e4GagNRMcXTq7MWUTTqD5s7Z3sax-gejXArWvLsvKcKOjKTaTahaiS6mhxYpnFmxw3URzKpDD7R-QIWl6ZR8uVA3ttPz7g-IR44g" charset="UTF-8"></script><script>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=Bbwo9Q114BGDbj-6HgSItJQrTMED6gEd2B4_EtRBAJNEYEAdMlxYe1cx-RpXNvPZzuz2E_NRu64svxEtDVendh2bvlElUC17gf7DmPU5uYA4S8Vq3PpcAMwLUBF305fSkB9ryngX0uCa69kObhn9Uw" charset="UTF-8"></script><script>
 (function () {
   var KEY = "crypto-scalping-journal-v1";
   /* Startup surface is a device-local presentation preference. It remembers only the
@@ -10752,14 +10752,8 @@
       b.classList.toggle("on", on);
       b.setAttribute("aria-selected", on ? "true" : "false");
     });
-    /* update the compact section list */
     var list = document.querySelector(".more-section-list");
     if (list) list.innerHTML = moreSectionListHtml();
-    /* also keep old expanded groups in sync */
-    Array.prototype.forEach.call(document.querySelectorAll("[data-more-group]"), function (g) {
-      g.hidden = !(moreFilter === "all" || g.getAttribute("data-more-group") === moreFilter);
-    });
-    if (moreFilter === "all" || moreFilter === "account") fitCoinNavigation();
     moreSyncRailTop();
   }
   function moreSyncRailTop() {
@@ -11115,14 +11109,6 @@
         "</div>" +
         moreFilterRailHtml() +
         '<div class="more-section-list">' + moreSectionListHtml() + "</div>" +
-        '<div class="more-groups has-section-list">' +
-          moreGroup("account", "◈", "Account & pair", moreAccountSum(), moreAccountBody()) +
-          moreGroup("fees", "◎", "Fees & fills", moreFeesSum(), moreFeesBody()) +
-          moreGroup("rules", "⚑", "Session rules", moreRulesSum(), moreRulesBody()) +
-          moreGroup("look", "◐", "Look", moreLookSum(), moreLookBody()) +
-          moreGroup("tools", "⌘", "Tools", moreToolsSum(planCount), moreToolsBody(planCount)) +
-          moreGroup("data", "⇅", "Data", moreDataSum(), moreDataBody()) +
-        "</div>" +
       "</div>"
     );
   }
