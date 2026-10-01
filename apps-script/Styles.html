@@ -6147,17 +6147,8 @@ body.command-strip-mode #main .triage-focus-actions .triage-unified-lock.on:not(
 }
 #main .coin-navigation .coin-library-chevron{color:var(--accent);font-size:10px;line-height:1}
 #main .coin-navigation .coin-shortcuts{flex:1 1 0;min-width:0;overflow:hidden}
-/* the Scout jump is now its own labelled control, sized like the other desk buttons */
-#main .coin-navigation .coin-research-btn{
-  flex:none;position:relative;display:inline-flex;align-items:center;justify-content:center;
-  min-height:30px;padding:0 9px;margin:0;border:1px solid #3d7dff;border-radius:7px;
-  background:rgba(61,125,255,.12);color:#a9c6ff;font-size:10px;font-family:inherit;
-  line-height:1;white-space:nowrap;cursor:pointer;
-}
 /* 40px tap targets behind the 30px visuals */
-#main .coin-navigation .coin-library-toggle::after,
-#main .coin-navigation .coin-research-btn::after,
-#main .coin-navigation .coin-context-action::after{
+#main .coin-navigation .coin-library-toggle::after{
   content:"";position:absolute;left:0;right:0;top:-5px;bottom:-5px;
 }
 #main .coin-navigation .coin-context-bar{
@@ -6199,50 +6190,13 @@ body.command-strip-mode #main .triage-focus-actions .triage-unified-lock.on:not(
 #main .coin-navigation .coin-context-l2{
   font-size:9.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-#main .coin-navigation .coin-context-action{
-  flex:none;position:relative;display:inline-flex;align-items:center;justify-content:center;
-  min-height:30px;padding:0 10px;margin:0;border:1px solid #3d7dff;border-radius:7px;
-  background:rgba(61,125,255,.18);color:#dbe9ff;font-size:10.5px;font-weight:700;
-  font-family:inherit;line-height:1;white-space:nowrap;cursor:pointer;
-}
-#main .coin-navigation .coin-context-bar.attn .coin-context-action,
-#main .coin-navigation .coin-context-bar.lock .coin-context-action{
-  border-color:#8a6a2a;background:rgba(246,207,104,.16);color:#ffe6a8;
-}
 /* keep the Cue Deck dialog header compact - the desk there is a switcher only */
 #cd-dialog .coin-navigation .coin-context-bar{display:none}
 @media(max-width:650px){
   #main .coin-navigation .coin-context-l2{font-size:9px}
-  #main .coin-navigation .coin-context-action{padding:0 8px;font-size:10px}
-  #main .coin-navigation .coin-research-btn{padding:0 7px;font-size:9.5px}
 }
 
-/* =====================================================================================
-   COIN-DESK-STACK-WIN-1 - restore the intended look of the two new desk controls.
-   The shared rule body.command-strip-mode #main button:not(...)... (specificity 1,7,2)
-   declares min-height:38px, padding:8px 12px, border, background and font-size with
-   !important, and it never mentions the desk classes - so it was overriding both new
-   buttons and rendering them as plain neutral chips. These selectors mirror that
-   :not() chain to win the cascade back.
-   ===================================================================================== */
-body.command-strip-mode #main .coin-navigation .coin-research-btn:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
-  min-height:30px!important;padding:0 9px!important;border:1px solid #3d7dff!important;
-  background:rgba(61,125,255,.12)!important;color:#a9c6ff!important;
-  font-size:10px!important;font-weight:500!important;line-height:1!important;border-radius:7px!important;
-}
-body.command-strip-mode #main .coin-navigation .coin-context-action:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
-  min-height:30px!important;padding:0 10px!important;border:1px solid #3d7dff!important;
-  background:rgba(61,125,255,.18)!important;color:#dbe9ff!important;
-  font-size:10.5px!important;font-weight:700!important;line-height:1!important;border-radius:7px!important;
-}
-body.command-strip-mode #main .coin-navigation .coin-context-bar.attn .coin-context-action:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow),
-body.command-strip-mode #main .coin-navigation .coin-context-bar.lock .coin-context-action:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){
-  border-color:#8a6a2a!important;background:rgba(246,207,104,.16)!important;color:#ffe6a8!important;
-}
-@media(max-width:650px){
-  body.command-strip-mode #main .coin-navigation .coin-research-btn:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){padding:0 7px!important;font-size:9.5px!important}
-  body.command-strip-mode #main .coin-navigation .coin-context-action:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow){padding:0 8px!important;font-size:10px!important}
-}
+
 
 /* =====================================================================================
    COIN-DESK-NO-DUP-1 - the desk's context bar now carries the live quote, so the
@@ -7619,4 +7573,4 @@ body:not(.command-strip-mode) .sizer-screen{padding-bottom:calc(130px + env(safe
 }
 
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a432e23e5e8714fb',t:'MTc5MDc2NzcwMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a43af1b7aaf0b3e7',t:'MTc5MDg1MjIyMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a432e23e5e8714fb',t:'MTc5MDc2NzcwMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
