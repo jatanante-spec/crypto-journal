@@ -1,4 +1,4 @@
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=2qWPlcVYlgYE3Vzc2uJpqmuI4UVzqWFUtspN66jOjPGbMHEXc67auvqpu3OHtx3womD1gOm5wsM5VF6afZaaqY0BZNLKKaiLRVUoT0-XPMGLAwkfjinAXSudexHP0uG8ChPjFWuVM8Efe0V6vIDpvg" charset="UTF-8"></script><script>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=IE9kWTxSZL7m15NmUW4a7svcTMVmYyw00CFn3rs12SlLYLytD-e4GagNRMcXTq7MWUTTqD5s7Z3sax-gejXArWvLsvKcKOjKTaTahaiS6mhxYpnFmxw3URzKpDD7R-QIWl6ZR8uVA3ttPz7g-IR44g" charset="UTF-8"></script><script>
 (function () {
   var KEY = "crypto-scalping-journal-v1";
   /* Startup surface is a device-local presentation preference. It remembers only the
@@ -12704,6 +12704,7 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
 
   function render() {
     var savedMoreSheet = moreSheetOpen;
+    var savedScroll = window.pageYOffset || document.documentElement.scrollTop || 0;
     rememberPrimaryPage(page);
     var trendTip=document.getElementById('triage-trend-popover');if(trendTip)trendTip.remove();
     var oldTriage=document.getElementById("triage-rows");if(oldTriage)triageScroll=oldTriage.scrollTop;
@@ -12775,8 +12776,12 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
       observeCoinNavigation();
       if(quickSwitchOpen)renderQuickSwitch();
       cpFold();
-      /* if the More sheet was open, refresh its content without closing */
-      if(savedMoreSheet && page==='settings'){moreSheetNavigate(savedMoreSheet);}
+      if(savedMoreSheet && page==='settings'){
+        var existPanel=document.getElementById("moreSheetPanel");
+        if(existPanel&&existPanel.classList.contains("open")){moreSheetNavigate(savedMoreSheet);}
+        else{moreSheetShow(savedMoreSheet);}
+      }
+      window.scrollTo(0,savedScroll);
     } catch (err) {
       main.innerHTML = '<p class="toast-error">Screen failed to draw: ' + esc(err && err.message ? err.message : String(err)) + "</p>";
     }
