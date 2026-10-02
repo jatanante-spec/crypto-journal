@@ -1,4 +1,4 @@
-<script>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=Bbwo9Q114BGDbj-6HgSItJQrTMED6gEd2B4_EtRBAJNEYEAdMlxYe1cx-RpXNvPZzuz2E_NRu64svxEtDVendh2bvlElUC17gf7DmPU5uYA4S8Vq3PpcAMwLUBF305fSkB9ryngX0uCa69kObhn9Uw" charset="UTF-8"></script><script>
 (function () {
   var KEY = "crypto-scalping-journal-v1";
   /* Startup surface is a device-local presentation preference. It remembers only the
@@ -10638,39 +10638,12 @@
       ' aria-selected="' + (on ? "true" : "false") + '">' + esc(label) + "</button>";
   }
 
-  /* SECTION-NAV-1 · the verdict, the gate strip and the ticket sit ABOVE the
-     sections and do not move when you filter, so the box you asked for was
-     still below the fold no matter which pill you tapped. Bring it to the
-     reader instead. Deliberately here and not in applySectionFilter: that runs
-     on every render too, and scrolling there would make the page jump on its
-     own. */
-  function scrollSectionIntoView(page) {
-    var items = SECTION_NAV[page];
-    if (!items) return;
-    var cur = sectionFilter[page] || "all";
-    if (cur === "all") return;
-    var it = null;
-    for (var i = 0; i < items.length; i++) if (items[i].id === cur) it = items[i];
-    if (!it) return;
-    var el = document.querySelector(it.sel);
-    if (!el) return;
-    /* The rail is sticky, so a plain scroll would park the box underneath it.
-       Set the margin before the scroll so the offset survives even where
-       scrollIntoView is unavailable. */
-    var rail = document.querySelector(".sec-nav");
-    var off = rail ? (parseFloat(rail.style.top) || 34) : 34;
-    try { el.style.scrollMarginTop = (off + 10) + "px"; } catch (e) {}
-    if (!el.scrollIntoView) return;
-    try { el.scrollIntoView({ behavior: "smooth", block: "start" }); }
-    catch (e) { try { el.scrollIntoView(); } catch (e2) {} }
-  }
   function setSectionFilter(page, id) {
     var items = SECTION_NAV[page];
     if (!items) return;
     var ok = id === "all" || items.some(function (it) { return it.id === id; });
     sectionFilter[page] = ok ? id : "all";
     applySectionFilter(page);
-    if (sectionFilter[page] !== "all") scrollSectionIntoView(page);
   }
 
   /* Show only the chosen block, or everything on "all". Applied after every
@@ -10681,16 +10654,8 @@
     if (!items) return;
     var cur = sectionFilter[page] || "all";
     items.forEach(function (it) {
-      var show = (cur === "all" || cur === it.id);
       document.querySelectorAll(it.sel).forEach(function (el) {
-        el.hidden = !show;
-        /* SECTION-NAV-1 · the sections are <details> and they ship CLOSED.
-           Hiding the others therefore left the chosen one as a bare summary
-           bar, so tapping a pill looked like nothing had happened -- the coin
-           price, verdict, gates and ticket never move. Open the chosen one so
-           the tap visibly reveals the box it stands for. "All" deliberately
-           leaves every fold as the user left it. */
-        if (show && cur !== "all" && el.tagName === "DETAILS") el.open = true;
+        el.hidden = (cur !== "all" && cur !== it.id);
       });
     });
     var rail = document.querySelector(".sec-nav");
@@ -10907,20 +10872,14 @@
   }
   function moreSyncRailTop() { syncStickyRailsTop(); }
   /* SECTION-NAV-1 — the rail is a filter, exactly like the More tab's, and it is
-     wired the same way: one action, one place, no scroll listeners.
-     Do NOT register this in the capture phase. It was, and the tap silently did
-     nothing: stopImmediatePropagation() fired at document before the event ever
-     reached the button, so the click never completed its dispatch. The More tab's
-     rail has always used the bubble phase, which is why its pills worked while
-     these did not. Same shape as the More handler on purpose — generic
-     [data-action] lookup, early return for anything that is not ours. */
+     wired the same way: one action, one place, no scroll listeners. */
   document.addEventListener("click", function (e) {
-    var b = e.target.closest("[data-action]"); if (!b) return;
-    var a = b.getAttribute("data-action");
-    if (a !== "sec-filter") return;
-    e.preventDefault(); e.stopImmediatePropagation();
+    var b = e.target.closest('[data-action="sec-filter"]');
+    if (!b) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
     setSectionFilter(b.getAttribute("data-page"), b.getAttribute("data-sec"));
-  });
+  }, true);
 
   document.addEventListener("click", function (e) {
     var b = e.target.closest("[data-action]"); if (!b) return;
@@ -14422,3 +14381,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a441b1778f592f8e',t:'MTc5MDkyMjk5MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
