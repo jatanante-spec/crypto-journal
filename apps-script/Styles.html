@@ -54,6 +54,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .brand { padding: 4px 10px 18px; }
 .brand h1 { margin: 0; font-size: 15px; letter-spacing: 0.04em; text-transform: uppercase; }
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option), body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){
+  width:58px!important;min-width:58px!important;max-width:58px!important;
+  padding:0 6px!important;font-size:9px!important;
+  line-height:1!important;white-space:nowrap!important;
+}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option), body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){
+  width:34px!important;min-width:34px!important;max-width:34px!important;
+}
 .brand p { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
 .nav button {
   text-align: left;
@@ -4342,15 +4350,22 @@ body.command-strip-mode .p1-diag{padding:6px 8px!important}
 /* the corner ⓘ is a real 40px target now; its container steps aside so it cannot sit on the heading */
 .tip-btn{width:40px;height:40px;min-width:40px;min-height:40px}
 .teach:has(> .tip-btn),.cell:has(> .tip-btn),.market-swing-head:has(.tip-btn),.market-swing-block:has(> .tip-btn),.budget-bar:has(.tip-btn),.cd-card > header:has(.tip-btn){padding-right:46px}
-
-/* --- the rest of the floor (LR1.1, 21 Sep 2026): every real control at 40px, and the chart's own
+/* --- the rest of the floor (LR1.1,
+21 Sep 2026): every real control at 40px,
+and the chart's own
    labels at 12px with the gutter widened to hold them. Most of these rows were pinned by an explicit
-   height rather than a min-height, so height:auto comes with the floor or the min-height is ignored.
-   The exclusions are chart annotations, not controls, and each one is measured: the swing dots sit
-   15px apart at their closest on a phone (40px squares would overlap and make a tap ambiguous), and the
-   journal's now-marker is a 12px point on a bar. Everything you can actually press is on the floor. --- */
-#main button:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option),
-#main summary, .train-mini, .stepper button, .rr-btn, .horizon-pill{min-height:40px;height:auto}
+   height rather than a min-height,
+so height:auto comes with the floor or the min-height is ignored.
+   The exclusions are chart annotations,
+not controls,
+and each one is measured: the swing dots sit
+   15px apart at their closest on a phone (40px squares would overlap and make a tap ambiguous),
+#main summary,
+.train-mini,
+.stepper button,
+.rr-btn,
+.horizon-pill{min-height:40px;height:auto}
+/* --- the rest of the floor (LR1.1, 21 Sep 2026): every real control at 40px, and the chart's own labels at 12px with the gutter widened to hold them. Most of these rows were pinned by an explicit height rather than a min-height, so height:auto comes with the floor or the min-height is ignored. The exclusions are chart annotations, not controls, and each one is measured: the swing dots sit 15px apart at their closest on a phone (40px squares would overlap and make a tap ambiguous), and the journal's now-marker is a 12px point on a bar. Everything you can actually press is on the floor. --- */ #main button:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option), #main summary, .train-mini, .stepper button, .rr-btn, .horizon-pill{min-height:40px;height:auto}
 details > summary{display:flex;align-items:center;gap:6px}
 .horizon-pill{padding:8px 10px}
 .train-mini{padding:0 9px}
@@ -4494,7 +4509,7 @@ body:not(.training) .p1-training,body:not(.training) .p1-feed,body:not(.training
 body:not(.training) .p1-training summary,body:not(.training) .p1-feed summary,body:not(.training) .p1-evidence summary{min-height:30px!important;font-size:10px!important}
 body:not(.training) .p1-actions{gap:5px!important;margin-top:6px!important}
 body:not(.training) .p1-actions button{min-height:34px!important;padding:6px 8px!important;font-size:10px!important}
-body:not(.training) #main button:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){min-height:32px!important;height:auto!important;padding:5px 8px!important;font-size:11px!important}
+body:not(.training) #main button:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){min-height:32px!important;height:auto!important;padding:5px 8px!important;font-size:11px!important}
 body:not(.training) #main summary{min-height:32px!important;padding:6px 8px!important}
 body:not(.training) .rr-btn{min-height:32px!important;padding:5px 7px!important}
 body:not(.training) .cch .cch-bar button,body:not(.training) .cch .cch-ctl button{min-height:34px!important;padding:5px 8px!important;font-size:11px!important}
@@ -4609,7 +4624,8 @@ body.command-strip-mode .field input,body.command-strip-mode .field select{paddi
 body.command-strip-mode .row{gap:4px!important}
 body.command-strip-mode .btn,body.command-strip-mode .btn.secondary,body.command-strip-mode .btn.danger{min-height:28px!important;height:auto!important;padding:4px 7px!important;border-radius:3px!important;font-size:10px!important;line-height:1.15}
 body.command-strip-mode .text-link{min-height:28px!important;padding:4px 7px!important;font-size:10px!important}
-body.command-strip-mode #main button:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){min-height:28px!important;height:auto!important;padding:4px 7px!important;border-radius:3px!important;font-size:10px!important;line-height:1.15}
+body.command-strip-mode #main button:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){min-height:28px!important;height:auto!important;padding:4px 7px!important;border-radius:3px!important;font-size:10px!important;line-height:1.15}
+body.command-strip-mode #main button:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){min-height:28px!important;height:auto!important;padding:4px 7px!important;border-radius:3px!important;font-size:10px!important;line-height:1.15}
 body.command-strip-mode #main summary{min-height:28px!important;height:auto!important;padding:5px 7px!important;font-size:10px!important}
 body.command-strip-mode .results{gap:4px!important}
 body.command-strip-mode .result{padding:6px 7px!important;border-radius:3px!important}
@@ -4852,7 +4868,6 @@ body.command-strip-mode .card,body.command-strip-mode .cd-card,body.command-stri
 body.command-strip-mode .card{padding:16px!important}
 body.command-strip-mode .cd-card{padding:16px!important;margin:0 0 12px!important;background:var(--panel)!important;border:1px solid var(--line)!important}
 body.command-strip-mode .btn,body.command-strip-mode .btn.secondary,body.command-strip-mode .btn.danger{min-height:38px!important;padding:8px 12px!important;border-radius:10px!important;font-size:12px!important;line-height:1.25}
-body.command-strip-mode #main button:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){min-height:38px!important;padding:8px 12px!important;border-radius:10px!important;font-size:12px!important}
 body.command-strip-mode #main summary{min-height:40px!important;padding:10px 12px!important;border-radius:10px!important;font-size:12px!important}
 body.command-strip-mode .cd-fold{margin:10px 0 0!important;border:1px solid var(--line)!important;border-radius:12px!important;background:var(--panel)!important}
 body.command-strip-mode .cd-fold>div{padding:0 12px 14px!important}
@@ -5014,6 +5029,37 @@ body.command-strip-mode[data-color-theme="signal"]{--bg:#0b1220;--panel:#151f35;
 .market-climate-actions .btn{min-height:32px;padding:6px 9px;font-size:10px}
 .market-climate-actions>span{color:var(--muted);font-size:9px!important;line-height:1.3!important}
 @media(max-width:620px){.market-screen .market-climate{padding:12px 10px}.market-climate-head{gap:8px}.market-climate-head h2{font-size:18px!important}.market-climate-status{padding:6px 7px;font-size:9px!important}.market-climate-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.market-climate-reading>summary{min-height:70px}.market-climate-method{grid-template-columns:1fr;gap:5px}.market-climate-method>div{padding:7px}.market-climate-data-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* SCOUT-ROW-ACTIONS-2 · why the previous fix did nothing.
+   The command-strip density pass ships a blanket rule
+     body.command-strip-mode #main button:not(.tip-btn)...:not(.more-palette-option)
+   carrying min-height:38px, padding:8px 12px, border-radius:10px and font-size:12px,
+   all !important. Its ten :not() clauses give it specificity (1,11,2).
+   SCOUT-ROW-ACTIONS-1 used only six :not() clauses, scoring (1,9,1), so it silently
+   lost EVERY property: the buttons kept padding:8px 12px, which inside a 36px segment
+   leaves 12px of content box, while "Lock" needs ~24px and "Research" ~41px at the
+   inherited 12px. Hence labels bursting their borders.
+   This block repeats the full ten-clause chain to reach (1,13,1) and win, then restores
+   the segmented look: square segments inside the container's 9px radius, real padding,
+   and a type size measured against the real Space Grotesk metrics.
+     "Lock"    10px -> 23.8px in 28px    "Research"  9px -> 40.6px in 46px
+     "Inspect"  9px -> 33.2px in 46px    at <=390px  8px -> 36.1px in 44px
+   Tap height and the ::after hit expansion are deliberately left alone. */
+body.command-strip-mode #main .triage-ledger-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option) button, body.command-strip-mode #main .triage-focus-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option) button{
+  padding:0!important;border-radius:0!important;
+}
+body.command-strip-mode #main .triage-ledger-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option) button:first-child{border-radius:9px 0 0 9px!important}
+body.command-strip-mode #main .triage-ledger-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option) button:last-child{border-radius:0 9px 9px 0!important}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option), body.command-strip-mode #main .triage-focus-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option), body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option), body.command-strip-mode #main .triage-focus-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){
+  width:36px!important;min-width:36px!important;max-width:36px!important;
+  padding:0 4px!important;font-size:10px!important;
+  line-height:1!important;white-space:nowrap!important;
+}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option), body.command-strip-mode #main .triage-focus-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){font-size:13px!important}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option), body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){
+  width:58px!important;min-width:58px!important;max-width:58px!important;
+  padding:0 6px!important;font-size:9px!important;
+  line-height:1!important;white-space:nowrap!important;
+}
 @media(max-width:390px){.market-climate-head{display:block}.market-climate-status{margin-top:8px}.market-climate-track-point{font-size:8px!important}.market-climate-readout{display:block}.market-climate-readout b{display:block;margin-bottom:3px}.market-climate-meta{gap:3px 7px}.market-climate-meta span+span:before{margin-right:4px}.market-climate-glance-head{display:block}.market-climate-glance-head small{display:block;margin-top:3px;text-align:left}.market-climate-reading>summary{padding:7px}.market-climate-reading summary b{font-size:11px!important}.market-climate-reading summary em{font-size:8px!important}.market-climate-data-grid{grid-template-columns:1fr 1fr}.market-climate-data:last-child{grid-column:span 2}}
 /* Unified Scout / Coin Desk. One record, three scopes, no duplicate library room. */
 #main .triage-page{max-width:100%;color:var(--text)}
@@ -5202,12 +5248,9 @@ body.command-strip-mode .coin-desk-layout-settings h3{margin:0!important;font-si
 body.command-strip-mode .coin-desk-layout-settings header p{margin:5px 0 0;max-width:680px;font-size:11px;line-height:1.45}
 body.command-strip-mode .layout-setting-badge{flex:0 0 auto;padding:5px 8px;border:1px solid var(--green);border-radius:999px;background:var(--green-bg);color:var(--green);font-size:9px;font-weight:800;white-space:nowrap}
 body.command-strip-mode .coin-desk-layout-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-body.command-strip-mode #main .coin-desk-layout-option,
-body.command-strip-mode .more-sheet-panel .coin-desk-layout-option{min-width:0;min-height:110px!important;padding:11px!important;border:1px solid var(--line)!important;border-radius:10px!important;background:var(--input)!important;color:var(--text)!important;text-align:left!important;box-shadow:none!important}
-body.command-strip-mode #main .coin-desk-layout-option:hover,
-body.command-strip-mode .more-sheet-panel .coin-desk-layout-option:hover{border-color:var(--accent)!important;background:var(--panel-2)!important}
-body.command-strip-mode #main .coin-desk-layout-option.selected,
-body.command-strip-mode .more-sheet-panel .coin-desk-layout-option.selected{border-color:var(--accent)!important;background:var(--panel-2)!important;box-shadow:inset 0 0 0 1px var(--accent)!important}
+body.command-strip-mode #main .coin-desk-layout-option{min-width:0;min-height:110px!important;padding:11px!important;border:1px solid var(--line)!important;border-radius:10px!important;background:var(--input)!important;color:var(--text)!important;text-align:left!important;box-shadow:none!important}
+body.command-strip-mode #main .coin-desk-layout-option:hover{border-color:var(--accent)!important;background:var(--panel-2)!important}
+body.command-strip-mode #main .coin-desk-layout-option.selected{border-color:var(--accent)!important;background:var(--panel-2)!important;box-shadow:inset 0 0 0 1px var(--accent)!important}
 body.command-strip-mode .layout-option-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
 body.command-strip-mode .layout-option-top b{font-size:11px}
 body.command-strip-mode .layout-option-top i{color:var(--green);font-size:8px;font-style:normal;font-weight:800;text-transform:uppercase;white-space:nowrap}
@@ -5222,8 +5265,7 @@ body.command-strip-mode .coin-library-chevron{color:var(--accent);font-weight:80
   body.command-strip-mode[data-coin-desk-layout="lab"] #main .triage-head{padding:12px 12px}
   body.command-strip-mode[data-coin-desk-layout="lab"] #main .triage-head h2{font-size:22px}
   body.command-strip-mode .coin-desk-layout-options{grid-template-columns:1fr}
-  body.command-strip-mode #main .coin-desk-layout-option,
-  body.command-strip-mode .more-sheet-panel .coin-desk-layout-option{min-height:84px!important}
+body.command-strip-mode #main .coin-desk-layout-option{min-height:84px!important}
   body.command-strip-mode .coin-desk-layout-settings>header{display:block}
   body.command-strip-mode .layout-setting-badge{display:inline-block;margin-top:8px}
   body.command-strip-mode[data-coin-desk-layout="focus"] #main .triage-head{display:flex}
@@ -6501,6 +6543,20 @@ body.command-strip-mode .more-group-head h3 {
 
 /* ── More page: compact section list + sheet ── */
 .more-section-list{display:flex;flex-direction:column;gap:6px;padding:0 0 20px}
+/* MORE-1 · a pill now OPENS its section instead of filtering a duplicate list,
+   so the body holds either the six-row overview or one section's settings,
+   rendered inline. No sheet overlay, no Close button, no prev/next. */
+.more-section-body{padding:10px 0 22px}
+.more-section-inline{display:flex;flex-direction:column;gap:9px}
+.more-inline-head{display:flex;align-items:center;gap:9px;padding:0 2px 3px}
+.more-inline-back{flex:none;border:1px solid var(--line);background:transparent;color:var(--muted);
+  border-radius:7px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;
+  transition:border-color .14s,color .14s}
+.more-inline-back:hover{border-color:var(--accent);color:var(--text)}
+.more-inline-title{font-size:12px;font-weight:700;color:var(--text);letter-spacing:-.01em}
+/* rows are the "All" overview only and carry no description now, so the body is
+   a single line -- stop it reserving the space the prose used to take */
+.more-section .sec-body h3{margin-bottom:0}
 .more-section{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--panel);cursor:pointer;transition:all .15s}
 .more-section:hover{border-color:var(--accent);background:var(--panel-2)}
 .more-section:active{transform:scale(.99)}
@@ -6518,25 +6574,7 @@ body.command-strip-mode .more-group-head h3 {
 .sec-icon.clr-data{background:rgba(190,160,255,.12);color:#bea0ff}
 /* hide old expanded groups when list mode is active */
 .more-groups.has-section-list{display:none}
-/* sheet scrim */
-.more-sheet-scrim{position:fixed;inset:0;z-index:170;background:rgba(3,9,24,.72);opacity:0;pointer-events:none;visibility:hidden}
-.more-sheet-scrim.open{opacity:1;pointer-events:auto;visibility:visible}
-/* sheet panel */
-.more-sheet-panel{position:fixed;top:0;right:0;bottom:0;z-index:175;width:min(420px,92vw);background:var(--bg);border-left:1px solid var(--line);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s ease;overscroll-behavior:contain}
-.more-sheet-panel.open{transform:translateX(0)}
-.more-sheet-head{display:flex;align-items:center;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line);flex:none}
-.more-sheet-head button{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:6px;background:var(--panel-2);color:var(--text);font-family:var(--font);font-size:16px;cursor:pointer;transition:all .15s;flex:none}
-.more-sheet-head button:hover{border-color:var(--accent);background:var(--accent-bg)}
-.more-sheet-head button:disabled{opacity:.3;cursor:default}
-.more-sheet-title{flex:1;text-align:center;min-width:0}
-.more-sheet-title h3{font-size:13px;font-weight:700;margin:0}
-.more-sheet-title small{font-size:9px;color:var(--muted)}
-.more-sheet-body{flex:1;overflow-y:auto;padding:14px;background:var(--bg)}
-.more-sheet-foot{display:flex;gap:6px;padding:10px 12px;border-top:1px solid var(--line);flex:none}
-.more-sheet-foot button{flex:1;padding:8px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--text);font-family:var(--font);font-size:10px;font-weight:600;cursor:pointer;transition:all .15s}
-.more-sheet-foot button:hover{filter:brightness(1.1)}
 @media(max-width:650px){
-  .more-sheet-panel{width:100%}
 }
 
 @media (max-width: 400px) {
@@ -6546,25 +6584,29 @@ body.command-strip-mode .more-group-head h3 {
   .more-chip { padding: 0 11px; font-size: 10.5px; }
   .more-sum { max-width: 42%; }
 }
-
 /* =====================================================================================
    MORE-LAYOUT-PREVIEW-1 - miniatures of the Coin Desk and Scout layouts inside the
-   Look group. Presentation only: the same two settings with the same options, actions
-   and destinations, now with a picture of what each one produces.
+   Look group. Presentation only: the same two settings with the same options,
+actions
+   and destinations,
+now with a picture of what each one produces.
 
    Notes for anyone editing this later:
      - the picture is built entirely from spans and carries role="img". It is not
-       focusable, not in the tab order, and not a control, which is also why it does
-       not have to fight the shared #main button rule.
-     - the only real buttons are .mp-toggle and .mp-seg button, and both carry .mp-btn,
-       which was added to the :not() chain of all four copies of the shared rule
+       focusable,
+not in the tab order,
+and not a control,
+which was added to the :not() chain of all four copies of the shared rule
        body.command-strip-mode #main button:not(...). Without that they would be forced
        to 38px with 8px 12px padding and a 10px radius.
-     - the three Coin Desk skins are driven by custom properties on .mp-pic, mirroring
-       the real values: strip height, button height, budget-bar height, budget track
-       width, heading size, evidence-panel weight and accent colour.
-   ===================================================================================== */
-.mp-panel {
+     - the three Coin Desk skins are driven by custom properties on .mp-pic,
+mirroring
+       the real values: strip height,
+button height,
+budget-bar height,
+budget track
+       width,
+heading size{
   display: block;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -6572,52 +6614,11 @@ body.command-strip-mode .more-group-head h3 {
   margin: 0 0 12px;
   overflow: hidden;
 }
-.mp-collapsed .mp-bar { border-bottom: 0; }
-.mp-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 9px;
-  border-bottom: 1px solid var(--line);
-  background: rgba(10, 17, 30, .5);
-}
-.mp-bar-title {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: 9px;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-  color: #5d6d8c;
-}
-/* No overflow:hidden here: it would clip the ::after that gives these small controls a
-   40px touch target without making them 40px tall. The radii move onto the buttons. */
-.mp-seg { display: flex; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 6px; }
-.mp-seg button:first-child { border-radius: 5px 0 0 5px; }
-.mp-seg button:last-child { border-radius: 0 5px 5px 0; }
-.mp-seg button,
-.mp-toggle,
-.mp-thumb-toggle .mp-btn { position: relative; }
-.mp-seg button::after,
-.mp-toggle::after,
-.mp-thumb-toggle .mp-btn::after {
+.mp-toggle{ position: relative; }
+.mp-toggle::after{
   content: ""; position: absolute; left: 0; right: 0; top: -9px; bottom: -9px;
 }
-.mp-seg button {
-  min-height: 22px;
-  padding: 3px 8px;
-  border: 0;
-  border-right: 1px solid var(--line);
-  border-radius: 0;
-  background: var(--panel-2);
-  color: var(--muted);
-  font-family: inherit;
-  font-size: 9px;
-  cursor: pointer;
-}
-.mp-seg button:last-child { border-right: 0; }
-.mp-seg button.on { background: var(--accent); color: #fff; font-weight: 700; }
-.mp-toggle,
-.mp-thumb-toggle .mp-btn {
+.mp-toggle{
   min-height: 22px;
   padding: 3px 8px;
   border: 1px solid var(--line);
@@ -6628,16 +6629,8 @@ body.command-strip-mode .more-group-head h3 {
   font-size: 9px;
   cursor: pointer;
 }
-.mp-toggle:hover, .mp-seg button:hover { color: var(--text); border-color: var(--accent); }
-.mp-toggle:focus-visible, .mp-seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.mp-stage { display: block; padding: 9px; }
-.mp-note {
-  display: block;
-  padding: 0 9px 8px;
-  font-size: 9px;
-  line-height: 1.4;
-  color: #5d6d8c;
-}
+.mp-toggle:hover{ color: var(--text); border-color: var(--accent); }
+.mp-toggle:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
 .mp-head-tools { display: flex; align-items: center; gap: 7px; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; }
 .mp-thumb-toggle { display: inline-flex; align-items: center; gap: 5px; }
 .mp-thumb-toggle > span { font-size: 8.5px; letter-spacing: .07em; text-transform: uppercase; color: #5d6d8c; }
@@ -7103,50 +7096,31 @@ body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.ti
 /* SCOUT-ROW-ACTIONS-2 · why the previous fix did nothing.
    The command-strip density pass ships a blanket rule
      body.command-strip-mode #main button:not(.tip-btn)...:not(.more-palette-option)
-   carrying min-height:38px, padding:8px 12px, border-radius:10px and font-size:12px,
-   all !important. Its ten :not() clauses give it specificity (1,11,2).
-   SCOUT-ROW-ACTIONS-1 used only six :not() clauses, scoring (1,9,1), so it silently
-   lost EVERY property: the buttons kept padding:8px 12px, which inside a 36px segment
-   leaves 12px of content box, while "Lock" needs ~24px and "Research" ~41px at the
+   carrying min-height:38px,
+padding:8px 12px,
+border-radius:10px and font-size:12px,
+all !important. Its ten :not() clauses give it specificity (1,
+11,
+2).
+   SCOUT-ROW-ACTIONS-1 used only six :not() clauses,
+scoring (1,
+9,
+1),
+so it silently
+   lost EVERY property: the buttons kept padding:8px 12px,
+which inside a 36px segment
+   leaves 12px of content box,
+while "Lock" needs ~24px and "Research" ~41px at the
    inherited 12px. Hence labels bursting their borders.
-   This block repeats the full ten-clause chain to reach (1,13,1) and win, then restores
-   the segmented look: square segments inside the container's 9px radius, real padding,
-   and a type size measured against the real Space Grotesk metrics.
-     "Lock"    10px -> 23.8px in 28px    "Research"  9px -> 40.6px in 46px
-     "Inspect"  9px -> 33.2px in 46px    at <=390px  8px -> 36.1px in 44px
-   Tap height and the ::after hit expansion are deliberately left alone. */
-body.command-strip-mode #main .triage-ledger-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option) button,
-body.command-strip-mode #main .triage-focus-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option) button{
+   This block repeats the full ten-clause chain to reach (1,
+13,
+1) and win,
+then restores
+   the segmented look: square segments inside the container's 9px radius,
+real padding{
   padding:0!important;border-radius:0!important;
 }
-body.command-strip-mode #main .triage-ledger-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option) button:first-child{border-radius:9px 0 0 9px!important}
-body.command-strip-mode #main .triage-ledger-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option) button:last-child{border-radius:0 9px 9px 0!important}
-body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option),
-body.command-strip-mode #main .triage-focus-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option),
-body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option),
-body.command-strip-mode #main .triage-focus-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){
-  width:36px!important;min-width:36px!important;max-width:36px!important;
-  padding:0 4px!important;font-size:10px!important;
-  line-height:1!important;white-space:nowrap!important;
-}
-body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option),
-body.command-strip-mode #main .triage-focus-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){font-size:13px!important}
-body.command-strip-mode #main .triage-ledger-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option),
-body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){
-  width:58px!important;min-width:58px!important;max-width:58px!important;
-  padding:0 6px!important;font-size:9px!important;
-  line-height:1!important;white-space:nowrap!important;
-}
 @media(max-width:390px){
-body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option),
-body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){
-  width:34px!important;min-width:34px!important;max-width:34px!important;
-}
-body.command-strip-mode #main .triage-ledger-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option),
-body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.mp-btn):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){
-  width:56px!important;min-width:56px!important;max-width:56px!important;
-  font-size:8px!important;
-}
 }
 
 /* CLIMATE-LAYOUT-1 · four ways to draw the same four independent readings, chosen from
@@ -7692,4 +7666,4 @@ body:not(.command-strip-mode) .sizer-screen{padding-bottom:calc(130px + env(safe
 }
 
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a44281c4598a221f',t:'MTc5MDkzMTUyMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a442ba4acf4bb3d8',t:'MTc5MDkzMzgzOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

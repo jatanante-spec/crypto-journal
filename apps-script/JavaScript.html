@@ -10757,7 +10757,6 @@
     data:    { icon: "⇅", label: "Data",            desc: "Sync, backup, reset", color: "clr-data" }
   };
   var moreFilter = "all";
-  var moreSheetOpen = null; /* null = closed, or group id string */
   var moreInfo = {};
   var MORE_THEME_SHORT = { signal: "Amber", electric: "Blue", graphite: "Coral" };
   var MORE_SCOUT_SHORT = { glance: "Glance", ledger: "Ledger" };
@@ -10825,31 +10824,40 @@
     if (id === "data") return moreDataSum();
     return "";
   }
+  /* MORE-1 · the pill rail now OPENS a section instead of filtering a duplicate
+     list of it. Under "All" the body is the six sections as an overview; under a
+     specific pill it is that section's own settings, inline. Reaching the Look
+     options is therefore one tap -- pill -> settings -- instead of
+     pill -> row -> sheet. No sheet overlay, no second tab bar inside it, no
+     prev/next. The rail is the only navigation, which is the same pattern the
+     Sizer and Market pills already use. */
+  function moreSectionBodyHtml() {
+    if (moreFilter === "all") {
+      return '<div class="more-section-list">' + moreSectionListHtml() + "</div>";
+    }
+    var m = MORE_SECTION_META[moreFilter];
+    if (!m) return "";
+    return '<div class="more-section-inline" data-more-section="' + esc(moreFilter) + '">' +
+      '<div class="more-inline-head">' +
+        '<button type="button" class="more-inline-back" data-action="more-filter" data-filter="all">&lsaquo; All</button>' +
+        '<span class="more-inline-title">' + esc(m.label) + "</span>" +
+      "</div>" +
+      moreSheetBodyFor(moreFilter) +
+      "</div>";
+  }
+  /* Rows are the "All" overview only. They carry no description -- the rail is
+     the navigation, so a second line of prose under each row was weight without
+     a job. Tapping one opens it, same as its pill. */
   function moreSectionListHtml() {
     return MORE_GROUPS.map(function (id) {
       var m = MORE_SECTION_META[id]; if (!m) return "";
-      var show = moreFilter === "all" || moreFilter === id;
-      if (!show) return "";
       var sum = moreSectionSum(id);
-      return '<div class="more-section" data-action="more-section-open" data-section="' + id + '">' +
-        '<span class="sec-icon ' + m.color + '">' + m.icon + '</span>' +
-        '<div class="sec-body"><h3>' + esc(m.label) + '</h3><p>' + esc(m.desc) + '</p></div>' +
-        (sum ? '<span class="sec-summary">' + esc(sum) + '</span>' : '') +
+      return '<div class="more-section" data-action="more-filter" data-filter="' + id + '" role="button" tabindex="0">' +
+        '<span class="sec-icon ' + m.color + '">' + m.icon + "</span>" +
+        '<div class="sec-body"><h3>' + esc(m.label) + "</h3></div>" +
+        (sum ? '<span class="sec-summary">' + esc(sum) + "</span>" : "") +
         '<span class="sec-arrow">&rsaquo;</span></div>';
     }).join("");
-  }
-  function moreSheetPanelHtml() {
-    return '<div class="more-sheet-scrim" id="moreSheetScrim"></div>' +
-      '<div class="more-sheet-panel" id="moreSheetPanel">' +
-        '<div class="more-sheet-head">' +
-          '<button type="button" id="moreSheetPrev" aria-label="Previous section">&lsaquo;</button>' +
-          '<div class="more-sheet-title"><h3 id="moreSheetTitle"></h3><small id="moreSheetSub"></small></div>' +
-          '<button type="button" id="moreSheetNext" aria-label="Next section">&rsaquo;</button>' +
-          '<button type="button" id="moreSheetClose" aria-label="Close">&times;</button>' +
-        '</div>' +
-        '<div class="more-sheet-body" id="moreSheetBody"></div>' +
-        '<div class="more-sheet-foot"><button type="button" id="moreSheetFootClose">Close</button></div>' +
-      '</div>';
   }
   function moreSheetBodyFor(id) {
     var planCount = normalisePlans(state.plans).length;
@@ -10861,45 +10869,6 @@
     if (id === "data") return moreDataBody();
     return "";
   }
-  function moreSheetNavigate(id) {
-    moreSheetOpen = id;
-    var m = MORE_SECTION_META[id]; if (!m) return;
-    var title = document.getElementById("moreSheetTitle");
-    var sub = document.getElementById("moreSheetSub");
-    var body = document.getElementById("moreSheetBody");
-    var prev = document.getElementById("moreSheetPrev");
-    var next = document.getElementById("moreSheetNext");
-    if (title) title.textContent = m.label;
-    if (sub) sub.textContent = m.desc;
-    if (body) body.innerHTML = moreSheetBodyFor(id);
-    var idx = MORE_GROUPS.indexOf(id);
-    if (prev) { prev.disabled = idx <= 0; prev.style.opacity = idx <= 0 ? ".3" : "1"; }
-    if (next) { next.disabled = idx >= MORE_GROUPS.length - 1; next.style.opacity = idx >= MORE_GROUPS.length - 1 ? ".3" : "1"; }
-    if (body && id === "account") fitCoinNavigation();
-  }
-  function moreSheetShow(id) {
-    var scrim = document.getElementById("moreSheetScrim");
-    var panel = document.getElementById("moreSheetPanel");
-    /* create once on document.body so render() never destroys them */
-    if (!scrim || !panel) {
-      var wrap = document.createElement("div");
-      wrap.innerHTML = moreSheetPanelHtml();
-      while (wrap.firstChild) document.body.appendChild(wrap.firstChild);
-      scrim = document.getElementById("moreSheetScrim");
-      panel = document.getElementById("moreSheetPanel");
-    }
-    if (!scrim || !panel) return;
-    moreSheetNavigate(id);
-    scrim.classList.add("open");
-    panel.classList.add("open");
-  }
-  function moreSheetHide() {
-    var scrim = document.getElementById("moreSheetScrim");
-    var panel = document.getElementById("moreSheetPanel");
-    if (scrim) scrim.classList.remove("open");
-    if (panel) panel.classList.remove("open");
-    moreSheetOpen = null;
-  }
   function moreSetFilter(next) {
     moreFilter = (next && MORE_GROUPS.indexOf(next) >= 0) ? next : "all";
     Array.prototype.forEach.call(document.querySelectorAll(".more-filter-rail .more-chip"), function (b) {
@@ -10907,8 +10876,17 @@
       b.classList.toggle("on", on);
       b.setAttribute("aria-selected", on ? "true" : "false");
     });
-    var list = document.querySelector(".more-section-list");
-    if (list) list.innerHTML = moreSectionListHtml();
+    var body = document.querySelector(".more-section-body");
+    if (body) body.innerHTML = moreSectionBodyHtml();
+    /* the chosen section is what you came for, so bring it under the rail */
+    if (moreFilter !== "all") {
+      var inline = body && body.querySelector(".more-section-inline");
+      if (inline && inline.scrollIntoView) {
+        try { inline.scrollIntoView({ behavior: "smooth", block: "start" }); }
+        catch (e) { try { inline.scrollIntoView(); } catch (e2) {} }
+      }
+    }
+    if (moreFilter === "account") fitCoinNavigation();
     moreSyncRailTop();
   }
   /* A sticky rail has to sit under whatever is pinned above it. The budget bar
@@ -10971,13 +10949,7 @@
     var a = b.getAttribute("data-action"); if (a.indexOf("more-") !== 0) return;
     e.preventDefault(); e.stopImmediatePropagation();
     if (a === "more-filter") { moreSetFilter(b.getAttribute("data-filter")); return; }
-    if (a === "more-section-open") { moreSheetShow(b.getAttribute("data-section")); return; }
     if (a === "more-theme") { setColorTheme(b.getAttribute("data-theme")); return; }
-    if (a === "more-preview-screen") {
-      morePreviewScreen = b.getAttribute("data-screen") === "sizer" ? "sizer" : "scout";
-      morePreviewSyncScreen();
-      return;
-    }
     if (a === "more-preview-toggle") {
       var target = b.getAttribute("data-target");
       if (!Object.prototype.hasOwnProperty.call(morePreviewOn, target)) return;
@@ -10996,29 +10968,22 @@
       moreSyncRailTop();
     }
   }, true);
-  /* Sheet panel: close / prev / next / scrim */
-  document.addEventListener("click", function (e) {
-    if (!moreSheetOpen) return;
-    if (e.target.id === "moreSheetClose" || e.target.id === "moreSheetFootClose" || e.target.id === "moreSheetScrim") {
-      moreSheetHide(); return;
-    }
-    if (e.target.id === "moreSheetPrev") {
-      var idx = MORE_GROUPS.indexOf(moreSheetOpen);
-      if (idx > 0) moreSheetNavigate(MORE_GROUPS[idx - 1]);
-      return;
-    }
-    if (e.target.id === "moreSheetNext") {
-      var idx2 = MORE_GROUPS.indexOf(moreSheetOpen);
-      if (idx2 < MORE_GROUPS.length - 1) moreSheetNavigate(MORE_GROUPS[idx2 + 1]);
-      return;
-    }
-  });
+  /* MORE-1 · keyboard control of the More rail. It used to drive the sheet; the
+     sheet is gone, so it now steps the inline sections -- Escape returns to All,
+     the arrows walk the six. Guarded to this page and to non-typing targets so it
+     never eats a keypress meant for a field. */
   document.addEventListener("keydown", function (e) {
-    if (!moreSheetOpen) return;
-    if (e.key === "Escape") { e.preventDefault(); moreSheetHide(); return; }
-    var idx = MORE_GROUPS.indexOf(moreSheetOpen);
-    if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); if (idx > 0) moreSheetNavigate(MORE_GROUPS[idx - 1]); }
-    if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); if (idx < MORE_GROUPS.length - 1) moreSheetNavigate(MORE_GROUPS[idx + 1]); }
+    if (page !== "settings" || moreFilter === "all") return;
+    var t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+    if (e.key === "Escape") { e.preventDefault(); moreSetFilter("all"); return; }
+    var idx = MORE_GROUPS.indexOf(moreFilter);
+    if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+      e.preventDefault(); if (idx > 0) moreSetFilter(MORE_GROUPS[idx - 1]); return;
+    }
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+      e.preventDefault(); if (idx < MORE_GROUPS.length - 1) moreSetFilter(MORE_GROUPS[idx + 1]);
+    }
   });
   window.addEventListener("resize", moreSyncRailTop);
 
@@ -11045,8 +11010,6 @@
      No layout, no setting, no action and no destination changes. This is a picture of
      the presentation that already exists.
      ===================================================================================== */
-  var morePreviewScreen = "scout";
-  var morePreviewOn = { panel: true, coinDesk: true, scout: true };
   var MORE_PREVIEW_ROWS = [
     { t: "XRP", p: "XRP / GBP", trend: "Up trend",   watch: "Above EMA · Tide up",
       loc: "1.87 – 1.92",   ch: "+1.4%", dir: "up",   age: "4m",  health: "Ready",   hc: "ok",   act: "Inspect" },
@@ -11154,39 +11117,14 @@
     return '<span class="mp-pic mp-' + cd + (mode === "chrome" || mode === "rows" ? " mp-thumbpic" : "") +
       '" role="img" aria-label="' + esc(label) + '">' + parts.join("") + '</span>';
   }
+  /* Thumbnail switches on the layout option cards. The "panel" key went with the
+     preview panel that carried its own tab bar; coinDesk and scout drive the
+     thumbnails that are still there. */
+  var morePreviewOn = { coinDesk: true, scout: true };
   function morePreviewToggle(target) {
     var on = !!morePreviewOn[target];
     return '<button type="button" class="mp-btn mp-toggle" data-action="more-preview-toggle" data-target="' + target +
       '" aria-pressed="' + on + '">' + (on ? "Hide" : "Show") + '</button>';
-  }
-  function morePreviewPanel() {
-    var cd = coinDeskLayoutValue(), scout = scoutTriageLayoutValue();
-    if (!morePreviewOn.panel) {
-      return '<div class="mp-panel mp-collapsed"><span class="mp-bar">' +
-        '<span class="mp-bar-title">Preview</span>' + morePreviewToggle("panel") + '</span></div>';
-    }
-    return '<div class="mp-panel"><span class="mp-bar">' +
-        '<span class="mp-bar-title">Preview · ' + (morePreviewScreen === "sizer" ? "Sizer" : "Scout") + '</span>' +
-        '<span class="mp-seg">' +
-          '<button type="button" class="mp-btn' + (morePreviewScreen === "scout" ? " on" : "") +
-            '" data-action="more-preview-screen" data-screen="scout">Scout</button>' +
-          '<button type="button" class="mp-btn' + (morePreviewScreen === "sizer" ? " on" : "") +
-            '" data-action="more-preview-screen" data-screen="sizer">Sizer</button>' +
-        '</span>' + morePreviewToggle("panel") +
-      '</span>' +
-      '<span class="mp-stage">' + mpPic(cd, scout, morePreviewScreen, "full") + '</span>' +
-      '<span class="mp-note">Live coin and budget. The rows show shape only.</span></div>';
-  }
-  function morePreviewSyncScreen() {
-    var stage = document.querySelector(".mp-panel .mp-stage");
-    if (!stage) return;
-    stage.innerHTML = mpPic(coinDeskLayoutValue(), scoutTriageLayoutValue(), morePreviewScreen, "full");
-    Array.prototype.forEach.call(document.querySelectorAll('[data-action="more-preview-screen"]'), function (b) {
-      b.classList.toggle("on", b.getAttribute("data-screen") === morePreviewScreen);
-    });
-    var title = document.querySelector(".mp-panel .mp-bar-title");
-    if (title) title.textContent = "Preview · " + (morePreviewScreen === "sizer" ? "Sizer" : "Scout");
-    moreSyncRailTop();
   }
 
   function moreAccountSum() {
@@ -11257,9 +11195,13 @@
     return esc((MORE_THEME_SHORT[colorTheme] || colorTheme) + " · " +
       (MORE_SCOUT_SHORT[scoutTriageLayoutValue()] || ""));
   }
+  /* MORE-1 · the preview panel that used to head this section carried its own
+     Scout / Sizer segmented control -- a third navigation layer stacked on the
+     sheet. It is gone. Each layout option below shows its own shape through the
+     thumbnail toggle in its header, so the preview lives with the choice instead
+     of behind another tab bar. */
   function moreLookBody() {
-    return morePreviewPanel() +
-      moreTagged("palette", "Colour palette") +
+    return moreTagged("palette", "Colour palette") +
       '<div class="more-palette" role="group" aria-label="Colour palette">' +
         Object.keys(COLOR_THEMES).map(function (k) {
           var on = k === colorTheme;
@@ -11310,7 +11252,7 @@
           '<button class="btn secondary more-updates" type="button" data-page="updates">Updates</button>' +
         "</div>" +
         moreFilterRailHtml() +
-        '<div class="more-section-list">' + moreSectionListHtml() + "</div>" +
+        '<div class="more-section-body">' + moreSectionBodyHtml() + "</div>" +
       "</div>"
     );
   }
@@ -12891,7 +12833,6 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
   });
 
   function render() {
-    var savedMoreSheet = moreSheetOpen;
     var savedScroll = window.pageYOffset || document.documentElement.scrollTop || 0;
     rememberPrimaryPage(page);
     var trendTip=document.getElementById('triage-trend-popover');if(trendTip)trendTip.remove();
@@ -12964,11 +12905,6 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
       observeCoinNavigation();
       if(quickSwitchOpen)renderQuickSwitch();
       cpFold();
-      if(savedMoreSheet && page==='settings'){
-        var existPanel=document.getElementById("moreSheetPanel");
-        if(existPanel&&existPanel.classList.contains("open")){moreSheetNavigate(savedMoreSheet);}
-        else{moreSheetShow(savedMoreSheet);}
-      }
       window.scrollTo(0,savedScroll);
     } catch (err) {
       main.innerHTML = '<p class="toast-error">Screen failed to draw: ' + esc(err && err.message ? err.message : String(err)) + "</p>";
@@ -14474,4 +14410,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a44281814ba6221f',t:'MTc5MDkzMTUxMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a442ba0748fdb3d8',t:'MTc5MDkzMzgyNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
