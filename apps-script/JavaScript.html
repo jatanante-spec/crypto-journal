@@ -10880,14 +10880,20 @@
   }
   function moreSyncRailTop() { syncStickyRailsTop(); }
   /* SECTION-NAV-1 — the rail is a filter, exactly like the More tab's, and it is
-     wired the same way: one action, one place, no scroll listeners. */
+     wired the same way: one action, one place, no scroll listeners.
+     Do NOT register this in the capture phase. It was, and the tap silently did
+     nothing: stopImmediatePropagation() fired at document before the event ever
+     reached the button, so the click never completed its dispatch. The More tab's
+     rail has always used the bubble phase, which is why its pills worked while
+     these did not. Same shape as the More handler on purpose — generic
+     [data-action] lookup, early return for anything that is not ours. */
   document.addEventListener("click", function (e) {
-    var b = e.target.closest('[data-action="sec-filter"]');
-    if (!b) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
+    var b = e.target.closest("[data-action]"); if (!b) return;
+    var a = b.getAttribute("data-action");
+    if (a !== "sec-filter") return;
+    e.preventDefault(); e.stopImmediatePropagation();
     setSectionFilter(b.getAttribute("data-page"), b.getAttribute("data-sec"));
-  }, true);
+  });
 
   document.addEventListener("click", function (e) {
     var b = e.target.closest("[data-action]"); if (!b) return;
@@ -14389,4 +14395,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a440905bc86feb1a',t:'MTc5MDkxMTE0OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4409d58b99eeb1a',t:'MTc5MDkxMTY4MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
