@@ -14075,10 +14075,14 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
               libraryPairs().length+' saved · '+state.settings.watchlist.length+' ★</span>'+
           '</div>'+
           '<div class="triage-whisper-center triage-combined-controls">'+
-            '<div class="triage-whisper-search">'+
+            /* SCOUT-SEARCH-1 · a <label>, not a <div>: the magnifier beside the
+               box is a bare decorative <svg>, so tapping it landed on nothing and
+               the search looked like a dead button. A label forwards the tap to
+               the input it wraps, which focuses it and raises the keyboard. */
+            '<label class="triage-whisper-search">'+
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.7-3.7"/></svg>'+
               '<input id="triage-search" type="search" placeholder="Search coins…" aria-label="Search coins" value="'+esc(triageQuery)+'">'+
-            '</div>'+
+            '</label>'+
             triageFocusIconBtn({act:'triage-pop',pop:'scope',icon:'scope',label:'Scope',cap:scopeCap,on:unifiedScoutScope!=='all'})+
             triageFocusIconBtn({act:'triage-pop',pop:'filter',icon:'filter',label:'Filter',cap:filterCap,on:triageFilter!=='all'})+
             triageFocusIconBtn({act:'triage-pop',pop:'sort',icon:'sort',label:'Sort',cap:sortCap,on:triageSort!=='priority'})+
@@ -14470,4 +14474,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a441b9fbdbf1b107',t:'MTc5MDkyMzM0MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a44281814ba6221f',t:'MTc5MDkzMTUxMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

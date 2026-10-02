@@ -7601,19 +7601,12 @@ body:not(.command-strip-mode) .sizer-screen{padding-bottom:calc(130px + env(safe
   overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch
 }
 #main .triage-compact-page .triage-whisper-center::-webkit-scrollbar{display:none}
-#main .triage-compact-page .triage-whisper-search{
-  flex:1;min-width:0;display:flex;align-items:center;gap:4px;
-  height:24px;padding:0 6px;border:1px solid transparent;border-radius:6px;
-  background:transparent;transition:all .15s
-}
+#main .triage-compact-page .triage-whisper-search{ flex:1 1 auto;min-width:118px;display:flex;align-items:center;gap:5px; height:28px;padding:0 7px;border:1px solid transparent;border-radius:6px; background:transparent;transition:all .15s;cursor:text;-webkit-tap-highlight-color:transparent}
 #main .triage-compact-page .triage-whisper-search:focus-within{
   border-color:rgba(61,125,255,.3);background:rgba(17,31,53,.5)
 }
-#main .triage-compact-page .triage-whisper-search svg{flex:0 0 auto;width:11px;height:11px;color:#4a6080}
-#main .triage-compact-page .triage-whisper-search input{
-  flex:1;min-width:0;border:0;background:transparent;color:var(--text);
-  font-size:9px;font-family:inherit;outline:none;height:100%
-}
+#main .triage-compact-page .triage-whisper-search svg{ flex:0 0 auto;width:14px;height:14px;color:#7f97b8;pointer-events:none}
+#main .triage-compact-page .triage-whisper-search input{ flex:1;min-width:0;width:100%;border:0;background:transparent;color:var(--text); font-size:12px;font-family:inherit;outline:none;height:100%;-webkit-appearance:none;appearance:none}
 #main .triage-compact-page .triage-whisper-search input::placeholder{color:#4a6080}
 /* Override triage-focus-icon for whisper chip style */
 #main .triage-compact-page .triage-whisper-center .triage-focus-icon{
@@ -7692,10 +7685,11 @@ body:not(.command-strip-mode) .sizer-screen{padding-bottom:calc(130px + env(safe
   #main .triage-compact-page .triage-whisper-center{gap:2px;padding:0 4px}
   #main .triage-compact-page .triage-whisper-center .triage-focus-icon{padding:0 4px;font-size:6.5px}
   #main .triage-compact-page .triage-whisper-center .triage-focus-icon svg{width:9px;height:9px}
-  #main .triage-compact-page .triage-whisper-center .triage-focus-icon b{font-size:6.5px}
+  #main .triage-compact-page .triage-whisper-center .triage-focus-icon b{font-size:6.5px} #main .triage-compact-page .triage-whisper-search{min-width:104px;height:26px;gap:4px;padding:0 6px} #main .triage-compact-page .triage-whisper-search svg{width:13px;height:13px} #main .triage-compact-page .triage-whisper-search input{font-size:12px}
   #main .triage-compact-page .triage-whisper-right{padding:0 5px;gap:2px}
   #main .triage-compact-page .triage-whisper-micro{font-size:7px;padding:0 4px}
   #main .triage-compact-page .triage-whisper-sub .triage-plans-button{display:none}
 }
 
 </style>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a44281c4598a221f',t:'MTc5MDkzMTUyMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
