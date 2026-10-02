@@ -10654,8 +10654,16 @@
     if (!items) return;
     var cur = sectionFilter[page] || "all";
     items.forEach(function (it) {
+      var show = (cur === "all" || cur === it.id);
       document.querySelectorAll(it.sel).forEach(function (el) {
-        el.hidden = (cur !== "all" && cur !== it.id);
+        el.hidden = !show;
+        /* SECTION-NAV-1 · the sections are <details> and they ship CLOSED.
+           Hiding the others therefore left the chosen one as a bare summary
+           bar, so tapping a pill looked like nothing had happened -- the coin
+           price, verdict, gates and ticket never move. Open the chosen one so
+           the tap visibly reveals the box it stands for. "All" deliberately
+           leaves every fold as the user left it. */
+        if (show && cur !== "all" && el.tagName === "DETAILS") el.open = true;
       });
     });
     var rail = document.querySelector(".sec-nav");
@@ -14381,4 +14389,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a44077fd3f77eb1a',t:'MTc5MDkxMDE1MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a440905bc86feb1a',t:'MTc5MDkxMTE0OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
