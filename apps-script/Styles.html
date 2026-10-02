@@ -4773,6 +4773,81 @@ body.command-strip-mode[data-color-theme="graphite"]{
   --bg:#0d0e0e;--panel:#171818;--panel-2:#222322;--line:#3a3b38;--text:#faf7ef;--muted:#b1b0aa;--input:#101111;
   --accent:#ff725e;--green:#63e58b;--green-bg:#123b26;--yellow:#f4c75e;--yellow-bg:#43340e;--red:#ff5570;--red-bg:#461521;--info:#55c7e8;--info-bg:#103743;
 }
+/* HIGH-CONTRAST-1 · four measured high contrast looks, offered as their own control in
+   More → Look. Every text pair clears 4.5:1 and every border clears 3:1; the three standard
+   palettes sit at 1.45:1 on card borders. Each look is a complete variable set rather than an
+   overlay on a palette, so two looks can never be active at once and no cascade tie is possible.
+   The accents are chosen so they work in BOTH directions -- as text on the panel and as a
+   background under white -- which the standard palettes do not manage (white on Signal amber
+   is 1.66:1 today). */
+body.command-strip-mode[data-color-theme="obsidian"]{
+  --bg:#000000;--panel:#1a2438;--panel-2:#232f4d;--line:#8ea8cf;--text:#ffffff;--muted:#c2d2ea;
+  --input:#0d1320;--accent:#4d8dff;--green:#5cf0b0;--green-bg:#0d3a26;--yellow:#ffd97a;
+  --yellow-bg:#4a3a10;--red:#ff9aa6;--red-bg:#521d26;--info:#9cc4ff;--info-bg:#103055;}
+body.command-strip-mode[data-color-theme="amberNight"]{
+  --bg:#000000;--panel:#241a10;--panel-2:#33261a;--line:#c9a55f;--text:#fffaf0;--muted:#d6c4a3;
+  --input:#120d07;--accent:#b8831f;--green:#6dfab9;--green-bg:#0d3a26;--yellow:#ffd97a;
+  --yellow-bg:#4a3a10;--red:#ff9aa6;--red-bg:#521d26;--info:#ffd27a;--info-bg:#4a3a10;}
+body.command-strip-mode[data-color-theme="paper"]{
+  --bg:#ffffff;--panel:#ebebef;--panel-2:#dcdce3;--line:#3a3a44;--text:#000000;--muted:#33333b;
+  --input:#ffffff;--accent:#0047bb;--green:#00693c;--green-bg:#d6f5e5;--yellow:#6b4e00;
+  --yellow-bg:#fff2c9;--red:#a11020;--red-bg:#ffe0e3;--info:#0047bb;--info-bg:#dbe7ff;}
+body.command-strip-mode[data-color-theme="mono"]{
+  --bg:#000000;--panel:#1e1e1e;--panel-2:#2e2e2e;--line:#a0a0a0;--text:#ffffff;--muted:#cccccc;
+  --input:#0a0a0a;--accent:#ffffff;--green:#ffffff;--green-bg:#262626;--yellow:#ffffff;
+  --yellow-bg:#404040;--red:#ffffff;--red-bg:#5c5c5c;--info:#ffffff;--info-bg:#333333;}
+/* Mono has no colour to separate the gate tones, so they separate by lightness instead. The app
+   already prints "4 of 4" as text on every chip, so the meaning survives without hue. */
+
+/* The High contrast card carries its own class names rather than borrowing the layout-card ones,
+   so a selector looking for the Coin Desk card can never match it. The chrome is mirrored here. */
+body.command-strip-mode .hc-layout-settings{margin-top:16px!important;padding:16px!important;
+  border:1px solid var(--line)!important;background:var(--panel)!important}
+body.command-strip-mode .hc-layout-settings>header{display:flex;align-items:flex-start;
+  justify-content:space-between;gap:12px;margin-bottom:12px}
+body.command-strip-mode .hc-layout-settings h3{margin:0!important;font-size:14px!important;letter-spacing:0!important}
+body.command-strip-mode .hc-layout-settings header p{margin:5px 0 0;max-width:680px;font-size:11px;line-height:1.45}
+body.command-strip-mode .hc-layout-settings .layout-setting-note{margin:10px 0 0;font-size:10px;line-height:1.4}
+body.command-strip-mode .hc-layout-options{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+body.command-strip-mode #main .hc-layout-option{min-width:0;min-height:76px!important;padding:8px 5px!important;
+  border:1px solid var(--line)!important;border-radius:10px!important;background:var(--input)!important;
+  color:var(--text)!important;text-align:left!important;box-shadow:none!important;cursor:pointer}
+body.command-strip-mode #main .hc-layout-option:hover{border-color:var(--accent)!important;
+  background:var(--panel-2)!important}
+body.command-strip-mode #main .hc-layout-option.selected{border-color:var(--accent)!important;
+  background:var(--panel-2)!important;box-shadow:inset 0 0 0 1px var(--accent)!important}
+body.command-strip-mode #main .hc-layout-option .layout-option-top{display:flex;align-items:flex-start;
+  justify-content:space-between;gap:6px}
+body.command-strip-mode #main .hc-layout-option .layout-option-top b{font-size:11px}
+body.command-strip-mode #main .hc-layout-option .layout-option-top i{color:var(--green);font-size:8px;
+  font-style:normal;font-weight:800;text-transform:uppercase;white-space:nowrap}
+body.command-strip-mode #main .hc-layout-option small{display:block;margin-top:6px;color:var(--muted);
+  font-size:9px;line-height:1.4}
+body.command-strip-mode .hc-badge-off{border-color:var(--line)!important;background:transparent!important;
+  color:var(--muted)!important}
+/* The palette card dims while a high contrast look is showing, so it is always obvious which of
+   the two controls is live -- without discarding the palette choice underneath. */
+body.command-strip-mode .more-palette-idle{opacity:.55}
+@media(max-width:650px){
+  body.command-strip-mode .hc-layout-options{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+/* Mono's accent is white, so anything that paints the accent as a background needs dark text on
+   it. Scoped to the mono theme only; the other six are unaffected. */
+body.command-strip-mode[data-color-theme="mono"] .btn,
+body.command-strip-mode[data-color-theme="mono"] .tag.on,
+body.command-strip-mode[data-color-theme="mono"] .more-chip.on,
+body.command-strip-mode[data-color-theme="mono"] .sec-pill.on,
+body.command-strip-mode[data-color-theme="mono"] .more-info.on,
+body.command-strip-mode[data-color-theme="mono"] #wl-mode-tabs button.on,
+body.command-strip-mode[data-color-theme="mono"] .library-tool-buttons button[aria-pressed=true],
+body.command-strip-mode[data-color-theme="mono"] .quick-switch-filters button.on,
+body.command-strip-mode[data-color-theme="mono"] .triage-page button[aria-pressed=true],
+body.command-strip-mode[data-color-theme="mono"] .triage-inspector-actions button:first-child,
+body.command-strip-mode[data-color-theme="mono"] #main .triage-mode-tabs button.on,
+body.command-strip-mode[data-color-theme="mono"] #main .triage-inspector-actions button.primary,
+body.command-strip-mode[data-color-theme="mono"] #main .triage-compact-page .triage-focus-icon.open{
+  color:#000000!important}
+
 body.command-strip-mode .cmd-theme{flex:0 0 auto;width:124px;height:25px;min-height:25px;padding:3px 5px;border:1px solid var(--line);border-radius:3px;background:var(--panel-2);color:var(--accent-strong,var(--accent));font-size:8px;font-weight:700;line-height:1;font-family:inherit;letter-spacing:.02em}
 body.command-strip-mode .cmd-theme:hover{border-color:var(--accent)}
 body.command-strip-mode .cmd-btn.cmd-fetch{color:var(--accent)!important;border-color:var(--accent)!important;background:var(--yellow-bg)!important}
@@ -4885,9 +4960,7 @@ body.command-strip-mode .library-search,body.command-strip-mode #quick-switch-se
 body.command-strip-mode .library-coin{padding:11px!important;border-radius:10px!important}
 body.command-strip-mode .library-open b{font-size:14px!important}
 body.command-strip-mode .library-open span{font-size:11px!important}
-body.command-strip-mode .library-star{font-size:23px!important}
-body.command-strip-mode[data-color-theme="signal"]{--bg:#0b1220;--panel:#151f35;--panel-2:#1b2742;--line:#2a3a5c;--text:#e8eefc;--muted:#93a0c0;--input:#0e1730;--accent:#3d7dff;--green:#3dcf8e;--green-bg:#123526;--yellow:#e6c35c;--yellow-bg:#332c12;--red:#ff6b7a;--red-bg:#3a1520}
-@media(min-width:1180px){body.command-strip-mode main{padding-left:24px!important;padding-right:24px!important}.cmd-strip{scrollbar-width:thin}}
+body.command-strip-mode .library-star{font-size:23px!important}@media(min-width:1180px){body.command-strip-mode main{padding-left:24px!important;padding-right:24px!important}.cmd-strip{scrollbar-width:thin}}
 @media(max-width:900px){body.command-strip-mode main{padding:10px 12px 32px!important}}
 @media(max-width:650px){body.command-strip-mode .cmd-context{border-radius:8px;padding:5px 8px}.cmd-context-note{display:none}body.command-strip-mode .cmd-strip{border-radius:8px;padding:5px 6px}.cmd-theme{width:126px!important}.cmd-input{min-width:135px!important}body.command-strip-mode .cmd-btn{min-height:34px!important;height:34px!important;padding:7px 9px!important}}
 
@@ -7666,4 +7739,3 @@ body:not(.command-strip-mode) .sizer-screen{padding-bottom:calc(130px + env(safe
 }
 
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a444a25f2d89b370',t:'MTc5MDk1MzgzMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

@@ -11,11 +11,26 @@
   /* Colour is a device-local presentation preference. It is intentionally kept outside state/settings so
      changing a palette cannot alter a journal payload or propagate a visual choice to another device. */
   var COLOR_THEME_KEY = KEY + "-color-theme-v1";
+  var COLOR_PALETTE_KEY = KEY + "-color-palette-v1";
   var COLOR_THEMES = {
     signal: { label: "SIGNAL AMBER" },
     electric: { label: "ELECTRIC BLUE + MINT" },
-    graphite: { label: "GRAPHITE + CORAL" }
+    graphite: { label: "GRAPHITE + CORAL" },
+    /* HIGH-CONTRAST-1 · four measured high contrast looks. Each one clears 4.5:1 on every text
+       pair and 3:1 on every border, where the three standard palettes sit at 1.45:1 on borders.
+       They are separate looks, not overlays, so they cannot be stacked on a standard palette. */
+    obsidian: { label: "DARK · COOL" },
+    amberNight: { label: "DARK · WARM" },
+    paper: { label: "LIGHT" },
+    mono: { label: "GREYSCALE" }
   };
+  /* The Colour palette card offers only the three standard looks. The high contrast looks live in
+     their own card, so the two controls never compete for the same row of buttons. */
+  var STANDARD_THEMES = ["signal", "electric", "graphite"];
+  var HC_THEMES = ["obsidian", "amberNight", "paper", "mono"];
+  var HC_THEME_SHORT = { obsidian: "Obsidian", amberNight: "Night", paper: "Paper", mono: "Mono" };
+  var HC_THEME_LABEL = { obsidian: "Obsidian", amberNight: "Amber Night", paper: "Paper", mono: "Mono" };
+  var HC_BADGE_OFF = "Off";
   /* Coin Desk layout is an account setting: all three approved minimal modes remain available,
      while the chosen presentation follows the existing settings sync. It never changes the engine. */
   var COIN_DESK_LAYOUTS = {
@@ -51,6 +66,13 @@
   try {
     var storedColorTheme = localStorage.getItem(COLOR_THEME_KEY);
     if (storedColorTheme && COLOR_THEMES[storedColorTheme]) colorTheme = storedColorTheme;
+  } catch (e) {}
+  /* The standard palette is kept even while a high contrast look is showing, so picking Standard
+     in the high contrast card returns you to the palette you had rather than to a default. */
+  var savedPalette = "signal";
+  try {
+    var storedPalette = localStorage.getItem(COLOR_PALETTE_KEY);
+    if (storedPalette && STANDARD_THEMES.indexOf(storedPalette) >= 0) savedPalette = storedPalette;
   } catch (e) {}
   var coinHadLocal=false;
   var activeCoinIntent="";
@@ -10759,6 +10781,7 @@
   var moreFilter = "all";
   var moreInfo = {};
   var MORE_THEME_SHORT = { signal: "Amber", electric: "Blue", graphite: "Coral" };
+  var STANDARD_LABEL = { signal: "Signal amber", electric: "Electric", graphite: "Graphite" };
   var MORE_SCOUT_SHORT = { glance: "Glance", ledger: "Ledger" };
   var MORE_HELP = {
     capital: "Total account money the Sizer may risk from.",
@@ -10949,6 +10972,8 @@
     var a = b.getAttribute("data-action"); if (a.indexOf("more-") !== 0) return;
     e.preventDefault(); e.stopImmediatePropagation();
     if (a === "more-filter") { moreSetFilter(b.getAttribute("data-filter")); return; }
+    if (a === "more-palette") { setStandardPalette(b.getAttribute("data-theme")); return; }
+    if (a === "more-hc-theme") { setHighContrast(b.getAttribute("data-hc")); return; }
     if (a === "more-theme") { setColorTheme(b.getAttribute("data-theme")); return; }
     if (a === "more-preview-toggle") {
       var target = b.getAttribute("data-target");
@@ -11205,14 +11230,18 @@
      of behind another tab bar. */
   function moreLookBody() {
     return moreTagged("palette", "Colour palette") +
-      '<div class="more-palette" role="group" aria-label="Colour palette">' +
-        Object.keys(COLOR_THEMES).map(function (k) {
-          var on = k === colorTheme;
+      '<div class="more-palette' + (isHcTheme(colorTheme) ? " more-palette-idle" : "") +
+        '" role="group" aria-label="Colour palette">' +
+        STANDARD_THEMES.map(function (k) {
+          /* The palette card keeps showing the palette you picked even while a high contrast look
+             is active, so switching back is one tap and nothing is forgotten. */
+          var on = k === savedPalette;
           return '<button type="button" class="more-palette-option' + (on ? " selected" : "") +
-            '" data-action="more-theme" data-theme="' + k + '" aria-pressed="' + (on ? "true" : "false") + '">' +
+            '" data-action="more-palette" data-theme="' + k + '" aria-pressed="' + (on ? "true" : "false") + '">' +
             "<b>" + esc(MORE_THEME_SHORT[k] || k) + "</b><small>" + esc(COLOR_THEMES[k].label) + "</small></button>";
         }).join("") +
       "</div>" +
+      highContrastSettingsHtml() +
       coinDeskLayoutSettingsHtml() +
       scoutTriageLayoutSettingsHtml(true) +
       climateLayoutSettingsHtml();
@@ -12771,6 +12800,47 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
     colorTheme = next;
     try { localStorage.setItem(COLOR_THEME_KEY, colorTheme); } catch (e) {}
     render();
+  }
+  function isHcTheme(k) { return HC_THEMES.indexOf(k) >= 0; }
+  /* Picking a standard palette always drops high contrast back to Standard, so the two cards can
+     never disagree about which look is showing. */
+  function setStandardPalette(next) {
+    next = STANDARD_THEMES.indexOf(next) >= 0 ? next : "signal";
+    savedPalette = next;
+    try { localStorage.setItem(COLOR_PALETTE_KEY, savedPalette); } catch (e) {}
+    setColorTheme(next);
+  }
+  /* next === "" means the Standard option, which hands control back to the saved palette. */
+  function setHighContrast(next) {
+    if (!next) { setColorTheme(savedPalette); return; }
+    if (!isHcTheme(next)) return;
+    setColorTheme(next);
+  }
+  function highContrastSettingsHtml() {
+    var on = isHcTheme(colorTheme), cur = on ? colorTheme : "";
+    var rows = [["", "Std", "off"]].concat(HC_THEMES.map(function (k) {
+      return [k, HC_THEME_SHORT[k], HC_THEME_LABEL[k]];
+    }));
+    return '<section class="card hc-layout-settings">' +
+      '<header><div><h3>High contrast</h3>' +
+      '<p class="muted">Firmer edges, brighter text and stronger gate tones for tired eyes or bright ' +
+      'rooms. Pick Standard to go back to your Colour palette.</p></div>' +
+      '<span class="layout-setting-badge' + (on ? "" : " hc-badge-off") + '">' +
+      esc(on ? HC_THEME_LABEL[cur] : HC_BADGE_OFF) + '</span></header>' +
+      '<div class="hc-layout-options" role="group" aria-label="High contrast">' +
+      rows.map(function (r) {
+        var sel = r[0] === cur;
+        return '<button type="button" class="hc-layout-option' +
+          (sel ? " selected" : "") + '" data-action="more-hc-theme" data-hc="' + r[0] +
+          '" aria-pressed="' + (sel ? "true" : "false") + '">' +
+          '<span class="layout-option-top"><b>' + esc(r[1]) + '</b><i>' +
+          (sel ? "Selected" : "Use this") + '</i></span>' +
+          '<small>' + esc(r[2]) + '</small></button>';
+      }).join("") + '</div>' +
+      '<p class="muted layout-setting-note">' +
+      (on ? 'Your <b>' + esc(STANDARD_LABEL[savedPalette]) + '</b> palette is kept — pick Standard to return to it.'
+          : 'Currently using your Colour palette choice.') +
+      '</p></section>';
   }
   function colorThemeOptionsHtml() {
     return Object.keys(COLOR_THEMES).map(function (key) {
@@ -14414,4 +14484,3 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a444a243ea62b370',t:'MTc5MDk1MzgyNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
