@@ -11120,7 +11120,10 @@
   /* Thumbnail switches on the layout option cards. The "panel" key went with the
      preview panel that carried its own tab bar; coinDesk and scout drive the
      thumbnails that are still there. */
-  var morePreviewOn = { coinDesk: true, scout: true };
+  /* Thumbnail switch on the Scout record layout only. The Coin Desk thumbnails
+     went with LOOK-1 -- choosing a layout redraws the app, so the mock and its
+     switch were both decoration. */
+  var morePreviewOn = { scout: true };
   function morePreviewToggle(target) {
     var on = !!morePreviewOn[target];
     return '<button type="button" class="mp-btn mp-toggle" data-action="more-preview-toggle" data-target="' + target +
@@ -11210,7 +11213,7 @@
             "<b>" + esc(MORE_THEME_SHORT[k] || k) + "</b><small>" + esc(COLOR_THEMES[k].label) + "</small></button>";
         }).join("") +
       "</div>" +
-      coinDeskLayoutSettingsHtml(true) +
+      coinDeskLayoutSettingsHtml() +
       scoutTriageLayoutSettingsHtml(true) +
       climateLayoutSettingsHtml();
   }
@@ -12778,18 +12781,19 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
     var value = state && state.settings ? String(state.settings.coinDeskLayout || "instrument") : "instrument";
     return COIN_DESK_LAYOUTS[value] ? value : "instrument";
   }
-  function coinDeskLayoutSettingsHtml(withThumbs) {
+  /* LOOK-1 · the Coin Desk thumbnails are gone. Choosing a layout redraws the
+     whole working surface the moment you tap it, so a mock of it sat between
+     you and the choice -- and the "Thumbnails" switch only existed to turn
+     that mock off. Pick one and watch the app change; that is the preview. */
+  function coinDeskLayoutSettingsHtml() {
     var current = coinDeskLayoutValue();
     var order = ["instrument", "lab", "focus"];
-    var thumbs = withThumbs && morePreviewOn.coinDesk;
     return '<section class="card coin-desk-layout-settings"><header><div><h3>Coin Desk layout</h3><p class="muted">Switch the presentation without changing research, Sizer, Journal, Market, risk or Gates.</p></div><span class="mp-head-tools"><span class="layout-setting-badge">'+esc(COIN_DESK_LAYOUTS[current].short)+'</span>'+
-      (withThumbs?'<span class="mp-thumb-toggle"><span>Thumbnails</span>'+morePreviewToggle("coinDesk")+'</span>':'')+
       '</span></header>' +
       '<div class="coin-desk-layout-options" role="group" aria-label="Coin Desk layout options">' +
       order.map(function (key) {
         var item = COIN_DESK_LAYOUTS[key], selected = key === current;
         return '<button type="button" class="coin-desk-layout-option'+(selected?' selected':'')+'" data-action="set-coin-desk-layout" data-layout="'+key+'" aria-pressed="'+selected+'">' +
-          (thumbs ? '<span class="mp-thumb">'+mpPic(key, scoutTriageLayoutValue(), "scout", "chrome")+'</span>' : '') +
           '<span class="layout-option-top"><b>'+esc(item.label)+'</b><i>'+ (selected ? 'Selected' : 'Use this') +'</i></span>' +
           '<small>'+esc(item.detail)+'</small>' +
         '</button>';
@@ -14410,4 +14414,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a442ba0748fdb3d8',t:'MTc5MDkzMzgyNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a442cffefdf62dd8',t:'MTc5MDkzNDcyNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
