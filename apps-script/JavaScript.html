@@ -10638,12 +10638,39 @@
       ' aria-selected="' + (on ? "true" : "false") + '">' + esc(label) + "</button>";
   }
 
+  /* SECTION-NAV-1 · the verdict, the gate strip and the ticket sit ABOVE the
+     sections and do not move when you filter, so the box you asked for was
+     still below the fold no matter which pill you tapped. Bring it to the
+     reader instead. Deliberately here and not in applySectionFilter: that runs
+     on every render too, and scrolling there would make the page jump on its
+     own. */
+  function scrollSectionIntoView(page) {
+    var items = SECTION_NAV[page];
+    if (!items) return;
+    var cur = sectionFilter[page] || "all";
+    if (cur === "all") return;
+    var it = null;
+    for (var i = 0; i < items.length; i++) if (items[i].id === cur) it = items[i];
+    if (!it) return;
+    var el = document.querySelector(it.sel);
+    if (!el) return;
+    /* The rail is sticky, so a plain scroll would park the box underneath it.
+       Set the margin before the scroll so the offset survives even where
+       scrollIntoView is unavailable. */
+    var rail = document.querySelector(".sec-nav");
+    var off = rail ? (parseFloat(rail.style.top) || 34) : 34;
+    try { el.style.scrollMarginTop = (off + 10) + "px"; } catch (e) {}
+    if (!el.scrollIntoView) return;
+    try { el.scrollIntoView({ behavior: "smooth", block: "start" }); }
+    catch (e) { try { el.scrollIntoView(); } catch (e2) {} }
+  }
   function setSectionFilter(page, id) {
     var items = SECTION_NAV[page];
     if (!items) return;
     var ok = id === "all" || items.some(function (it) { return it.id === id; });
     sectionFilter[page] = ok ? id : "all";
     applySectionFilter(page);
+    if (sectionFilter[page] !== "all") scrollSectionIntoView(page);
   }
 
   /* Show only the chosen block, or everything on "all". Applied after every
@@ -14395,4 +14422,3 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4409d58b99eeb1a',t:'MTc5MDkxMTY4MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
