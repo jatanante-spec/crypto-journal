@@ -10380,7 +10380,7 @@
     var ctxMeta=f.c.ready?(f.observation.trend+' · Tide '+tape.tide):'Hourly evidence unavailable';
     var toolsMeta=gbp(state.settings.capitalGbp)+' · '+num(state.settings.riskPct,2)+'% risk'+(out.invalid?' · review prices':' · '+num(out.stopDistancePct,2)+'% stop');
     var dataMeta=String((f.fresh&&f.fresh.label)||'Provider');
-    return '<div class="sizer-screen cd-workspace">'+cdHeader(f)+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')
+    return '<div class="sizer-screen cd-workspace">'+sectionNavHtml('sizer')+cdHeader(f)+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')
       +(managing?'<section class="cd-card cd-manage"><h3>Manage existing ticket</h3>'+manageCueHtml(manageAdvice(primaryOpenTrade()))+sizerManagePanel()+'</section><details class="cd-fold" data-cd-fold="new-ticket"><summary>New ticket · Log locked</summary><div>'+ticket+cdPlanHtml(f)+'</div></details>':ticket)
       +'<div class="cd-more">'
         +(managing?'':cdMoreRow('sizer-plan','Plan around my entry · BP1',planMeta,cdPlanHtml(f)))
@@ -10534,7 +10534,7 @@
 
   function renderMarket(){
     var f=cdFrame(true),t=f.t,known=f.fresh.kind!=='sample'&&!f.fresh.stale,exit=exitClimate(t,openDirection(primaryOpenTrade()||{coin:state.settings.coinTicker}));
-    return '<div class="market-screen cd-workspace">'+cdHeader(f)+marketClimateHtml(f)+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')+'<section class="cd-card"><header><h3>'+esc(f.c.title)+'</h3><button type="button" class="text-link" data-action="cd-learn">Learn</button></header>'+crLeadHtml(f)+cdChartHtml(f)+cdVolumeEvidenceHtml(f)+pcSummary(f)+cdTimeframes(f)+(known&&t.high>t.low?'<div class="range-meter"><div class="track"><i class="dot" style="left:'+clamp(t.locPct,0,100)+'%"></i></div><div class="cap"><span>'+esc(priceGbp(t.low,5))+'</span><span>'+esc(num(t.locPct,1)+'% · '+t.locLabel)+'</span><span>'+esc(priceGbp(t.high,5))+'</span></div></div>':'<p class="cd-small">Fresh provider range unavailable.</p>')+'<div class="cd-watch"><div><small>Continuation · observation only</small><b>'+esc(contLabel(f.continuation.code))+'</b></div><button type="button" class="text-link" data-action="cd-deck" data-cue="Continuation">Details</button></div><button type="button" class="btn secondary" data-page="sizer">Review ticket in Sizer →</button></section><details class="cd-fold" data-cd-fold="market-indicators"><summary>Evidence & indicators<small>Full cue deck · structure · market readings</small></summary><div><button type="button" class="btn secondary" data-action="cd-deck">All 24 instruments</button>'+contextWhyHtml()+'<p>'+esc('Daily RSI '+(t.rsi==null?'unknown':num(t.rsi,1))+' · hourly RSI '+(t.hourRsi==null?'unknown':num(t.hourRsi,1))+' · composite '+num(t.composite,1))+'</p></div></details>'+cdDataHtml(f)+'<details class="cd-fold" data-cd-fold="backdrop"><summary>Longer-term backdrop & exit climate<small>Month / week / day · separate legacy swing map</small></summary><div>'+horizonsBlockHtml(t)+'<p class="cd-small">Legacy prominence-ranked hourly swing map: comparison only, not the P1 proposal source.</p>'+swingMapLineHtml(t)+'<details class="cd-fold" data-cd-fold="legacy-chart"><summary>Legacy swing chart</summary><div>'+swingSparkSvg(state.hourly,t.swingLowIdx,t.swingHighIdx,640,180,'Legacy hourly map',t.swingMicroPivots,seriesBarAts(state.hourly,true),{})+'</div></details><p><b>Exit lens · if already long: '+esc(exit.stance)+'</b></p><p>'+esc(exit.say)+'</p><small>Not a short entry or buying approval.</small></div></details>'+cdMarketAdjust(t)+'<details class="cd-fold" data-cd-fold="legacy-send"><summary>Manual quote-based ticket tool</summary><div><p>This existing tool overwrites the draft using the current quote, manual stop percentage and 2R target. It is separate from P1 and does not approve a buy or change an open order.</p><button type="button" class="btn secondary" data-action="use-sizer"'+(!known||busy?' disabled':'')+'>Overwrite draft and open Sizer</button></div></details><div class="cd-actions"><button type="button" class="btn secondary" data-action="cd-learn">Learn this screen</button><button type="button" class="text-link" data-page="manual">Open the manual</button></div></div>';
+    return '<div class="market-screen cd-workspace">'+sectionNavHtml('market')+cdHeader(f)+marketClimateHtml(f)+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')+'<section class="cd-card"><header><h3>'+esc(f.c.title)+'</h3><button type="button" class="text-link" data-action="cd-learn">Learn</button></header>'+crLeadHtml(f)+cdChartHtml(f)+cdVolumeEvidenceHtml(f)+pcSummary(f)+cdTimeframes(f)+(known&&t.high>t.low?'<div class="range-meter"><div class="track"><i class="dot" style="left:'+clamp(t.locPct,0,100)+'%"></i></div><div class="cap"><span>'+esc(priceGbp(t.low,5))+'</span><span>'+esc(num(t.locPct,1)+'% · '+t.locLabel)+'</span><span>'+esc(priceGbp(t.high,5))+'</span></div></div>':'<p class="cd-small">Fresh provider range unavailable.</p>')+'<div class="cd-watch"><div><small>Continuation · observation only</small><b>'+esc(contLabel(f.continuation.code))+'</b></div><button type="button" class="text-link" data-action="cd-deck" data-cue="Continuation">Details</button></div><button type="button" class="btn secondary" data-page="sizer">Review ticket in Sizer →</button></section><details class="cd-fold" data-cd-fold="market-indicators"><summary>Evidence & indicators<small>Full cue deck · structure · market readings</small></summary><div><button type="button" class="btn secondary" data-action="cd-deck">All 24 instruments</button>'+contextWhyHtml()+'<p>'+esc('Daily RSI '+(t.rsi==null?'unknown':num(t.rsi,1))+' · hourly RSI '+(t.hourRsi==null?'unknown':num(t.hourRsi,1))+' · composite '+num(t.composite,1))+'</p></div></details>'+cdDataHtml(f)+'<details class="cd-fold" data-cd-fold="backdrop"><summary>Longer-term backdrop & exit climate<small>Month / week / day · separate legacy swing map</small></summary><div>'+horizonsBlockHtml(t)+'<p class="cd-small">Legacy prominence-ranked hourly swing map: comparison only, not the P1 proposal source.</p>'+swingMapLineHtml(t)+'<details class="cd-fold" data-cd-fold="legacy-chart"><summary>Legacy swing chart</summary><div>'+swingSparkSvg(state.hourly,t.swingLowIdx,t.swingHighIdx,640,180,'Legacy hourly map',t.swingMicroPivots,seriesBarAts(state.hourly,true),{})+'</div></details><p><b>Exit lens · if already long: '+esc(exit.stance)+'</b></p><p>'+esc(exit.say)+'</p><small>Not a short entry or buying approval.</small></div></details>'+cdMarketAdjust(t)+'<details class="cd-fold" data-cd-fold="legacy-send"><summary>Manual quote-based ticket tool</summary><div><p>This existing tool overwrites the draft using the current quote, manual stop percentage and 2R target. It is separate from P1 and does not approve a buy or change an open order.</p><button type="button" class="btn secondary" data-action="use-sizer"'+(!known||busy?' disabled':'')+'>Overwrite draft and open Sizer</button></div></details><div class="cd-actions"><button type="button" class="btn secondary" data-action="cd-learn">Learn this screen</button><button type="button" class="text-link" data-page="manual">Open the manual</button></div></div>';
   }
 
   function renderTrend() {
@@ -10592,6 +10592,82 @@
        (d) the chips filter in place by toggling [hidden]. No re-render, so an open
            note, a half-typed number and the scroll position all survive a filter change.
      ===================================================================================== */
+  /* ======================================================================
+     SECTION-NAV-1 — a section rail for the two long screens.
+     Sizer and Market only. Scout, Journal and More get no rail: Scout is one
+     scannable list with its own filter row, Journal is short and already split
+     into open/closed, and More ships its own rail above.
+
+     Each entry points at a block that ALREADY exists in the rendered page, so
+     the rail never restructures markup — it only shows and hides what is there.
+     The selectors are the stable hooks those blocks already carry (the
+     data-cd-fold fold keys, and the one .cd-card / .sizer-vol that are direct
+     children of the screen). Nothing here touches a price, a gate or a verdict.
+     ====================================================================== */
+  var SECTION_NAV = {
+    sizer: [
+      { id: "plan",    label: "Plan",    sel: '[data-cd-fold="sizer-plan"]' },
+      { id: "saved",   label: "Saved",   sel: '[data-cd-fold="sizer-plans"]' },
+      { id: "context", label: "Context", sel: '[data-cd-fold="sizer-context"]' },
+      { id: "tools",   label: "Tools",   sel: '[data-cd-fold="sizer-tools"]' },
+      { id: "data",    label: "Data",    sel: '[data-cd-fold="sizer-data"]' }
+    ],
+    market: [
+      { id: "market",   label: "Market",   sel: ".market-screen > .cd-card" },
+      { id: "evidence", label: "Evidence", sel: '[data-cd-fold="market-indicators"]' },
+      { id: "data",     label: "Data",     sel: '[data-cd-fold="data"]' },
+      { id: "backdrop", label: "Backdrop", sel: '[data-cd-fold="backdrop"]' },
+      { id: "adjust",   label: "Adjust",   sel: ".market-screen > .sizer-vol" },
+      { id: "quote",    label: "Quote",    sel: '[data-cd-fold="legacy-send"]' }
+    ]
+  };
+  var sectionFilter = { sizer: "all", market: "all" };
+
+  function sectionNavHtml(page) {
+    var items = SECTION_NAV[page];
+    if (!items) return "";
+    var cur = sectionFilter[page] || "all";
+    var out = '<div class="sec-nav" role="tablist" aria-label="' + esc(page) + ' sections">';
+    out += secPillHtml(page, "all", "All", cur === "all");
+    items.forEach(function (it) { out += secPillHtml(page, it.id, it.label, cur === it.id); });
+    return out + "</div>";
+  }
+  function secPillHtml(page, id, label, on) {
+    return '<button type="button" class="sec-pill' + (on ? " on" : "") + '" data-action="sec-filter"' +
+      ' data-page="' + esc(page) + '" data-sec="' + esc(id) + '" role="tab"' +
+      ' aria-selected="' + (on ? "true" : "false") + '">' + esc(label) + "</button>";
+  }
+
+  function setSectionFilter(page, id) {
+    var items = SECTION_NAV[page];
+    if (!items) return;
+    var ok = id === "all" || items.some(function (it) { return it.id === id; });
+    sectionFilter[page] = ok ? id : "all";
+    applySectionFilter(page);
+  }
+
+  /* Show only the chosen block, or everything on "all". Applied after every
+     draw as well as on click, because render() rebuilds #main from scratch and
+     would otherwise drop the filter the moment any state changed. */
+  function applySectionFilter(page) {
+    var items = SECTION_NAV[page];
+    if (!items) return;
+    var cur = sectionFilter[page] || "all";
+    items.forEach(function (it) {
+      document.querySelectorAll(it.sel).forEach(function (el) {
+        el.hidden = (cur !== "all" && cur !== it.id);
+      });
+    });
+    var rail = document.querySelector(".sec-nav");
+    if (rail) {
+      rail.querySelectorAll(".sec-pill").forEach(function (b) {
+        var on = b.getAttribute("data-sec") === cur;
+        b.classList.toggle("on", on);
+        b.setAttribute("aria-selected", on ? "true" : "false");
+      });
+    }
+  }
+
   var MORE_GROUPS = ["account", "fees", "rules", "look", "tools", "data"];
   var MORE_SECTION_META = {
     account: { icon: "◈", label: "Account & pair", desc: "Capital, risk %, active coin", color: "clr-account" },
@@ -10756,14 +10832,55 @@
     if (list) list.innerHTML = moreSectionListHtml();
     moreSyncRailTop();
   }
-  function moreSyncRailTop() {
-    var rail = document.querySelector(".more-filter-rail");
-    if (!rail) return;
-    var nav = document.querySelector(".nav"), budget = document.getElementById("budget"), top = 0;
-    if (nav) { var nh = nav.getBoundingClientRect().height; if (nh > 0 && nh < 200) top += nh; }
-    if (budget) top += budget.getBoundingClientRect().height;
-    rail.style.top = Math.max(0, Math.round(top)) + "px";
+  /* A sticky rail has to sit under whatever is pinned above it. The budget bar
+     is 30px on desktop and 24px compact, and the main nav is a 100vh sidebar on
+     desktop but a ~46px bar on a phone — so the offset is measured, never
+     hard-coded. The height guard is what tells those two apart: a sidebar is
+     taller than 200px, a bar is not.
+
+     SECTION-NAV-1: this now measures BOTH rails. It used to read only the More
+     rail, and while the nav was a fixed bottom bar on phones the guard still
+     matched its height and pushed the More rail ~60px too far down. Moving the
+     nav to the top (NAV-TOP-1) makes the guard correct again, and sharing one
+     measurement keeps the two rails in step. */
+  function syncStickyRailsTop() {
+    var nav = document.querySelector(".nav"), budget = document.getElementById("budget"), top = 0, navH = 0;
+    if (nav) {
+      navH = nav.getBoundingClientRect().height;
+      if (navH > 0 && navH < 200) top += navH;
+    }
+    /* NAV-TOP-1 follow-up. #budget is sticky at top:0 in the base stylesheet,
+       and .nav is sticky at top:0 too -- so once the nav moved to the top the
+       budget bar parked underneath it and vanished on every scroll. Pin the
+       budget bar directly below the nav so the phone stack reads
+       tabs -> budget -> rail. The < 200 guard is the same one used for the
+       offset: on a desktop the nav is the 100vh sidebar, so the budget bar
+       correctly stays at top:0. */
+    if (budget) {
+      if (navH > 0 && navH < 200) budget.style.top = Math.round(navH) + "px";
+      top += budget.getBoundingClientRect().height;
+    }
+    top = Math.max(0, Math.round(top));
+    [".more-filter-rail", ".sec-nav"].forEach(function (sel) {
+      var rail = document.querySelector(sel);
+      /* Only overwrite the stylesheet fallback when there is something real to
+         write. A zero here means layout has not happened yet (or #budget is
+         absent), and 0px would drop the rail on top of the budget bar. */
+      if (rail && top > 0) rail.style.top = top + "px";
+    });
+    return top;
   }
+  function moreSyncRailTop() { syncStickyRailsTop(); }
+  /* SECTION-NAV-1 — the rail is a filter, exactly like the More tab's, and it is
+     wired the same way: one action, one place, no scroll listeners. */
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest('[data-action="sec-filter"]');
+    if (!b) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    setSectionFilter(b.getAttribute("data-page"), b.getAttribute("data-sec"));
+  }, true);
+
   document.addEventListener("click", function (e) {
     var b = e.target.closest("[data-action]"); if (!b) return;
     var a = b.getAttribute("data-action"); if (a.indexOf("more-") !== 0) return;
@@ -14236,10 +14353,14 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
   // MORE-FILTERED-1 - the chip rail sticks directly beneath the sticky budget bar, whose
   // height depends on the mode and on touch tokens, so the offset is measured after each
   // draw instead of being hard-coded into the stylesheet. Only the More tab has a rail.
+  // SECTION-NAV-1 - the Sizer and Market rails are measured the same way, and their
+  // filter is re-applied here too, because render() rebuilds #main from scratch.
   var __moreRailRender=render;
   render=function(){
     var out=__moreRailRender.apply(this,arguments);
-    if(page==='settings')moreSyncRailTop();
+    syncStickyRailsTop();
+    if(page==='sizer')applySectionFilter('sizer');
+    if(page==='market')applySectionFilter('market');
     return out;
   };
 
@@ -14260,4 +14381,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a432f29b6e70a14b',t:'MTc5MDc2ODM3Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a432f29b6e70a14b',t:'MTc5MDc2ODM3Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a43ff7ebaa41eb1a',t:'MTc5MDkwNDkwNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
