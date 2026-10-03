@@ -28,6 +28,15 @@ html, body {
   color: var(--text);
   overflow-x: hidden;
 }
+/* MORE-LOOK-2 (3 Oct 2026) · the line above has been killing every sticky element in this app.
+   `overflow-x: hidden` computes `overflow-y` to `auto`, which makes <body> a scroll container --
+   and a scroll container that never scrolls makes `position: sticky` on anything inside it look
+   like it simply does not work. Measured on the dev build: the More rail sat at y=-236 after a
+   400px scroll, holding a `top` value the app had carefully measured and written for it. `clip`
+   clips the same overflow without creating a scroll container, so the rail finally pins, and the
+   budget bar gets the pin its own comment says it was supposed to have. The `hidden` above stays as
+   the fallback for browsers without `clip`. */
+body { overflow-x: clip; }
 body {
   background:
     radial-gradient(900px 500px at 10% -10%, #1a2b55 0%, transparent 55%),
@@ -4842,8 +4851,7 @@ body.command-strip-mode #main .hc-layout-option .layout-option-top i{color:var(-
   font-style:normal;font-weight:800;text-transform:uppercase;white-space:nowrap}
 body.command-strip-mode #main .hc-layout-option small{display:block;margin-top:6px;color:var(--muted);
   font-size:9px;line-height:1.4}
-body.command-strip-mode .hc-badge-off{border-color:var(--line)!important;background:transparent!important;
-  color:var(--muted)!important}
+
 /* The palette card dims while a high contrast look is showing, so it is always obvious which of
    the two controls is live -- without discarding the palette choice underneath. */
 body.command-strip-mode .more-palette-idle{opacity:.55}
@@ -5340,7 +5348,6 @@ body.command-strip-mode .coin-desk-layout-settings{margin-top:16px!important;pad
 body.command-strip-mode .coin-desk-layout-settings>header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
 body.command-strip-mode .coin-desk-layout-settings h3{margin:0!important;font-size:14px!important;letter-spacing:0!important}
 body.command-strip-mode .coin-desk-layout-settings header p{margin:5px 0 0;max-width:680px;font-size:11px;line-height:1.45}
-body.command-strip-mode .layout-setting-badge{flex:0 0 auto;padding:5px 8px;border:1px solid var(--green);border-radius:999px;background:var(--green-bg);color:var(--green);font-size:9px;font-weight:800;white-space:nowrap}
 body.command-strip-mode .coin-desk-layout-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 body.command-strip-mode #main .coin-desk-layout-option{min-width:0;min-height:110px!important;padding:11px!important;border:1px solid var(--line)!important;border-radius:10px!important;background:var(--input)!important;color:var(--text)!important;text-align:left!important;box-shadow:none!important}
 body.command-strip-mode #main .coin-desk-layout-option:hover{border-color:var(--accent)!important;background:var(--panel-2)!important}
@@ -5361,7 +5368,7 @@ body.command-strip-mode .coin-library-chevron{color:var(--accent);font-weight:80
   body.command-strip-mode .coin-desk-layout-options{grid-template-columns:1fr}
 body.command-strip-mode #main .coin-desk-layout-option{min-height:84px!important}
   body.command-strip-mode .coin-desk-layout-settings>header{display:block}
-  body.command-strip-mode .layout-setting-badge{display:inline-block;margin-top:8px}
+
   body.command-strip-mode[data-coin-desk-layout="focus"] #main .triage-head{display:flex}
 }
 @media(max-width:390px){
@@ -6725,7 +6732,6 @@ heading size{
 }
 .mp-toggle:hover{ color: var(--text); border-color: var(--accent); }
 .mp-toggle:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
-.mp-head-tools { display: flex; align-items: center; gap: 7px; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; }
 .mp-thumb-toggle { display: inline-flex; align-items: center; gap: 5px; }
 .mp-thumb-toggle > span { font-size: 8.5px; letter-spacing: .07em; text-transform: uppercase; color: #5d6d8c; }
 
@@ -7782,8 +7788,6 @@ body.command-strip-mode .comfort-settings>header{display:flex;align-items:flex-s
   justify-content:space-between;gap:12px;margin-bottom:12px}
 body.command-strip-mode .comfort-settings h3{margin:0!important;font-size:14px!important;letter-spacing:0!important}
 body.command-strip-mode .comfort-settings header p{margin:5px 0 0;max-width:680px;font-size:11px;line-height:1.45}
-body.command-strip-mode .comfort-settings .hc-badge-off{border-color:var(--line)!important;
-  background:var(--panel-2)!important;color:var(--muted)!important}
 body.command-strip-mode .comfort-rows{display:grid;gap:8px}
 body.command-strip-mode .comfort-row{min-width:0;padding:10px 12px;border:1px solid var(--line);
   border-radius:10px;background:var(--input)}
@@ -7830,5 +7834,99 @@ body.command-strip-mode .comfort-reset:focus-visible{outline:2px solid var(--acc
   body.command-strip-mode .comfort-switch .comfort-switch-track i{transition:none}
 }
 
+
+/* ==== MORE-LOOK-2 (3 Oct 2026) ================================================================
+   The Look section is six folded cards behind a sticky jump row, and the pill rail carries a glyph
+   and a state dot. Nothing about the settings themselves changed: every control that was here is
+   still here, one tap deeper, with the value it is set to printed on the outside of the drawer.
+   The !importants below are not decoration. #main's global button floor pins min-height, padding,
+   radius and font-size on every button that is not one of its named exceptions, and a new class is
+   not one of them until it says so. */
+.more-chip{display:inline-flex!important;align-items:center;gap:7px}
+.more-chip-glyph{font-size:12px;line-height:1;opacity:.9}
+.more-chip-dot{flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.more-chip.on .more-chip-dot{background:var(--on-accent)}
+/* Only when there is something past the right edge: the class is set from a measurement after render. */
+.more-filter-rail.fade,.more-look-jump.fade{-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent 100%);
+  mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent 100%)}
+
+/* ---------- the state strip: the whole Look setup in two lines, before you open anything ---------- */
+body.command-strip-mode .more-look-state{display:flex!important;align-items:center;justify-content:space-between;gap:10px;
+  margin:0 0 8px!important;padding:9px 11px!important;border:1px solid var(--line)!important;border-radius:10px!important;
+  background:var(--panel)!important}
+body.command-strip-mode .more-look-state .vals{min-width:0;font-size:10.5px;line-height:1.75;color:var(--muted)}
+body.command-strip-mode .more-look-state .vals b{color:var(--text);font-weight:700}
+body.command-strip-mode .more-look-all{flex:0 0 auto;min-height:28px!important;padding:4px 10px!important;border-radius:999px!important;
+  border:1px solid var(--line)!important;background:var(--input)!important;color:var(--muted)!important;font-size:10px!important;
+  font-weight:700;cursor:pointer;white-space:nowrap}
+body.command-strip-mode .more-look-all:hover{border-color:var(--accent)!important;color:var(--text)!important}
+body.command-strip-mode .more-look-all:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- the jump row (top is measured in JS beside the rail's own offset) ---------- */
+body.command-strip-mode .more-look-jump{position:sticky;top:81px;z-index:11;display:flex;gap:5px;flex-wrap:nowrap;
+  overflow-x:auto;overflow-y:hidden;margin:0 0 10px!important;padding:7px 2px;background:var(--bg);scrollbar-width:none;
+  -webkit-overflow-scrolling:touch}
+body.command-strip-mode .more-look-jump::-webkit-scrollbar{display:none}
+body.command-strip-mode .more-look-jumpchip{flex:0 0 auto;display:inline-flex!important;align-items:center;gap:6px;min-height:28px!important;
+  padding:3px 10px!important;border:1px dashed var(--line)!important;border-radius:999px!important;background:transparent!important;
+  color:var(--muted)!important;font-size:10.5px!important;font-weight:700!important;line-height:1.15;cursor:pointer;white-space:nowrap}
+body.command-strip-mode .more-look-jumpchip:hover{border-style:solid!important;border-color:var(--accent)!important;color:var(--text)!important}
+body.command-strip-mode .more-look-jumpchip.on{border-style:solid!important;border-color:var(--accent)!important;
+  background:var(--input)!important;color:var(--text)!important}
+body.command-strip-mode .more-look-jumpchip .dot{width:5px;height:5px;border-radius:50%;background:var(--line)}
+body.command-strip-mode .more-look-jumpchip.on .dot{background:var(--accent)}
+body.command-strip-mode .more-look-jumpchip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- group labels ---------- */
+body.command-strip-mode .more-look-group{display:flex;align-items:center;gap:8px;margin:12px 0 6px;
+  font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+body.command-strip-mode .more-look-group:after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* ---------- the folded card ---------- */
+body.command-strip-mode .more-look-card{margin-top:0!important;padding:0!important;border:1px solid var(--line)!important;
+  border-radius:11px!important;background:var(--panel)!important;overflow:hidden}
+body.command-strip-mode .more-look-card + .more-look-card{margin-top:7px!important}
+body.command-strip-mode .more-look-head{display:flex!important;align-items:center;gap:4px;padding:0 10px 0 0;
+  margin:0!important;border:0}
+body.command-strip-mode .more-look-toggle{flex:1 1 auto;display:flex!important;align-items:center;gap:10px;width:100%;
+  min-height:46px!important;height:auto!important;padding:10px 2px 10px 12px!important;border:0!important;border-radius:0!important;
+  background:transparent!important;color:var(--text)!important;font-size:12px!important;line-height:1.2;text-align:left;cursor:pointer}
+body.command-strip-mode .more-look-toggle:hover{background:var(--panel-2)!important}
+body.command-strip-mode .more-look-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+body.command-strip-mode .more-look-glyph{flex:0 0 auto;width:15px;font-size:13px;line-height:1;color:var(--accent);text-align:center}
+body.command-strip-mode .more-look-txt{flex:1 1 auto;min-width:0}
+body.command-strip-mode .more-look-txt b{display:block;font-size:12px;font-weight:700}
+body.command-strip-mode .more-look-txt small{display:block;margin-top:2px;font-size:10px;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.command-strip-mode .more-look-chev{flex:0 0 auto;font-size:10px;color:var(--muted);transition:transform .15s ease}
+body.command-strip-mode .more-look-card.open .more-look-chev{transform:rotate(180deg)}
+body.command-strip-mode .more-look-body{padding:0 12px 12px;border-top:1px solid var(--line)}
+body.command-strip-mode .more-look-body[hidden]{display:none!important}
+body.command-strip-mode .more-look-lead{margin:10px 0 0;font-size:11px;line-height:1.5;color:var(--muted)}
+body.command-strip-mode .more-look-body .hc-layout-options,
+body.command-strip-mode .more-look-body .more-palette,
+body.command-strip-mode .more-look-body .more-choice,
+body.command-strip-mode .more-look-body .climate-layout-group{margin-top:10px}
+body.command-strip-mode .more-look-body .hc-layout-settings,
+body.command-strip-mode .more-look-body .comfort-settings{margin-top:0!important;padding:0!important;border:0!important;background:transparent!important}
+body.command-strip-mode .more-look-thumbrow{display:flex;align-items:center;justify-content:flex-end;margin-top:10px}
+body.command-strip-mode .more-look-thumb{margin-top:9px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--input)}
+
+/* ---------- the chooser ---------- */
+body.command-strip-mode .more-choice{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(116px,1fr));gap:5px}
+body.command-strip-mode .more-choice-opt{display:flex!important;align-items:center;justify-content:space-between;gap:6px;
+  min-height:30px!important;height:auto!important;padding:6px 9px!important;border:1px solid var(--line)!important;
+  border-radius:8px!important;background:var(--input)!important;color:var(--text)!important;font-size:10.5px!important;
+  font-weight:650!important;line-height:1.25;text-align:left;cursor:pointer}
+body.command-strip-mode .more-choice-opt:hover{border-color:var(--accent)!important;background:var(--panel-2)!important}
+body.command-strip-mode .more-choice-opt.on{border-color:var(--accent)!important;box-shadow:inset 0 0 0 1px var(--accent)!important}
+body.command-strip-mode .more-choice-opt i{flex:0 0 auto;font-style:normal;font-size:9px;font-weight:800;color:var(--green)}
+body.command-strip-mode .more-choice-opt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+body.command-strip-mode .more-choice-note{margin:8px 0 0;font-size:10.5px;line-height:1.5;color:var(--muted)}
+body.command-strip-mode .more-choice-note b{color:var(--text);font-weight:700}
+@media (prefers-reduced-motion:reduce){
+  body.command-strip-mode .more-look-chev{transition:none}
+}
+
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a44b175868ecb13e',t:'MTc5MTAyMTUzNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a44baf77cc59b3e4',t:'MTc5MTAyNzc2Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
