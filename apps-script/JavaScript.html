@@ -11119,6 +11119,7 @@
       '<div class="more-inline-head">' +
         '<button type="button" class="more-inline-back" data-action="more-filter" data-filter="all">&lsaquo; All</button>' +
         '<span class="more-inline-title">' + esc(m.label) + "</span>" +
+        (moreFilter === "look" ? moreLookAllHtml() : "") +
       "</div>" +
       moreSheetBodyFor(moreFilter) +
       "</div>";
@@ -11196,11 +11197,6 @@
       top += budget.getBoundingClientRect().height;
     }
     top = Math.max(0, Math.round(top));
-    /* The Look section's jump row rides directly under the rail: its top is the rail's top plus the
-       height the rail actually has at this width, so the two never overlap when the pills wrap or the
-       budget bar appears above them. */
-    var jumpEl = document.querySelector(".more-look-jump"), railEl = document.querySelector(".more-filter-rail");
-    if (jumpEl && railEl && top > 0) jumpEl.style.top = (top + Math.round(railEl.getBoundingClientRect().height)) + "px";
     [".more-filter-rail", ".sec-nav"].forEach(function (sel) {
       var rail = document.querySelector(sel);
       /* Only overwrite the stylesheet fallback when there is something real to
@@ -11235,7 +11231,6 @@
     if (a === "more-palette") { setStandardPalette(b.getAttribute("data-theme")); return; }
     if (a === "more-hc-theme") { setHighContrast(b.getAttribute("data-hc")); return; }
     if (a === "more-look-toggle") { moreLookToggle(b.getAttribute("data-card")); return; }
-    if (a === "more-look-jump") { moreLookJump(b.getAttribute("data-card")); return; }
     if (a === "more-look-all") { moreLookSetAll(b.getAttribute("data-value") === "1"); return; }
     if (a === "more-comfort-boost") { setComfortBoost(b.getAttribute("data-value") === "1"); return; }
     if (a === "more-comfort-warm") { setComfortWarm(b.getAttribute("data-value") === "1"); return; }
@@ -11500,12 +11495,12 @@
      actually came for. Nothing about the settings changed -- every control that was here is still
      here, one tap deeper. */
   var MORE_LOOK_CARDS = [
-    { id: "palette", glyph: "\u25D0", title: "Colour palette", cls: "", jump: "Palette" },
-    { id: "hc", glyph: "\u25D0", title: "High contrast", cls: "hc-layout-settings", jump: "Contrast" },
-    { id: "comfort", glyph: "\u25D1", title: "Comfort", cls: "comfort-settings", jump: "Comfort" },
-    { id: "coin", glyph: "\u25A6", title: "Coin Desk layout", cls: "coin-desk-layout-settings", jump: "Coin Desk" },
-    { id: "scout", glyph: "\u25A4", title: "Scout record layout", cls: "scout-triage-layout-settings", jump: "Scout" },
-    { id: "climate", glyph: "\u25A3", title: "Market climate layout", cls: "climate-layout-settings", jump: "Climate" }
+    { id: "palette", glyph: "\u25D0", title: "Colour palette", cls: "" },
+    { id: "hc", glyph: "\u25D0", title: "High contrast", cls: "hc-layout-settings" },
+    { id: "comfort", glyph: "\u25D1", title: "Comfort", cls: "comfort-settings" },
+    { id: "coin", glyph: "\u25A6", title: "Coin Desk layout", cls: "coin-desk-layout-settings" },
+    { id: "scout", glyph: "\u25A4", title: "Scout record layout", cls: "scout-triage-layout-settings" },
+    { id: "climate", glyph: "\u25A3", title: "Market climate layout", cls: "climate-layout-settings" }
   ];
   var MORE_LOOK_GROUPS = [["Appearance", ["palette", "hc", "comfort"]], ["Layouts", ["coin", "scout", "climate"]]];
   function moreLookSummary(id) {
@@ -11541,25 +11536,15 @@
       '<div class="more-look-body" id="more-look-body-' + c.id + '"' + (open ? "" : " hidden") + ">" +
         moreLookCardBody(c.id) + "</div></section>";
   }
-  function moreLookStateHtml() {
-    var line1 = (isHcTheme(colorTheme) ? HC_THEME_LABEL[colorTheme] : "Standard palettes") +
-      " \u00b7 " + comfortLumaValue() + "%" + (comfortBoostOn() ? " \u00b7 deep floor" : "") +
-      " \u00b7 palette " + (MORE_THEME_SHORT[savedPalette] || savedPalette);
-    var line2 = COIN_DESK_LAYOUTS[coinDeskLayoutValue()].short + " \u00b7 " +
-      SCOUT_TRIAGE_LAYOUTS[scoutTriageLayoutValue()].short + " \u00b7 " +
-      CLIMATE_LAYOUTS[climateLayoutValue()].short;
+  /* The state strip used to be here: two lines printing the look, the luminance, the palette and
+     the three layouts. Every one of those six values is already printed on the face of the card it
+     belongs to, one line below, so the strip was a second copy of the same information -- 65px of
+     it on a phone, sitting between the section head and the first control. The one part that was
+     not a copy was this button, which now shares the section's own head line. */
+  function moreLookAllHtml() {
     var anyOpen = MORE_LOOK_CARDS.some(function (c) { return moreLookOpen[c.id]; });
-    return '<div class="more-look-state"><div class="vals">' + esc(line1) + "<br>" + esc(line2) + "</div>" +
-      '<button type="button" class="more-look-all" data-action="more-look-all" data-value="' + (anyOpen ? "0" : "1") + '">' +
-      (anyOpen ? "Collapse all" : "Expand all") + "</button></div>";
-  }
-  function moreLookJumpHtml() {
-    return '<div class="more-look-jump" role="group" aria-label="Jump to a Look setting">' +
-      MORE_LOOK_CARDS.map(function (c) {
-        return '<button type="button" class="more-look-jumpchip' + (moreLookOpen[c.id] ? " on" : "") +
-          '" data-action="more-look-jump" data-card="' + c.id + '">' +
-          '<span class="dot" aria-hidden="true"></span>' + esc(c.jump) + "</button>";
-      }).join("") + "</div>";
+    return '<button type="button" class="more-look-all" data-action="more-look-all" data-value="' + (anyOpen ? "0" : "1") + '">' +
+      (anyOpen ? "Collapse all" : "Expand all") + "</button>";
   }
   function moreLookToggle(id) {
     if (!MORE_LOOK_CARDS.some(function (c) { return c.id === id; })) return;
@@ -11570,31 +11555,11 @@
     MORE_LOOK_CARDS.forEach(function (c) { moreLookOpen[c.id] = !!open; });
     render();
   }
-  /* Jumping opens the card and leaves its head under the sticky chrome, so the title you tapped is
-     the thing you are looking at rather than something that scrolled past the top of the screen. */
-  function moreLookJump(id) {
-    if (!MORE_LOOK_CARDS.some(function (c) { return c.id === id; })) return;
-    moreLookOpen[id] = true;
-    render();
-    var el = document.querySelector('[data-look-card="' + id + '"]');
-    if (!el) return;
-    /* The chrome that will be over the card once the page has scrolled is the rail plus the jump
-       row, and the rail does not sit at zero: it sticks at whatever offset syncStickyRailsTop
-       measured for the nav and budget bar. Landing on the rows' heights alone would park the heading
-       behind the pills. */
-    var rail = document.querySelector(".more-filter-rail");
-    var railTop = rail ? (parseFloat(rail.style.top) || 0) : 0;
-    var chrome = railTop;
-    [".more-filter-rail", ".more-look-jump"].forEach(function (sel) {
-      var n = document.querySelector(sel);
-      if (n) chrome += n.getBoundingClientRect().height;
-    });
-    var y = el.getBoundingClientRect().top + (window.pageYOffset || 0) - chrome - 8;
-    if (typeof window.scrollTo === "function") window.scrollTo(0, Math.max(0, y));
-  }
   function moreLookBody() {
-    return moreLookStateHtml() + moreLookJumpHtml() +
-      MORE_LOOK_GROUPS.map(function (g) {
+    /* No state strip and no jump row. With every card folded to one line the whole section is
+       about 200px tall, so a six-chip jump row was a second navigation for a list that fits on
+       one screen -- and the strip above it said nothing the card faces do not already say. */
+    return MORE_LOOK_GROUPS.map(function (g) {
         return '<div class="more-look-group">' + esc(g[0]) + "</div>" + g[1].map(function (id) {
           return moreLookCardHtml(MORE_LOOK_CARDS.filter(function (c) { return c.id === id; })[0]);
         }).join("");
@@ -14106,8 +14071,8 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
         }
       }
     }
-    var jump = document.querySelector(".more-look-jump");
-    if (jump) jump.classList.toggle("fade", jump.scrollWidth > jump.clientWidth + 2);
+    /* No jump row to fade any more. With every card folded to one line the section fits a phone
+       screen, so the six-chip jump row was a second navigation for a list that already fits. */
   }
   var __moreRail2Render = render;
   render = function () {
@@ -14909,4 +14874,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a44baf610c15b3e4',t:'MTc5MTAyNzc2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a44c00a1ce952dd8',t:'MTc5MTAzMTA5MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

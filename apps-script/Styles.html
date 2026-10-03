@@ -64,12 +64,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .brand { padding: 4px 10px 18px; }
 .brand h1 { margin: 0; font-size: 15px; letter-spacing: 0.04em; text-transform: uppercase; }
-body.command-strip-mode #main .triage-ledger-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option), body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle), body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle){
   width:58px!important;min-width:58px!important;max-width:58px!important;
   padding:0 6px!important;font-size:9px!important;
   line-height:1!important;white-space:nowrap!important;
 }
-body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option), body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle), body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle){
   width:34px!important;min-width:34px!important;max-width:34px!important;
 }
 .brand p { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
@@ -4375,7 +4375,7 @@ and each one is measured: the swing dots sit
 .stepper button,
 .rr-btn,
 .horizon-pill{min-height:40px;height:auto}
-/* --- the rest of the floor (LR1.1, 21 Sep 2026): every real control at 40px, and the chart's own labels at 12px with the gutter widened to hold them. Most of these rows were pinned by an explicit height rather than a min-height, so height:auto comes with the floor or the min-height is ignored. The exclusions are chart annotations, not controls, and each one is measured: the swing dots sit 15px apart at their closest on a phone (40px squares would overlap and make a tap ambiguous), and the journal's now-marker is a 12px point on a bar. Everything you can actually press is on the floor. --- */ #main button:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option), #main summary, .train-mini, .stepper button, .rr-btn, .horizon-pill{min-height:40px;height:auto}
+/* --- the rest of the floor (LR1.1, 21 Sep 2026): every real control at 40px, and the chart's own labels at 12px with the gutter widened to hold them. Most of these rows were pinned by an explicit height rather than a min-height, so height:auto comes with the floor or the min-height is ignored. The exclusions are chart annotations, not controls, and each one is measured: the swing dots sit 15px apart at their closest on a phone (40px squares would overlap and make a tap ambiguous), and the journal's now-marker is a 12px point on a bar. Everything you can actually press is on the floor. --- */ #main button:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle), #main summary, .train-mini, .stepper button, .rr-btn, .horizon-pill{min-height:40px;height:auto}
 details > summary{display:flex;align-items:center;gap:6px}
 .horizon-pill{padding:8px 10px}
 .train-mini{padding:0 9px}
@@ -4519,7 +4519,7 @@ body:not(.training) .p1-training,body:not(.training) .p1-feed,body:not(.training
 body:not(.training) .p1-training summary,body:not(.training) .p1-feed summary,body:not(.training) .p1-evidence summary{min-height:30px!important;font-size:10px!important}
 body:not(.training) .p1-actions{gap:5px!important;margin-top:6px!important}
 body:not(.training) .p1-actions button{min-height:34px!important;padding:6px 8px!important;font-size:10px!important}
-body:not(.training) #main button:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){min-height:32px!important;height:auto!important;padding:5px 8px!important;font-size:11px!important}
+body:not(.training) #main button:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle){min-height:32px!important;height:auto!important;padding:5px 8px!important;font-size:11px!important}
 body:not(.training) #main summary{min-height:32px!important;padding:6px 8px!important}
 body:not(.training) .rr-btn{min-height:32px!important;padding:5px 7px!important}
 body:not(.training) .cch .cch-bar button,body:not(.training) .cch .cch-ctl button{min-height:34px!important;padding:5px 8px!important;font-size:11px!important}
@@ -4634,8 +4634,8 @@ body.command-strip-mode .field input,body.command-strip-mode .field select{paddi
 body.command-strip-mode .row{gap:4px!important}
 body.command-strip-mode .btn,body.command-strip-mode .btn.secondary,body.command-strip-mode .btn.danger{min-height:28px!important;height:auto!important;padding:4px 7px!important;border-radius:3px!important;font-size:10px!important;line-height:1.15}
 body.command-strip-mode .text-link{min-height:28px!important;padding:4px 7px!important;font-size:10px!important}
-body.command-strip-mode #main button:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){min-height:28px!important;height:auto!important;padding:4px 7px!important;border-radius:3px!important;font-size:10px!important;line-height:1.15}
-body.command-strip-mode #main button:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){min-height:28px!important;height:auto!important;padding:4px 7px!important;border-radius:3px!important;font-size:10px!important;line-height:1.15}
+body.command-strip-mode #main button:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle){min-height:28px!important;height:auto!important;padding:4px 7px!important;border-radius:3px!important;font-size:10px!important;line-height:1.15}
+body.command-strip-mode #main button:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle){min-height:28px!important;height:auto!important;padding:4px 7px!important;border-radius:3px!important;font-size:10px!important;line-height:1.15}
 body.command-strip-mode #main summary{min-height:28px!important;height:auto!important;padding:5px 7px!important;font-size:10px!important}
 body.command-strip-mode .results{gap:4px!important}
 body.command-strip-mode .result{padding:6px 7px!important;border-radius:3px!important}
@@ -5133,7 +5133,7 @@ body.command-strip-mode .library-star{font-size:23px!important}@media(min-width:
 @media(max-width:620px){.market-screen .market-climate{padding:12px 10px}.market-climate-head{gap:8px}.market-climate-head h2{font-size:18px!important}.market-climate-status{padding:6px 7px;font-size:9px!important}.market-climate-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.market-climate-reading>summary{min-height:70px}.market-climate-method{grid-template-columns:1fr;gap:5px}.market-climate-method>div{padding:7px}.market-climate-data-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 /* SCOUT-ROW-ACTIONS-2 · why the previous fix did nothing.
    The command-strip density pass ships a blanket rule
-     body.command-strip-mode #main button:not(.tip-btn)...:not(.more-palette-option)
+     body.command-strip-mode #main button:not(.tip-btn)...:not(.more-palette-option):not(.more-look-toggle)
    carrying min-height:38px, padding:8px 12px, border-radius:10px and font-size:12px,
    all !important. Its ten :not() clauses give it specificity (1,11,2).
    SCOUT-ROW-ACTIONS-1 used only six :not() clauses, scoring (1,9,1), so it silently
@@ -5146,18 +5146,18 @@ body.command-strip-mode .library-star{font-size:23px!important}@media(min-width:
      "Lock"    10px -> 23.8px in 28px    "Research"  9px -> 40.6px in 46px
      "Inspect"  9px -> 33.2px in 46px    at <=390px  8px -> 36.1px in 44px
    Tap height and the ::after hit expansion are deliberately left alone. */
-body.command-strip-mode #main .triage-ledger-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option) button, body.command-strip-mode #main .triage-focus-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option) button{
+body.command-strip-mode #main .triage-ledger-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle) button, body.command-strip-mode #main .triage-focus-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle) button{
   padding:0!important;border-radius:0!important;
 }
-body.command-strip-mode #main .triage-ledger-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option) button:first-child{border-radius:9px 0 0 9px!important}
-body.command-strip-mode #main .triage-ledger-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option) button:last-child{border-radius:0 9px 9px 0!important}
-body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option), body.command-strip-mode #main .triage-focus-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option), body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option), body.command-strip-mode #main .triage-focus-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){
+body.command-strip-mode #main .triage-ledger-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle) button:first-child{border-radius:9px 0 0 9px!important}
+body.command-strip-mode #main .triage-ledger-actions:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle) button:last-child{border-radius:0 9px 9px 0!important}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle), body.command-strip-mode #main .triage-focus-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle), body.command-strip-mode #main .triage-ledger-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle), body.command-strip-mode #main .triage-focus-actions .triage-unified-lock:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle){
   width:36px!important;min-width:36px!important;max-width:36px!important;
   padding:0 4px!important;font-size:10px!important;
   line-height:1!important;white-space:nowrap!important;
 }
-body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option), body.command-strip-mode #main .triage-focus-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){font-size:13px!important}
-body.command-strip-mode #main .triage-ledger-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option), body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option){
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle), body.command-strip-mode #main .triage-focus-actions .triage-unified-star:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle){font-size:13px!important}
+body.command-strip-mode #main .triage-ledger-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle), body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.tip-btn):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle){
   width:58px!important;min-width:58px!important;max-width:58px!important;
   padding:0 6px!important;font-size:9px!important;
   line-height:1!important;white-space:nowrap!important;
@@ -7195,7 +7195,7 @@ body.command-strip-mode #main .triage-focus-actions .triage-unified-open:not(.ti
 }
 /* SCOUT-ROW-ACTIONS-2 · why the previous fix did nothing.
    The command-strip density pass ships a blanket rule
-     body.command-strip-mode #main button:not(.tip-btn)...:not(.more-palette-option)
+     body.command-strip-mode #main button:not(.tip-btn)...:not(.more-palette-option):not(.more-look-toggle)
    carrying min-height:38px,
 padding:8px 12px,
 border-radius:10px and font-size:12px,
@@ -7847,15 +7847,10 @@ body.command-strip-mode .comfort-reset:focus-visible{outline:2px solid var(--acc
 .more-chip-dot{flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent)}
 .more-chip.on .more-chip-dot{background:var(--on-accent)}
 /* Only when there is something past the right edge: the class is set from a measurement after render. */
-.more-filter-rail.fade,.more-look-jump.fade{-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent 100%);
+.more-filter-rail.fade{-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent 100%);
   mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent 100%)}
 
 /* ---------- the state strip: the whole Look setup in two lines, before you open anything ---------- */
-body.command-strip-mode .more-look-state{display:flex!important;align-items:center;justify-content:space-between;gap:10px;
-  margin:0 0 8px!important;padding:9px 11px!important;border:1px solid var(--line)!important;border-radius:10px!important;
-  background:var(--panel)!important}
-body.command-strip-mode .more-look-state .vals{min-width:0;font-size:10.5px;line-height:1.75;color:var(--muted)}
-body.command-strip-mode .more-look-state .vals b{color:var(--text);font-weight:700}
 body.command-strip-mode .more-look-all{flex:0 0 auto;min-height:28px!important;padding:4px 10px!important;border-radius:999px!important;
   border:1px solid var(--line)!important;background:var(--input)!important;color:var(--muted)!important;font-size:10px!important;
   font-weight:700;cursor:pointer;white-space:nowrap}
@@ -7863,19 +7858,6 @@ body.command-strip-mode .more-look-all:hover{border-color:var(--accent)!importan
 body.command-strip-mode .more-look-all:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* ---------- the jump row (top is measured in JS beside the rail's own offset) ---------- */
-body.command-strip-mode .more-look-jump{position:sticky;top:81px;z-index:11;display:flex;gap:5px;flex-wrap:nowrap;
-  overflow-x:auto;overflow-y:hidden;margin:0 0 10px!important;padding:7px 2px;background:var(--bg);scrollbar-width:none;
-  -webkit-overflow-scrolling:touch}
-body.command-strip-mode .more-look-jump::-webkit-scrollbar{display:none}
-body.command-strip-mode .more-look-jumpchip{flex:0 0 auto;display:inline-flex!important;align-items:center;gap:6px;min-height:28px!important;
-  padding:3px 10px!important;border:1px dashed var(--line)!important;border-radius:999px!important;background:transparent!important;
-  color:var(--muted)!important;font-size:10.5px!important;font-weight:700!important;line-height:1.15;cursor:pointer;white-space:nowrap}
-body.command-strip-mode .more-look-jumpchip:hover{border-style:solid!important;border-color:var(--accent)!important;color:var(--text)!important}
-body.command-strip-mode .more-look-jumpchip.on{border-style:solid!important;border-color:var(--accent)!important;
-  background:var(--input)!important;color:var(--text)!important}
-body.command-strip-mode .more-look-jumpchip .dot{width:5px;height:5px;border-radius:50%;background:var(--line)}
-body.command-strip-mode .more-look-jumpchip.on .dot{background:var(--accent)}
-body.command-strip-mode .more-look-jumpchip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* ---------- group labels ---------- */
 body.command-strip-mode .more-look-group{display:flex;align-items:center;gap:8px;margin:12px 0 6px;
@@ -7928,5 +7910,70 @@ body.command-strip-mode .more-choice-note b{color:var(--text);font-weight:700}
   body.command-strip-mode .more-look-chev{transition:none}
 }
 
+
+/* ================================================================================================
+   MORE-DENSITY-1 (3 Oct 2026) -- one owner for the More tab's rhythm.
+
+   Measured on the deployed build at 1180px: the content column is 860px and each settings row put
+   143-251px of ink into it, so five of the six rows were 71-83% empty and even the fullest left
+   three quarters of its width bare. Three things caused that, and none of them were decisions:
+
+     1. The row title is flex:1, so the box stretches to the full column. The label ends up marooned
+        at the left, the summary is pushed to the far right, and ~600px of nothing sits between them.
+     2. The spacing was inconsistent -- 54px rows, 32px chips, 7px here, 12px there. Inconsistent
+        spacing is what reads as "gaps"; consistent spacing reads as "tight". So every metric for
+        this tab is set once, below, instead of being inherited from fifty other rules.
+     3. The folded card heads were two lines (title over value) and were not getting the dimensions
+        I wrote for them: `#main button:not(...)` sets a 28px min-height on every button in the app
+        and .more-look-toggle was not in its exclusion list (that chain is fixed in place, above),
+        while `body.command-strip-mode .card` set 8px of padding on every card and beat
+        .more-look-card on source order. The selectors below carry #main so they hold regardless.
+
+   46px is the floor for a row, not a target: it keeps a comfortable touch target in a dark room,
+   which is the reason this app exists. Nothing here goes below it.
+   ================================================================================================ */
+
+/* the row --------------------------------------------------------------------------- 54 -> 46 */
+body.command-strip-mode #main .more-section{min-height:46px!important;padding:7px 10px!important}
+body.command-strip-mode #main .more-section .sec-icon{width:30px;height:30px;flex:0 0 30px!important;font-size:15px}
+body.command-strip-mode #main .more-section .sec-body h3{margin:0 0 1px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.command-strip-mode #main .more-section-list{gap:5px!important;padding:0 0 12px!important}
+/* Six rows stacked in an 860px column is three quarters empty each. Three across is two rows
+   instead of six, and each cell still has room to spare: 30 icon + 10 gap + ~100 title + ~70
+   summary + 6 arrow + 4 margin is ~220px inside ~283px of cell. */
+@media(min-width:1180px){
+  body.command-strip-mode #main .more-section-list{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+
+/* the rail and the section head ----------------------------------------------------- 32 -> 30 */
+body.command-strip-mode #main .more-chip{min-height:30px!important;padding:0 10px!important;font-size:10px!important}
+body.command-strip-mode #main .more-section-body{padding:8px 0 14px!important}
+body.command-strip-mode #main .more-inline-head{padding:0 2px 2px!important}
+body.command-strip-mode #main .more-look-all{margin-left:auto!important}
+
+/* the vertical rhythm inside a section: the flex gap owns it, and nothing else does ------------ */
+/* .more-section-inline is a flex column with a 9px gap, so a margin on a card ADDED to it -- which
+   is why a 5px gap rendered as 14px. The gap is the single owner now and the cards carry no vertical
+   margin at all; the group labels keep their own margins because a label is a break in the list, not
+   a member of it. */
+body.command-strip-mode #main .more-section-inline{gap:5px!important}
+
+/* the folded card ------------------------------------------------------- one line, 5px apart */
+body.command-strip-mode #main .more-look-card{padding:0!important;margin-top:0!important}
+body.command-strip-mode #main .more-look-card + .more-look-card{margin-top:0!important}
+body.command-strip-mode #main .more-look-head{padding:0 9px 0 0!important}
+body.command-strip-mode #main .more-look-toggle{min-height:32px!important;height:auto!important;
+  padding:5px 2px 5px 11px!important;gap:9px!important}
+/* The value moves up beside the title instead of sitting under it. Same information, one line:
+   40px per card becomes 32, and six two-line blocks become six single-line rows. */
+body.command-strip-mode #main .more-look-txt{display:flex!important;align-items:baseline;gap:8px;min-width:0}
+body.command-strip-mode #main .more-look-txt b{display:inline!important;flex:0 0 auto;font-size:11.5px!important}
+body.command-strip-mode #main .more-look-txt small{display:block!important;flex:1 1 auto;min-width:0;
+  margin:0!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:9.5px!important;color:var(--muted)}
+body.command-strip-mode #main .more-look-body{padding:9px 11px 11px!important}
+
+/* the group label ------------------------------------------------------------------ 12/6 -> 9/4 */
+body.command-strip-mode #main .more-look-group{margin:9px 0 4px!important}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a44baf77cc59b3e4',t:'MTc5MTAyNzc2Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a44c013afd0f2dd8',t:'MTc5MTAzMTExNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
