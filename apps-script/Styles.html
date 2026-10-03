@@ -1,5 +1,6 @@
 <style>
 :root {
+  --on-accent: #ffffff;
   color-scheme: dark;
   --bg: #0b1220;
   --panel: #151f35;
@@ -4762,14 +4763,17 @@ body.command-strip-mode #main .cd-plan .p1-plan .p1-linked {
 
 /* COLOR-PALETTE-1 — three device-local palettes for the same compact Command Strip shell. */
 body.command-strip-mode[data-color-theme="signal"]{
+  color-scheme:dark;--on-accent:#241a00;
   --bg:#0b0e13;--panel:#151a23;--panel-2:#1c2430;--line:#303b4b;--text:#f4f7fb;--muted:#a9b4c2;--input:#0d1118;
   --accent:#ffbd4a;--green:#49e6a6;--green-bg:#103a2a;--yellow:#ffbd4a;--yellow-bg:#432c0b;--red:#ff637c;--red-bg:#461622;--info:#61b7ff;--info-bg:#123455;
 }
 body.command-strip-mode[data-color-theme="electric"]{
+  color-scheme:dark;--on-accent:#001a33;
   --bg:#080e17;--panel:#0f1a29;--panel-2:#15253a;--line:#263d59;--text:#f1f7ff;--muted:#a8b9ca;--input:#0a1422;
   --accent:#43a5ff;--green:#48e5c0;--green-bg:#0e3a3b;--yellow:#ffcf5a;--yellow-bg:#44370c;--red:#ff668c;--red-bg:#46152a;--info:#b78cff;--info-bg:#2d1d4b;
 }
 body.command-strip-mode[data-color-theme="graphite"]{
+  color-scheme:dark;--on-accent:#2b0d08;
   --bg:#0d0e0e;--panel:#171818;--panel-2:#222322;--line:#3a3b38;--text:#faf7ef;--muted:#b1b0aa;--input:#101111;
   --accent:#ff725e;--green:#63e58b;--green-bg:#123b26;--yellow:#f4c75e;--yellow-bg:#43340e;--red:#ff5570;--red-bg:#461521;--info:#55c7e8;--info-bg:#103743;
 }
@@ -4781,21 +4785,36 @@ body.command-strip-mode[data-color-theme="graphite"]{
    background under white -- which the standard palettes do not manage (white on Signal amber
    is 1.66:1 today). */
 body.command-strip-mode[data-color-theme="obsidian"]{
-  --bg:#000000;--panel:#1a2438;--panel-2:#232f4d;--line:#8ea8cf;--text:#ffffff;--muted:#c2d2ea;
-  --input:#0d1320;--accent:#4d8dff;--green:#5cf0b0;--green-bg:#0d3a26;--yellow:#ffd97a;
-  --yellow-bg:#4a3a10;--red:#ff9aa6;--red-bg:#521d26;--info:#9cc4ff;--info-bg:#103055;}
+  /* HIGH-CONTRAST-1 · glare-calibrated. Text capped at luminance 0.74, borders at 3.9:1,
+dark on-accent labels. Cool cast. */
+  color-scheme:dark;--on-accent:#050c18;
+  --bg:#060810;--panel:#101725;--panel-2:#1a2233;--line:#637695;--text:#d5e0f0;--muted:#8291a8;
+  --input:#0a0f1a;--accent:#6d97da;--green:#4cad82;--green-bg:#0f3629;--yellow:#c19c5c;--yellow-bg:#3c2d11;
+  --red:#d78585;--red-bg:#501c21;--info:#7aa0c6;--info-bg:#12314e;}
 body.command-strip-mode[data-color-theme="amberNight"]{
-  --bg:#000000;--panel:#241a10;--panel-2:#33261a;--line:#c9a55f;--text:#fffaf0;--muted:#d6c4a3;
-  --input:#120d07;--accent:#b8831f;--green:#6dfab9;--green-bg:#0d3a26;--yellow:#ffd97a;
-  --yellow-bg:#4a3a10;--red:#ff9aa6;--red-bg:#521d26;--info:#ffd27a;--info-bg:#4a3a10;}
+  /* HIGH-CONTRAST-1 · glare-calibrated. Warm cast. The dark-room default. */
+  color-scheme:dark;--on-accent:#170e02;
+  --bg:#0a0704;--panel:#191209;--panel-2:#241a0e;--line:#8b6b3a;--text:#e9ddc8;--muted:#a58961;
+  --input:#0d0906;--accent:#c18736;--green:#55a176;--green-bg:#113120;--yellow:#c09948;--yellow-bg:#3b2a0c;
+  --red:#ce7d74;--red-bg:#4c191d;--info:#829cad;--info-bg:#112835;}
+body.command-strip-mode[data-color-theme="nightVision"]{
+  /* HIGH-CONTRAST-1 · deep warm red for dark adaptation. Lowest emitted light of the set. */
+  color-scheme:dark;--on-accent:#140504;
+  --bg:#070403;--panel:#170d0a;--panel-2:#221410;--line:#97624f;--text:#ecc6b7;--muted:#a07e71;
+  --input:#0b0605;--accent:#cf6749;--green:#74997a;--green-bg:#152d1c;--yellow:#b19345;--yellow-bg:#32260c;
+  --red:#d57464;--red-bg:#3f1311;--info:#9c88b0;--info-bg:#2e2244;}
 body.command-strip-mode[data-color-theme="paper"]{
-  --bg:#ffffff;--panel:#ebebef;--panel-2:#dcdce3;--line:#3a3a44;--text:#000000;--muted:#33333b;
-  --input:#ffffff;--accent:#0047bb;--green:#00693c;--green-bg:#d6f5e5;--yellow:#6b4e00;
-  --yellow-bg:#fff2c9;--red:#a11020;--red-bg:#ffe0e3;--info:#0047bb;--info-bg:#dbe7ff;}
+  /* HIGH-CONTRAST-1 · low-glare light for bright rooms. Never use in a dark room. */
+  color-scheme:light;--on-accent:#fff8ea;
+  --bg:#efe9dc;--panel:#e5dcc9;--panel-2:#d7ccb4;--line:#736a56;--text:#241f17;--muted:#5a5342;
+  --input:#faf6ec;--accent:#734400;--green:#0c6138;--green-bg:#ddede2;--yellow:#724e00;--yellow-bg:#f5e6c1;
+  --red:#a61a23;--red-bg:#f6e2e2;--info:#0e5696;--info-bg:#e0eaf6;}
 body.command-strip-mode[data-color-theme="mono"]{
-  --bg:#000000;--panel:#1e1e1e;--panel-2:#2e2e2e;--line:#a0a0a0;--text:#ffffff;--muted:#cccccc;
-  --input:#0a0a0a;--accent:#ffffff;--green:#ffffff;--green-bg:#262626;--yellow:#ffffff;
-  --yellow-bg:#404040;--red:#ffffff;--red-bg:#5c5c5c;--info:#ffffff;--info-bg:#333333;}
+  /* HIGH-CONTRAST-1 · greyscale. Gate tones separate by lightness, not hue. */
+  color-scheme:dark;--on-accent:#0a0a0a;
+  --bg:#070707;--panel:#161616;--panel-2:#212121;--line:#747474;--text:#dedede;--muted:#8f8f8f;
+  --input:#0b0b0b;--accent:#b7b7b7;--green:#9e9e9e;--green-bg:#2b2b2b;--yellow:#b5b5b5;--yellow-bg:#3f3f3f;
+  --red:#d2d2d2;--red-bg:#545454;--info:#f4f4f4;--info-bg:#696969;}
 /* Mono has no colour to separate the gate tones, so they separate by lightness instead. The app
    already prints "4 of 4" as text on every chip, so the meaning survives without hue. */
 
@@ -4808,7 +4827,7 @@ body.command-strip-mode .hc-layout-settings>header{display:flex;align-items:flex
 body.command-strip-mode .hc-layout-settings h3{margin:0!important;font-size:14px!important;letter-spacing:0!important}
 body.command-strip-mode .hc-layout-settings header p{margin:5px 0 0;max-width:680px;font-size:11px;line-height:1.45}
 body.command-strip-mode .hc-layout-settings .layout-setting-note{margin:10px 0 0;font-size:10px;line-height:1.4}
-body.command-strip-mode .hc-layout-options{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+body.command-strip-mode .hc-layout-options{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
 body.command-strip-mode #main .hc-layout-option{min-width:0;min-height:76px!important;padding:8px 5px!important;
   border:1px solid var(--line)!important;border-radius:10px!important;background:var(--input)!important;
   color:var(--text)!important;text-align:left!important;box-shadow:none!important;cursor:pointer}
@@ -4831,22 +4850,24 @@ body.command-strip-mode .more-palette-idle{opacity:.55}
 @media(max-width:650px){
   body.command-strip-mode .hc-layout-options{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
-/* Mono's accent is white, so anything that paints the accent as a background needs dark text on
-   it. Scoped to the mono theme only; the other six are unaffected. */
-body.command-strip-mode[data-color-theme="mono"] .btn,
-body.command-strip-mode[data-color-theme="mono"] .tag.on,
-body.command-strip-mode[data-color-theme="mono"] .more-chip.on,
-body.command-strip-mode[data-color-theme="mono"] .sec-pill.on,
-body.command-strip-mode[data-color-theme="mono"] .more-info.on,
-body.command-strip-mode[data-color-theme="mono"] #wl-mode-tabs button.on,
-body.command-strip-mode[data-color-theme="mono"] .library-tool-buttons button[aria-pressed=true],
-body.command-strip-mode[data-color-theme="mono"] .quick-switch-filters button.on,
-body.command-strip-mode[data-color-theme="mono"] .triage-page button[aria-pressed=true],
-body.command-strip-mode[data-color-theme="mono"] .triage-inspector-actions button:first-child,
-body.command-strip-mode[data-color-theme="mono"] #main .triage-mode-tabs button.on,
-body.command-strip-mode[data-color-theme="mono"] #main .triage-inspector-actions button.primary,
-body.command-strip-mode[data-color-theme="mono"] #main .triage-compact-page .triage-focus-icon.open{
-  color:#000000!important}
+/* On-accent labels. Anything painting the accent as a background needs text that reads against it:
+   white on the Signal amber is 1.66:1, and 1:1 on mono. Each theme now carries a measured
+   --on-accent value instead (6.2:1 to 10.3:1 across all eight themes). This replaces the old
+   mono-only rule, which existed because mono's white accent was the first case of the problem. */
+body.command-strip-mode .btn,
+body.command-strip-mode .tag.on,
+body.command-strip-mode .more-chip.on,
+body.command-strip-mode .sec-pill.on,
+body.command-strip-mode .more-info.on,
+body.command-strip-mode #wl-mode-tabs button.on,
+body.command-strip-mode .library-tool-buttons button[aria-pressed=true],
+body.command-strip-mode .quick-switch-filters button.on,
+body.command-strip-mode .triage-page button[aria-pressed=true],
+body.command-strip-mode .triage-inspector-actions button:first-child,
+body.command-strip-mode #main .triage-mode-tabs button.on,
+body.command-strip-mode #main .triage-inspector-actions button.primary,
+body.command-strip-mode #main .triage-compact-page .triage-focus-icon.open{
+  color:var(--on-accent)!important}
 
 body.command-strip-mode .cmd-theme{flex:0 0 auto;width:124px;height:25px;min-height:25px;padding:3px 5px;border:1px solid var(--line);border-radius:3px;background:var(--panel-2);color:var(--accent-strong,var(--accent));font-size:8px;font-weight:700;line-height:1;font-family:inherit;letter-spacing:.02em}
 body.command-strip-mode .cmd-theme:hover{border-color:var(--accent)}
@@ -7738,5 +7759,76 @@ body:not(.command-strip-mode) .sizer-screen{padding-bottom:calc(130px + env(safe
   #main .triage-compact-page .triage-whisper-sub .triage-plans-button{display:none}
 }
 
+
+/* ==== COMFORT-1 (3 Oct 2026) ================================================================
+   The deep black floor. It is a per-look deepening of that look's OWN backdrop: every colour is
+   scaled to half, which leaves the hue ratios exactly where they were, so Amber Night stays warm,
+   Night Vision stays red, Obsidian stays cool and Mono stays neutral. Nothing here paints plain
+   black, and Paper is deliberately absent -- on a light look a deeper floor is a worse page, not a
+   better one, so the switch is disabled there rather than lying about what it does.
+   The floor moves only --bg/--panel/--panel-2/--input. Text, borders and gate tones stay put, so
+   the look is still recognisably itself, only quieter. Measured at the 70% cap the slider takes
+   while the floor is down, every boosted look still clears 7:1 on its primary text. */
+body.command-strip-mode[data-color-theme="obsidian"][data-boosted="true"]{--bg:#030408;--panel:#080c12;--panel-2:#0d111a;--input:#05080d}
+body.command-strip-mode[data-color-theme="amberNight"][data-boosted="true"]{--bg:#050402;--panel:#0c0904;--panel-2:#120d07;--input:#060403}
+body.command-strip-mode[data-color-theme="nightVision"][data-boosted="true"]{--bg:#040202;--panel:#0c0605;--panel-2:#110a08;--input:#060302}
+body.command-strip-mode[data-color-theme="mono"][data-boosted="true"]{--bg:#040404;--panel:#0b0b0b;--panel-2:#101010;--input:#060606}
+
+/* The card borrows the high contrast card's geometry so the Look section reads as one column of
+   siblings rather than two design languages. */
+body.command-strip-mode .comfort-settings{margin-top:16px!important;padding:16px!important;
+  border:1px solid var(--line)!important;background:var(--panel)!important}
+body.command-strip-mode .comfort-settings>header{display:flex;align-items:flex-start;
+  justify-content:space-between;gap:12px;margin-bottom:12px}
+body.command-strip-mode .comfort-settings h3{margin:0!important;font-size:14px!important;letter-spacing:0!important}
+body.command-strip-mode .comfort-settings header p{margin:5px 0 0;max-width:680px;font-size:11px;line-height:1.45}
+body.command-strip-mode .comfort-settings .hc-badge-off{border-color:var(--line)!important;
+  background:var(--panel-2)!important;color:var(--muted)!important}
+body.command-strip-mode .comfort-rows{display:grid;gap:8px}
+body.command-strip-mode .comfort-row{min-width:0;padding:10px 12px;border:1px solid var(--line);
+  border-radius:10px;background:var(--input)}
+body.command-strip-mode .comfort-row.off{opacity:.6}
+body.command-strip-mode .comfort-row-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+body.command-strip-mode .comfort-row-head b{font-size:11px;font-weight:700;color:var(--text)}
+body.command-strip-mode .comfort-readout{flex:0 0 auto;font-size:11px;font-weight:800;color:var(--accent)}
+body.command-strip-mode .comfort-hint{margin:5px 0 0;font-size:10px;line-height:1.4}
+body.command-strip-mode .comfort-slider{-webkit-appearance:none;appearance:none;display:block;width:100%;
+  height:20px;margin:8px 0 0;padding:0;background:transparent;cursor:pointer}
+body.command-strip-mode .comfort-slider::-webkit-slider-runnable-track{height:6px;border-radius:999px;
+  background:var(--panel-2);border:1px solid var(--line)}
+body.command-strip-mode .comfort-slider::-moz-range-track{height:6px;border-radius:999px;
+  background:var(--panel-2);border:1px solid var(--line)}
+body.command-strip-mode .comfort-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:18px;height:18px;margin-top:-7px;border-radius:50%;background:var(--accent);border:2px solid var(--on-accent)}
+body.command-strip-mode .comfort-slider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;
+  background:var(--accent);border:2px solid var(--on-accent)}
+body.command-strip-mode .comfort-slider:disabled{opacity:.45;cursor:not-allowed}
+body.command-strip-mode .comfort-slider:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+body.command-strip-mode .comfort-switch{display:inline-flex!important;align-items:center;gap:7px;
+  min-height:28px!important;height:auto!important;padding:4px 9px!important;border:1px solid var(--line)!important;
+  border-radius:999px!important;background:var(--input)!important;color:var(--text)!important;
+  font-size:10px!important;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent}
+body.command-strip-mode .comfort-switch .comfort-switch-track{position:relative;display:block;width:30px;height:16px;
+  border-radius:999px;background:var(--panel-2);border:1px solid var(--line)}
+body.command-strip-mode .comfort-switch .comfort-switch-track i{position:absolute;top:1px;left:1px;width:12px;height:12px;
+  border-radius:50%;background:var(--muted);transition:left .12s ease}
+body.command-strip-mode .comfort-switch.on{border-color:var(--accent)!important;background:var(--panel-2)!important}
+body.command-strip-mode .comfort-switch.on .comfort-switch-track{background:var(--accent);border-color:var(--accent)}
+body.command-strip-mode .comfort-switch.on .comfort-switch-track i{left:15px;background:var(--on-accent)}
+body.command-strip-mode .comfort-switch:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+body.command-strip-mode .comfort-switch:disabled{cursor:not-allowed}
+body.command-strip-mode .comfort-foot{display:flex;justify-content:flex-end;margin-top:12px}
+body.command-strip-mode .comfort-reset{min-height:28px!important;padding:4px 10px!important;
+  border:1px solid var(--line)!important;border-radius:999px!important;background:var(--input)!important;
+  color:var(--muted)!important;font-size:10px!important;cursor:pointer}
+body.command-strip-mode .comfort-reset:hover{border-color:var(--accent)!important;color:var(--text)!important}
+body.command-strip-mode .comfort-reset:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (min-width:900px){
+  body.command-strip-mode .comfort-switches{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+}
+@media (prefers-reduced-motion:reduce){
+  body.command-strip-mode .comfort-switch .comfort-switch-track i{transition:none}
+}
+
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a444ed1d9faa360d',t:'MTc5MDk1Njg5MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a44b175868ecb13e',t:'MTc5MTAyMTUzNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

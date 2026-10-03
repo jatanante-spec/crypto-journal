@@ -16,20 +16,23 @@
     signal: { label: "SIGNAL AMBER" },
     electric: { label: "ELECTRIC BLUE + MINT" },
     graphite: { label: "GRAPHITE + CORAL" },
-    /* HIGH-CONTRAST-1 · four measured high contrast looks. Each one clears 4.5:1 on every text
-       pair and 3:1 on every border, where the three standard palettes sit at 1.45:1 on borders.
-       They are separate looks, not overlays, so they cannot be stacked on a standard palette. */
+    /* HIGH-CONTRAST-1 · five measured high contrast looks. Every one clears 4.5:1 on text and 3:1
+       on borders, where the standard palettes sit low on borders. Since the glare makeover the
+       text is capped below pure white and borders are tuned to ~3.8:1 rather than 6-7:1, so cards
+       stop shimmering in a dark room. They are separate looks, not overlays, so they cannot be
+       stacked on a standard palette. */
     obsidian: { label: "DARK · COOL" },
     amberNight: { label: "DARK · WARM" },
+    nightVision: { label: "DEEP RED · DARK ADAPTED" },
     paper: { label: "LIGHT" },
     mono: { label: "GREYSCALE" }
   };
   /* The Colour palette card offers only the three standard looks. The high contrast looks live in
      their own card, so the two controls never compete for the same row of buttons. */
   var STANDARD_THEMES = ["signal", "electric", "graphite"];
-  var HC_THEMES = ["obsidian", "amberNight", "paper", "mono"];
-  var HC_THEME_SHORT = { obsidian: "Obsidian", amberNight: "Night", paper: "Paper", mono: "Mono" };
-  var HC_THEME_LABEL = { obsidian: "Obsidian", amberNight: "Amber Night", paper: "Paper", mono: "Mono" };
+  var HC_THEMES = ["obsidian", "amberNight", "nightVision", "paper", "mono"];
+  var HC_THEME_SHORT = { obsidian: "Obsidian", amberNight: "Night", nightVision: "Vision", paper: "Paper", mono: "Mono" };
+  var HC_THEME_LABEL = { obsidian: "Obsidian", amberNight: "Amber Night", nightVision: "Night Vision", paper: "Paper", mono: "Mono" };
   var HC_BADGE_OFF = "Off";
   /* Coin Desk layout is an account setting: all three approved minimal modes remain available,
      while the chosen presentation follows the existing settings sync. It never changes the engine. */
@@ -74,6 +77,221 @@
     var storedPalette = localStorage.getItem(COLOR_PALETTE_KEY);
     if (storedPalette && STANDARD_THEMES.indexOf(storedPalette) >= 0) savedPalette = storedPalette;
   } catch (e) {}
+  /* COMFORT-1 (3 Oct 2026) · eye comfort for the screen in front of you, kept device-local for the
+     same reason the palette is: two devices in two rooms should not fight over how bright the text
+     is, and none of it belongs in a journal payload. These are modifiers, not looks -- the look
+     still comes from the Colour palette and High contrast cards, which stay mutually exclusive.
+        · luminance scales the primary text channels and applies to EVERY look, standard included;
+        · the deep black floor is a high contrast idea, so it is off (and disabled) elsewhere --
+          there is no floor to deepen on Paper, and nothing to lift on a standard palette;
+        · while the floor is deep the slider is capped at 70%: dimming the text and deepening
+          the floor are one request in two controls, and letting one undo the other is a false
+          control. Turning the floor off hands the slider back at the value you had before.
+     The unscaled text of each look is read from the stylesheet at build time (verify_css.py asserts
+     the two still agree), so the slider never has to read a computed style to do its arithmetic. */
+  var TEXT_LUMA_KEY = KEY + "-text-luminance-v1";
+  var BOOST_KEY = KEY + "-booster-v1";
+  var WARM_TEXT_KEY = KEY + "-warm-text-v1";
+  var FOLLOW_CONTRAST_KEY = KEY + "-follow-contrast-v1";
+  var LUMA_MIN = 60, LUMA_MAX = 100, BOOST_CAP = 70;
+  /* How far each look can actually be dimmed. Past these numbers the primary text has fallen to the
+     strength of the muted labels, and a screen where the small print out-reads the body is worse in
+     the dark, not better -- so the slider stops there rather than offering a setting that quietly
+     breaks the page. The standard palettes floor higher (72-75%) because their muted text is
+     brighter to begin with; the dark high contrast looks reach 64-65%. Measured against each
+     look's own --muted, and against the deepened floor while the booster is on. verify_css.py
+     recomputes every one of these from the stylesheet. */
+  var LUMA_FLOOR = {signal: 73, electric: 75, graphite: 72, obsidian: 65, amberNight: 64, nightVision: 65, paper: 60, mono: 65};
+  var LUMA_FLOOR_BOOST = {obsidian: 65, amberNight: 64, nightVision: 65, mono: 65};
+  var THEME_TEXT = {
+      signal: "#f4f7fb",
+      electric: "#f1f7ff",
+      graphite: "#faf7ef",
+      obsidian: "#d5e0f0",
+      amberNight: "#e9ddc8",
+      nightVision: "#ecc6b7",
+      paper: "#241f17",
+      mono: "#dedede"
+  };
+  var comfort = { luma: LUMA_MAX, boost: false, warm: true, follow: false };
+  var comfortPreBoost = null;
+  function readComfort() {
+    var reader = {
+      luma: function (raw) {
+        var n = parseInt(raw, 10);
+        return isFinite(n) && n >= LUMA_MIN && n <= LUMA_MAX ? n : LUMA_MAX;
+      },
+      flag: function (raw, fallback) { return raw === "1" || raw === "true" ? true : raw === "0" || raw === "false" ? false : fallback; }
+    };
+    var raw = {};
+    try {
+      raw.luma = localStorage.getItem(TEXT_LUMA_KEY);
+      raw.boost = localStorage.getItem(BOOST_KEY);
+      raw.warm = localStorage.getItem(WARM_TEXT_KEY);
+      raw.follow = localStorage.getItem(FOLLOW_CONTRAST_KEY);
+    } catch (e) { return; }
+    comfort.luma = reader.luma(raw.luma);
+    comfort.boost = reader.flag(raw.boost, false);
+    comfort.warm = reader.flag(raw.warm, true);
+    comfort.follow = reader.flag(raw.follow, false);
+  }
+  readComfort();
+  function saveComfort() {
+    try {
+      localStorage.setItem(TEXT_LUMA_KEY, String(comfort.luma));
+      localStorage.setItem(BOOST_KEY, comfort.boost ? "1" : "0");
+      localStorage.setItem(WARM_TEXT_KEY, comfort.warm ? "1" : "0");
+      localStorage.setItem(FOLLOW_CONTRAST_KEY, comfort.follow ? "1" : "0");
+    } catch (e) {}
+  }
+  function systemWantsMoreContrast() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-contrast: more)").matches);
+  }
+  /* The floor only means anything on a dark high contrast look. Paper is light: deepening it would
+     make the page harder to read, not easier, which is the opposite of the feature. */
+  function comfortBoostUsable() { return isHcTheme(colorTheme) && colorTheme !== "paper"; }
+  function comfortBoostOn() { return comfort.boost && comfortBoostUsable(); }
+  function comfortFollowLocked() { return comfort.follow && systemWantsMoreContrast(); }
+  function comfortMin() {
+    var table = comfortBoostOn() ? LUMA_FLOOR_BOOST : LUMA_FLOOR;
+    return Math.max(LUMA_MIN, table[colorTheme] || LUMA_MIN);
+  }
+  function comfortLumaValue() {
+    if (comfortFollowLocked()) return LUMA_MAX;
+    var lo = comfortMin(), v = Math.max(comfort.luma, lo);
+    return comfortBoostOn() ? Math.min(v, Math.max(BOOST_CAP, lo)) : v;
+  }
+  function comfortDirty() { return comfort.luma !== LUMA_MAX || comfort.boost || !comfort.warm || comfort.follow; }
+  function scaleText(hex, pct) {
+    var h = String(hex || "").replace("#", "");
+    if (h.length === 3) h = h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2);
+    if (!/^[0-9a-fA-F]{6}$/.test(h)) return hex;
+    var out = "#";
+    for (var i = 0; i < 3; i++) {
+      var c = Math.round(parseInt(h.substr(i * 2, 2), 16) * pct / 100);
+      out += ("0" + Math.max(0, Math.min(255, c)).toString(16)).slice(-2);
+    }
+    return out;
+  }
+  /* One place paints the text, and it paints it inline on <body>, so a look change, a card tap and
+     a slider drag all go through the same line and no rule can win by accident. */
+  function applyComfort() {
+    if (!document.body) return;
+    var on = comfortBoostOn(), luma = comfortLumaValue();
+    document.body.setAttribute("data-boosted", on ? "true" : "false");
+    if (luma < LUMA_MAX) {
+      var base = THEME_TEXT[colorTheme] || "#ffffff";
+      if (on && !comfort.warm) base = "#ffffff";
+      document.body.style.setProperty("--text", scaleText(base, luma));
+    } else {
+      document.body.style.removeProperty("--text");
+    }
+  }
+  function setComfortLuma(value) {
+    var n = parseInt(value, 10);
+    if (!isFinite(n)) return;
+    var lo = comfortMin();
+    n = Math.max(lo, Math.min(LUMA_MAX, n));
+    if (comfortBoostOn()) { n = Math.min(n, Math.max(BOOST_CAP, lo)); comfortPreBoost = null; }
+    comfort.luma = n;
+    saveComfort();
+    render();
+  }
+  function setComfortBoost(on) {
+    if (on && !comfortBoostUsable()) return;
+    if (on && !comfort.boost) { comfortPreBoost = comfort.luma; comfort.luma = Math.min(comfort.luma, Math.max(BOOST_CAP, comfortMin())); }
+    if (!on && comfort.boost && comfortPreBoost !== null) { comfort.luma = comfortPreBoost; comfortPreBoost = null; }
+    comfort.boost = !!on;
+    saveComfort();
+    render();
+  }
+  function setComfortWarm(on) { comfort.warm = !!on; saveComfort(); render(); }
+  function setComfortFollow(on) { comfort.follow = !!on; saveComfort(); render(); }
+  function resetComfort() {
+    comfort.luma = LUMA_MAX; comfort.boost = false; comfort.warm = true; comfort.follow = false;
+    comfortPreBoost = null;
+    try {
+      localStorage.removeItem(TEXT_LUMA_KEY);
+      localStorage.removeItem(BOOST_KEY);
+      localStorage.removeItem(WARM_TEXT_KEY);
+      localStorage.removeItem(FOLLOW_CONTRAST_KEY);
+    } catch (e) {}
+    render();
+  }
+  function comfortBadge() {
+    if (comfortFollowLocked()) return "System";
+    var parts = [];
+    if (comfortLumaValue() < LUMA_MAX) parts.push(comfortLumaValue() + "%");
+    if (comfortBoostOn()) parts.push("Deep floor");
+    return parts.length ? parts.join(" \u00b7 ") : "Off";
+  }
+  function comfortSwitchHtml(action, on, label, disabled) {
+    return '<button type="button" class="comfort-switch' + (on ? " on" : "") + '"' +
+      ' data-action="' + action + '" data-value="' + (on ? "0" : "1") + '"' +
+      ' role="switch" aria-checked="' + (on ? "true" : "false") + '" aria-label="' + esc(label) + '"' +
+      (disabled ? " disabled" : "") + '>' +
+      '<span class="comfort-switch-track" aria-hidden="true"><i></i></span>' +
+      "<b>" + (on ? "On" : "Off") + "</b></button>";
+  }
+  function comfortSettingsHtml() {
+    var usable = comfortBoostUsable(), on = comfortBoostOn(), luma = comfortLumaValue(), locked = comfortFollowLocked();
+    /* A disabled switch keeps showing what you chose: the preference is still on, it is the floor
+       that cannot apply to this look. Flipping it to Off by itself would look like it was lost. */
+    var boostShown = usable ? on : comfort.boost;
+    var warmLive = on;
+    return '<section class="card comfort-settings">' +
+      '<header><div><h3>Comfort</h3>' +
+      '<p class="muted">For a dark room or tired eyes. Luminance dims the primary text of every ' +
+      'look, standard palettes included; the deep black floor halves the backdrop of the dark ' +
+      'high contrast looks and keeps each one\u2019s own cast.</p></div>' +
+      '<span class="layout-setting-badge comfort-badge' + (comfortDirty() ? "" : " hc-badge-off") + '">' +
+      esc(comfortBadge()) + "</span></header>" +
+      '<div class="comfort-rows">' +
+        '<div class="comfort-row">' +
+          '<div class="comfort-row-head"><b>Text luminance</b>' +
+          '<span class="comfort-readout" id="comfort-luma-out">' + luma + '%</span></div>' +
+          '<input class="comfort-slider" type="range" id="comfort-luma" min="' + comfortMin() + '" max="' + LUMA_MAX +
+            '" step="1" value="' + luma + '" aria-label="Text luminance"' + (locked ? " disabled" : "") + ">" +
+          '<p class="muted comfort-hint">' +
+            (locked ? "Following this device\u2019s contrast setting. Untick Follow to use your own value again."
+                    : "100% is the look\u2019s own text. This look stops at " + comfortMin() +
+                      "%, where the labels would start to out-read the body." + (on ? " Capped at " + BOOST_CAP + "% while the floor is deep." : "")) +
+          "</p>" +
+        "</div>" +
+        '<div class="comfort-switches">' +
+          '<div class="comfort-row' + (usable ? "" : " off") + '">' +
+            '<div class="comfort-row-head"><b>Deep black floor</b>' +
+            comfortSwitchHtml("more-comfort-boost", boostShown, "Deep black floor", !usable) + "</div>" +
+            '<p class="muted comfort-hint">' +
+              (usable ? "Halves the backdrop of this look. The slider tops out at " + BOOST_CAP + "% while it is on."
+                      : comfort.boost
+                        /* The switch keeps showing what you chose, because the choice is still on --
+                           it is the floor that cannot apply here. Saying so is better than silently
+                           flipping the switch off and letting you think it was forgotten. */
+                        ? "Paused here: the floor only exists on the dark high contrast looks. It comes back with Obsidian, Amber Night, Night Vision or Mono."
+                        : colorTheme === "paper"
+                          ? "Paper is a light look, so it has no floor to deepen \u2014 the floor lives on the dark high contrast looks."
+                          : "The floor belongs to the high contrast looks. Pick Obsidian, Amber Night, Night Vision or Mono and it wakes up.") +
+            "</p>" +
+          "</div>" +
+          '<div class="comfort-row' + (warmLive ? "" : " off") + '">' +
+            '<div class="comfort-row-head"><b>Keep the tint</b>' +
+            comfortSwitchHtml("more-comfort-warm", comfort.warm, "Keep the tint", !warmLive) + "</div>" +
+            '<p class="muted comfort-hint">' +
+              (warmLive ? "Text keeps this look\u2019s own warm or cool cast. Off gives neutral white instead."
+                        : "Only applies with the floor down.") +
+            "</p>" +
+          "</div>" +
+          '<div class="comfort-row">' +
+            '<div class="comfort-row-head"><b>Follow the device</b>' +
+            comfortSwitchHtml("more-comfort-follow", comfort.follow, "Follow the device", false) + "</div>" +
+            '<p class="muted comfort-hint">Uses this device\u2019s contrast preference. It only moves luminance \u2014 it never switches your look.</p>' +
+          "</div>" +
+        "</div>" +
+      "</div>" +
+      (comfortDirty() ? '<div class="comfort-foot"><button type="button" class="comfort-reset" data-action="more-comfort-reset">Reset comfort</button></div>' : "") +
+      "</section>";
+  }
   var coinHadLocal=false;
   var activeCoinIntent="";
   var activeCoinIntentAt=0;
@@ -10780,7 +10998,9 @@
   };
   var moreFilter = "all";
   var moreInfo = {};
-  var MORE_THEME_SHORT = { signal: "Amber", electric: "Blue", graphite: "Coral" };
+  var MORE_THEME_SHORT = { signal: "Amber", electric: "Blue", graphite: "Coral",
+    obsidian: "Obsidian", amberNight: "Amber Night", nightVision: "Night Vision",
+    paper: "Paper", mono: "Mono" };
   var STANDARD_LABEL = { signal: "Signal amber", electric: "Electric", graphite: "Graphite" };
   var MORE_SCOUT_SHORT = { glance: "Glance", ledger: "Ledger" };
   var MORE_HELP = {
@@ -10974,6 +11194,10 @@
     if (a === "more-filter") { moreSetFilter(b.getAttribute("data-filter")); return; }
     if (a === "more-palette") { setStandardPalette(b.getAttribute("data-theme")); return; }
     if (a === "more-hc-theme") { setHighContrast(b.getAttribute("data-hc")); return; }
+    if (a === "more-comfort-boost") { setComfortBoost(b.getAttribute("data-value") === "1"); return; }
+    if (a === "more-comfort-warm") { setComfortWarm(b.getAttribute("data-value") === "1"); return; }
+    if (a === "more-comfort-follow") { setComfortFollow(b.getAttribute("data-value") === "1"); return; }
+    if (a === "more-comfort-reset") { resetComfort(); return; }
     if (a === "more-theme") { setColorTheme(b.getAttribute("data-theme")); return; }
     if (a === "more-preview-toggle") {
       var target = b.getAttribute("data-target");
@@ -11242,6 +11466,7 @@
         }).join("") +
       "</div>" +
       highContrastSettingsHtml() +
+      comfortSettingsHtml() +
       coinDeskLayoutSettingsHtml() +
       scoutTriageLayoutSettingsHtml(true) +
       climateLayoutSettingsHtml();
@@ -12905,6 +13130,33 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
   document.addEventListener("change", function (e) {
     if (e.target && e.target.id === "settings-theme") setColorTheme(e.target.value);
   });
+  /* The slider is not a data-action button: it is a form control, so it listens for itself. While
+     the thumb is down the readout and the page update in place -- re-rendering the sheet mid-drag
+     would throw the element out from under your finger -- and the choice is written on release. */
+  document.addEventListener("input", function (e) {
+    if (!e.target || e.target.id !== "comfort-luma") return;
+    var n = parseInt(e.target.value, 10);
+    if (!isFinite(n)) return;
+    comfort.luma = Math.max(comfortMin(), Math.min(LUMA_MAX, n));
+    comfortPreBoost = null;
+    applyComfort();
+    var out = document.getElementById("comfort-luma-out");
+    if (out) out.textContent = comfortLumaValue() + "%";
+    var badge = document.querySelector(".comfort-badge");
+    if (badge) badge.textContent = comfortBadge();
+  });
+  document.addEventListener("change", function (e) {
+    if (!e.target || e.target.id !== "comfort-luma") return;
+    setComfortLuma(e.target.value);
+  });
+  /* Follow the device: prefers-contrast is the only signal used, and it moves luminance and nothing
+     else. A device that says nothing leaves your own value alone. */
+  if (window.matchMedia) {
+    var contrastMq = window.matchMedia("(prefers-contrast: more)");
+    var onContrastChange = function () { if (comfort.follow) { applyComfort(); render(); } };
+    if (contrastMq.addEventListener) contrastMq.addEventListener("change", onContrastChange);
+    else if (contrastMq.addListener) contrastMq.addListener(onContrastChange);
+  }
 
   function render() {
     var savedScroll = window.pageYOffset || document.documentElement.scrollTop || 0;
@@ -12927,6 +13179,7 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
       document.body.classList.toggle("page-market", page === "market");
       document.body.classList.add("command-strip-mode");
       document.body.setAttribute("data-color-theme", colorTheme);
+      applyComfort();
       document.body.setAttribute("data-coin-desk-layout", coinDeskLayoutValue());
       document.body.setAttribute("data-scout-triage-layout", scoutTriageLayoutValue());
       document.body.classList.toggle("page-scout", page === "scout");
@@ -13678,6 +13931,21 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
   window.addEventListener("storage", function (e) {
     if (e.key === COLOR_THEME_KEY && e.newValue && COLOR_THEMES[e.newValue]) {
       colorTheme = e.newValue;
+      render();
+      return;
+    }
+    /* The saved palette has to travel too. Without this, picking a palette in one tab and then
+       pressing Standard in another silently reverts to the palette you just replaced, which is
+       the opposite of what the High contrast card promises. */
+    if (e.key === COLOR_PALETTE_KEY && e.newValue && STANDARD_THEMES.indexOf(e.newValue) >= 0) {
+      savedPalette = e.newValue;
+      render();
+      return;
+    }
+    /* Comfort is device-local, but a device can have more than one tab open, and a slider in one
+       tab that the other tab ignores is worse than no slider at all. */
+    if (e.key === TEXT_LUMA_KEY || e.key === BOOST_KEY || e.key === WARM_TEXT_KEY || e.key === FOLLOW_CONTRAST_KEY) {
+      readComfort();
       render();
       return;
     }
@@ -14484,4 +14752,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a444eed7bec0360d',t:'MTc5MDk1Njk2Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a44b16e38857b13e',t:'MTc5MTAyMTUxNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
