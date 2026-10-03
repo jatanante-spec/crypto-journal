@@ -7975,5 +7975,64 @@ body.command-strip-mode #main .more-look-body{padding:9px 11px 11px!important}
 
 /* the group label ------------------------------------------------------------------ 12/6 -> 9/4 */
 body.command-strip-mode #main .more-look-group{margin:9px 0 4px!important}
+/* SCOUT-ACCESS-1 · Task F build -------------------------------------------------------------------
+   The Signal-ledger row now gives every pixel to the coin: the star / lock cluster is out of the
+   row, so no state can squeeze, cover or clip the signal, health or meta line at any width. The
+   verbs move to a 44px sheet (long-press, right-click or M) and to the phone record panel.
+   Measured targets: row main full width and >= 52px tall, every sheet verb 44px, panel verbs 44px,
+   record tabs 44px on a phone. */
+#main .triage-compact-page .triage-ledger-row{grid-template-columns:minmax(0,1fr);padding:6px 8px 6px 10px}
+#main .triage-compact-page .triage-ledger-main{width:100%;cursor:pointer;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;border-radius:8px}
+#main .triage-compact-page .triage-ledger-main:hover{background:#131f36}
+#main .triage-compact-page .triage-ledger-main:active{background:#182741}
+#main .triage-compact-page .triage-ledger-main:focus-visible{outline:2px solid #9dc9ff;outline-offset:-2px;background:#131f36}
+@media (max-width:820px){#main .triage-compact-page .triage-ledger-row{padding:6px 6px 6px 8px}}
+
+/* the action sheet — the same shape as the app's other sheets -------------------------------------- */
+.scout-sheet-host{position:fixed;inset:0;z-index:120}
+.scout-sheet-scrim{position:absolute;inset:0;background:rgba(3,7,14,.66)}
+.scout-sheet{position:absolute;left:0;right:0;bottom:0;max-height:82vh;overflow:auto;background:#0c1424;border-top:1px solid #2b3d5e;border-radius:14px 14px 0 0;box-shadow:0 -14px 34px rgba(2,5,12,.7);padding:8px 10px calc(12px + env(safe-area-inset-bottom,0px))}
+@media (min-width:821px){.scout-sheet{left:auto;right:16px;bottom:16px;width:392px;border:1px solid #2b3d5e;border-radius:14px;padding:10px}}
+.scout-sheet-head{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 8px;padding:2px 2px 8px;border-bottom:1px solid #1e2b44}
+.scout-sheet-head em{grid-column:1 / -1;font-style:normal;font-size:9px;color:#8fa2c0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scout-grab{grid-column:1 / -1;justify-self:center;width:38px;height:4px;border-radius:2px;background:#2c3d5c;margin:0 0 6px}
+.scout-sheet-id{display:flex;align-items:baseline;gap:6px;min-width:0}
+.scout-sheet-id b{font-size:13px;color:#dce7f7}
+.scout-sheet-id small{font-size:9px;color:#879ab9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scout-sheet-x{grid-row:1 / 3;grid-column:2;align-self:center;min-height:32px;padding:0 9px;border:1px solid #2b3d5e;border-radius:8px;background:#101a2d;color:#a9bad4;font-size:9px;font-weight:700}
+.scout-sheet-list{display:grid;gap:6px;padding:9px 0 2px}
+.scout-sheet-quiet{display:grid;gap:4px;padding:8px 0 0;border-top:1px solid #1e2b44;margin-top:8px}
+.scout-verb{display:flex;align-items:center;gap:9px;min-height:44px;width:100%;padding:0 12px;border:1px solid #2b3d5e;border-radius:10px;background:#111c30;color:#e6eefc;font-family:inherit;font-size:11px;font-weight:650;text-align:left}
+.scout-verb .scout-vi{flex:0 0 17px;width:17px;height:17px;color:#9fb4d6}
+.scout-verb span{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scout-verb .k{flex:0 0 auto;font-style:normal;font-size:9px;font-weight:700;color:#8ea3c4;border:1px solid #2b3d5e;border-radius:5px;padding:1px 5px;text-align:center}
+.scout-verb:hover{background:#16233a}
+.scout-verb:focus-visible{outline:2px solid #9dc9ff;outline-offset:1px}
+.scout-verb.on{border-color:#8a6f1c;background:#2a2409}
+.scout-verb.on .scout-vi{color:var(--yellow)}
+.scout-verb-quiet{min-height:36px;width:100%;padding:0 10px;border:1px solid transparent;border-radius:9px;background:none;color:#9fb4d6;font-family:inherit;font-size:10px;text-align:left}
+.scout-verb-quiet.danger{color:#ff9db1}
+.scout-verb-quiet:focus-visible{outline:2px solid #9dc9ff;outline-offset:1px}
+
+/* the same verbs inside the open record, where a phone has no tab row of its own ------------------- */
+.triage-verbs{display:grid;gap:6px;padding:8px 10px 2px}
+@media (min-width:521px){.triage-verbs-panel{grid-template-columns:1fr 1fr}}
+@media (max-width:820px){
+  #main .triage-tab-pills{gap:6px;padding:8px 10px 0}
+  #main .triage-tab-pill{min-height:44px;padding:0 14px;border-radius:10px;font-size:10.5px}
+}
+
+/* the app's shared button rule — body.command-strip-mode #main button:not(…)… — forces 28px on every
+   button inside #main with !important. The tap targets this build promises pay the same specificity
+   and take those 28px back. */
+body.command-strip-mode #main .scout-verb:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle){min-height:44px!important;height:auto!important;padding:0 12px!important;border-radius:10px!important;font-size:11px!important;line-height:1.15}
+body.command-strip-mode #main .scout-verb-quiet:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle){min-height:36px!important;height:auto!important;font-size:10px!important;line-height:1.15}
+body.command-strip-mode #main .triage-tab-pill:not(.tip-btn):not(.triage-focus-icon):not(.swing-pivot-hit):not(.swing-now-hit):not(.now-tip):not(.now-key):not(.bar-glow):not(.more-chip):not(.sec-pill):not(.more-info):not(.more-palette-option):not(.more-look-toggle){min-height:44px!important;height:auto!important;padding:0 14px!important;border-radius:10px!important;font-size:10.5px!important}
+/* phone · the signal line no longer shares its width with the health column: health drops to the
+   second line beside the meta strip, so the whole reason text fits on a 390px screen. */
+@media (max-width:820px){
+  #main .triage-compact-page .triage-ledger-row .triage-ledger-signal{grid-column:2 / 4;grid-row:1}
+  #main .triage-compact-page .triage-ledger-row .triage-ledger-health{grid-column:3;grid-row:2}
+  #main .triage-compact-page .triage-ledger-row .triage-ledger-meta{grid-column:2;grid-row:2}
+}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a44c013afd0f2dd8',t:'MTc5MTAzMTExNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

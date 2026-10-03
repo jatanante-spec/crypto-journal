@@ -12952,9 +12952,13 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
     }
     triageSelected=ticker;triageUpdate(false);if(window.innerWidth<=1180){
       triageFocus=document.activeElement;triageOldOverflow=document.body.style.overflow;document.body.style.overflow='hidden';triageSheet=true;triageRenderInspector();
-      document.getElementById('triage-scrim').hidden=false;document.querySelector('.triage-scanner').inert=true;document.querySelector('.triage-stats').inert=true;
-      document.querySelector('.nav').inert=true;document.getElementById('budget').inert=true;document.querySelector('.triage-head').inert=true;
-      document.getElementById('triage-inspector').querySelector('[data-action="triage-close"]').focus();}}
+      /* every one of these is optional depending on the layout that is on screen; an unguarded
+         dereference here used to throw while the record was opening on a phone and leave the sheet
+         half set up. */
+      var _scrimEl=document.getElementById('triage-scrim');if(_scrimEl)_scrimEl.hidden=false;
+      ['.triage-scanner','.triage-stats','.nav','.triage-head'].forEach(function(sel){var el=document.querySelector(sel);if(el)el.inert=true;});
+      var _budEl=document.getElementById('budget');if(_budEl)_budEl.inert=true;
+      var _inspEl=document.getElementById('triage-inspector'),_inspClose=_inspEl&&_inspEl.querySelector('[data-action="triage-close"]');if(_inspClose)_inspClose.focus();}}
   function triageClose(){triageRecordJump=false;triageRecordDrag=null;var rp=document.getElementById('triage-inspector');if(rp)rp.style.transform='';if(triageSheet)document.body.style.overflow=(triageFocusMode?'hidden':triageOldOverflow);triageSheet=false;document.body.classList.remove('triage-focus-inspect');var panel=document.getElementById('triage-inspector');if(panel){panel.classList.remove('sheet');panel.removeAttribute('role');panel.removeAttribute('aria-modal');}document.getElementById('triage-scrim').hidden=true;['.triage-scanner','.triage-stats','.nav','#budget','.triage-head'].forEach(function(s){var el=document.querySelector(s);if(el)el.inert=false;});var fbox2=document.getElementById('triage-focus');if(fbox2)fbox2.inert=false;if(triageFocus&&triageFocus.isConnected)triageFocus.focus();else if(triageFocusMode){var fs=document.getElementById('triage-focus-search');if(fs)fs.focus();}else {var search=document.getElementById('triage-search');if(search)search.focus();}}
 
   /* COIN-RECORD-1 · drag the record down to close it. Only from the handle or the title
@@ -13045,6 +13049,187 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
     list.forEach(function(t){triageJob.items[t]='queued';ensureCoinBook(t);scoutPeekQueue.push(t);});
     watchlistToast='Refreshing selected snapshot: '+list.length+' coins. Filters do not change this queued list.';drainScoutPeekQueue();triageUpdate(false);
   }
+  /* SCOUT-ACCESS-1 · Task F build. The record row now gives all of its width to the coin's data:
+     the star / lock cluster is out of the row, so nothing can squeeze, cover or clip the signal,
+     health or meta line in any state. Every verb stays reachable without hovering or guessing:
+       · the row is one button = open the record  (tap, Enter or Space)
+       · press and hold a row for 450ms (finger or mouse) → 44px action sheet
+       · right-click a row → the same sheet
+       · focused row: Enter open · M sheet · S save · L lock · R refresh · arrows move · Esc close
+       · the phone record panel carries Lock / Save at 44px and shows its tabs again
+     This changes how verbs are reached; it never changes what a coin records. */
+  var scoutSheetTicker='',scoutSheetReturn=null,scoutPressTimer=0,scoutPressFired=false,scoutPressStart=null;
+  function _vbquery(panel){return !!(panel&&panel.querySelector&&panel.querySelector('.triage-verbs'));}
+  function scoutVerbIcon(name){
+    if(name==='lock')return '<svg class="scout-vi" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 10.4V7.6a4 4 0 0 1 8 0v2.8" fill="none" stroke="currentColor" stroke-width="2"/><rect x="5" y="10.4" width="14" height="9.6" rx="2.2" fill="currentColor"/></svg>';
+    if(name==='unlock')return '<svg class="scout-vi" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 10.4V7.6a4 4 0 0 1 7.6-1.4" fill="none" stroke="currentColor" stroke-width="2"/><rect x="5" y="10.4" width="14" height="9.6" rx="2.2" fill="currentColor"/></svg>';
+    if(name==='star')return '<svg class="scout-vi" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.4l2.8 5.6 6.2.9-4.5 4.4 1.1 6.2L12 17.6l-5.6 2.9 1.1-6.2L3 9.9l6.2-.9z" fill="currentColor"/></svg>';
+    if(name==='inspect')return '<svg class="scout-vi" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.6 15.6L21 21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    return '<svg class="scout-vi" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.4 12a8.4 8.4 0 1 1-2.7-6.2M20.4 3.8v4.4H16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  }
+  function scoutRowFor(ticker){
+    for(var i=0;i<triageCache.length;i++)if(triageCache[i].pair.ticker===ticker)return triageCache[i];
+    return null;
+  }
+  /* one place that fires an existing Scout action, so the sheet, the keys and the panel row all
+     behave exactly like the app's own buttons. The temporary button lives inside the row for the
+     length of one click, which is how the delegated handler at the document level finds it. */
+  function scoutAct(ticker,action,extra){
+    if(!ticker||!action)return;
+    var host=document.querySelector('.triage-unified-row[data-ticker="'+ticker+'"]')||document.body;
+    var b=document.createElement('button');
+    b.setAttribute('type','button');b.setAttribute('data-action',action);b.setAttribute('data-ticker',ticker);
+    if(extra)b.setAttribute('data-reason',extra);
+    b.style.display='none';host.appendChild(b);b.click();
+    if(b.parentNode)b.parentNode.removeChild(b);
+  }
+  function scoutVerbRowHtml(ticker,withKeys){
+    var lock=scoutLockFor(ticker),locked=!!lock,star=state.settings.watchlist.indexOf(ticker)>=0,t=esc(ticker);
+    var k=withKeys?'<i class="k">':'<i class="k k-off">';
+    return '<button type="button" class="scout-verb'+(locked?' on':'')+'" data-action="'+(locked?'triage-unlock':'triage-lock')+'" data-reason="HODL / existing exposure" data-ticker="'+t+'" data-sheet-close="1">'+
+        scoutVerbIcon(locked?'unlock':'lock')+'<span>'+(locked?'Unlock for Sizer review':'Lock in Scout')+'</span>'+k+'L</i></button>'+
+      '<button type="button" class="scout-verb'+(star?' on':'')+'" data-action="triage-star" data-ticker="'+t+'" aria-pressed="'+star+'" data-sheet-close="1">'+
+        scoutVerbIcon('star')+'<span>'+(star?'Saved to shortlist':'Save to shortlist')+'</span>'+k+'S</i></button>';
+  }
+  function scoutSheetHtml(ticker){
+    var r=scoutRowFor(ticker),lock=scoutLockFor(ticker),locked=!!lock,star=state.settings.watchlist.indexOf(ticker)>=0,t=esc(ticker);
+    var trend=r?(r.scanStatus==='failed'?'Outdated':(r.scanStatus&&r.scanStatus!=='done')?'Refreshing…':(r.context.ready?(r.observation.trend||'Observed'):'Unknown')):'—';
+    var note=[trend,r?(r.pos&&r.pos.word||'not checked'):'',locked?'Locked in Scout':''].filter(Boolean).join(' · ');
+    return '<div class="scout-sheet-scrim" data-action="scout-sheet-close"></div>'+
+      '<section class="scout-sheet" role="dialog" aria-modal="true" aria-labelledby="scout-sheet-title">'+
+        '<header class="scout-sheet-head"><span class="scout-grab" aria-hidden="true"></span>'+
+          '<div class="scout-sheet-id"><b id="scout-sheet-title">'+t+'</b><small>'+(r?esc(r.pair.name||ticker):'saved record')+'</small></div>'+
+          '<em>'+esc(note)+'</em>'+
+          '<button type="button" class="scout-sheet-x" data-action="scout-sheet-close" aria-label="Close actions">Esc</button>'+
+        '</header>'+
+        '<div class="scout-sheet-list">'+
+          '<button type="button" class="scout-verb'+(star?' on':'')+'" data-action="triage-star" data-ticker="'+t+'" aria-pressed="'+star+'" data-sheet-close="1">'+
+            scoutVerbIcon('star')+'<span>'+(star?'Saved to shortlist':'Save to shortlist')+'</span><i class="k">S</i></button>'+
+          '<button type="button" class="scout-verb'+(locked?' on':'')+'" data-action="'+(locked?'triage-unlock':'triage-lock')+'" data-reason="HODL / existing exposure" data-ticker="'+t+'" data-sheet-close="1">'+
+            scoutVerbIcon(locked?'unlock':'lock')+'<span>'+(locked?'Unlock for Sizer review':'Lock in Scout')+'</span><i class="k">L</i></button>'+
+          '<button type="button" class="scout-verb" data-action="triage-inspect" data-ticker="'+t+'" data-sheet-close="1">'+
+            scoutVerbIcon('inspect')+'<span>Open the record</span><i class="k">I</i></button>'+
+          '<button type="button" class="scout-verb" data-action="triage-refresh-one" data-ticker="'+t+'" data-sheet-close="1">'+
+            scoutVerbIcon('refresh')+'<span>Refresh this coin</span><i class="k">R</i></button>'+
+        '</div>'+
+        '<div class="scout-sheet-quiet">'+
+          '<button type="button" class="scout-verb-quiet" data-action="triage-row" data-ticker="'+t+'" data-sheet-close="1">Show the detail inside the row</button>'+
+          (triageEdit?'<button type="button" class="scout-verb-quiet danger" data-action="triage-remove" data-ticker="'+t+'" data-sheet-close="1">Remove from Scout</button>':'')+
+        '</div>'+
+      '</section>';
+  }
+  /* a Scout action re-renders the list, which throws the focused row away; put the keyboard back
+     on the same coin so a person driving with keys never loses their place. */
+  function scoutRefocus(ticker){
+    if(!ticker)return;
+    window.requestAnimationFrame(function(){
+      var m=document.querySelector('.triage-ledger-row[data-ticker="'+ticker+'"] .triage-unified-main');
+      if(m)try{m.focus({preventScroll:true});}catch(err){}
+    });
+  }
+  function scoutSheetClose(){
+    var h=document.getElementById('scout-sheet-host');
+    if(h&&h.parentNode)h.parentNode.removeChild(h);
+    var back=scoutSheetTicker;scoutSheetTicker='';
+    var ok=scoutSheetReturn&&scoutSheetReturn.getClientRects&&scoutSheetReturn.getClientRects().length;
+    if(ok){try{scoutSheetReturn.focus({preventScroll:true});}catch(err){}}
+    else scoutRefocus(back);
+    scoutSheetReturn=null;
+  }
+  function scoutSheetOpen(ticker){
+    if(!ticker)return;
+    scoutSheetClose();
+    scoutSheetReturn=document.activeElement;
+    var host=document.createElement('div');host.id='scout-sheet-host';host.className='scout-sheet-host';
+    host.innerHTML=scoutSheetHtml(ticker);
+    document.body.appendChild(host);
+    scoutSheetTicker=ticker;
+    var first=host.querySelector('.scout-verb');
+    if(first)try{first.focus({preventScroll:true});}catch(err){}
+    host.addEventListener('keydown',function(e){
+      if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();scoutSheetClose();return;}
+      var map={s:'[data-action="triage-star"]',l:'[data-action="triage-lock"],[data-action="triage-unlock"]',i:'[data-action="triage-inspect"]',r:'[data-action="triage-refresh-one"]'};
+      var sel=map[String(e.key||'').toLowerCase()];
+      if(sel&&!e.metaKey&&!e.ctrlKey&&!e.altKey){var hit=host.querySelector(sel);if(hit){e.preventDefault();hit.click();return;}}
+      var items=Array.prototype.slice.call(host.querySelectorAll('button')).filter(function(el){return el.getClientRects().length;});
+      if(!items.length)return;
+      var i=items.indexOf(document.activeElement);
+      if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();var n=e.key==='ArrowDown'?Math.min(items.length-1,i+1):Math.max(0,i-1);if(items[n])items[n].focus();}
+      else if(e.key==='Tab'){var a=items[0],z=items[items.length-1];
+        if(i<0){e.preventDefault();a.focus();}
+        else if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus();}
+        else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus();}}
+    });
+  }
+  /* click plumbing is registered before the Scout action handler on purpose: the app's handler
+     calls stopImmediatePropagation, so anything that must happen around a verb has to happen here. */
+  document.addEventListener('click',function(e){
+    if(scoutPressFired){scoutPressFired=false;e.preventDefault();e.stopImmediatePropagation();return;}
+    var el=e.target&&e.target.closest?e.target.closest('[data-action],[data-sheet-close]'):null;
+    if(!el)return;
+    var a=el.getAttribute('data-action');
+    if(a==='scout-sheet-close'){e.preventDefault();scoutSheetClose();return;}
+    if(el.getAttribute('data-sheet-close'))scoutSheetClose();
+  },true);
+  document.addEventListener('pointerdown',function(e){
+    if(e.pointerType==='mouse'&&e.button!==0)return;
+    var row=e.target&&e.target.closest?e.target.closest('.triage-unified-row.triage-ledger-row'):null;
+    if(!row)return;
+    var act=e.target.closest('[data-action]');
+    if(act&&['triage-inspect','triage-row'].indexOf(act.getAttribute('data-action'))<0)return;
+    scoutPressStart={x:e.clientX,y:e.clientY};scoutPressFired=false;
+    clearTimeout(scoutPressTimer);
+    scoutPressTimer=setTimeout(function(){
+      scoutPressTimer=0;
+      var t=row.getAttribute('data-ticker');
+      if(!t)return;
+      scoutPressFired=true;scoutSheetOpen(t);
+    },450);
+  },true);
+  document.addEventListener('pointermove',function(e){
+    if(!scoutPressTimer||!scoutPressStart)return;
+    if(Math.abs(e.clientX-scoutPressStart.x)>10||Math.abs(e.clientY-scoutPressStart.y)>10){clearTimeout(scoutPressTimer);scoutPressTimer=0;scoutPressStart=null;}
+  },true);
+  document.addEventListener('pointerup',function(){clearTimeout(scoutPressTimer);scoutPressTimer=0;scoutPressStart=null;},true);
+  document.addEventListener('pointercancel',function(){clearTimeout(scoutPressTimer);scoutPressTimer=0;scoutPressStart=null;},true);
+  document.addEventListener('contextmenu',function(e){
+    var row=e.target&&e.target.closest?e.target.closest('.triage-unified-row.triage-ledger-row'):null;
+    if(!row)return;
+    e.preventDefault();scoutSheetOpen(row.getAttribute('data-ticker'));
+  },false);
+  document.addEventListener('keydown',function(e){
+    if(document.getElementById('scout-sheet-host'))return;
+    if(e.key==='Escape'){
+      /* the help dot lives inside the row button, so a keyboard cannot reach it; Escape closes it */
+      if(document.getElementById('triage-trend-popover')){e.preventDefault();e.stopImmediatePropagation();scoutAct(document.activeElement&&document.activeElement.closest('.triage-ledger-row')?document.activeElement.closest('.triage-ledger-row').getAttribute('data-ticker'):'','triage-trend-help-close');}
+      return;
+    }
+    var tag=(e.target&&e.target.tagName||'').toLowerCase();
+    if(tag==='input'||tag==='textarea'||tag==='select')return;
+    if(e.metaKey||e.ctrlKey||e.altKey)return;
+    var focused=document.activeElement;
+    var main=focused&&focused.closest?focused.closest('.triage-ledger-row .triage-unified-main'):null;
+    if(!main)return;
+    var row=main.closest('.triage-ledger-row'),t=row&&row.getAttribute('data-ticker');
+    if(!t)return;
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+      var mains=Array.prototype.slice.call(document.querySelectorAll('#triage-rows .triage-unified-main')).filter(function(el){return el.getClientRects().length;});
+      var i=mains.indexOf(main);
+      if(i<0)return;
+      var n=e.key==='ArrowDown'?Math.min(mains.length-1,i+1):Math.max(0,i-1);
+      e.preventDefault();e.stopImmediatePropagation();
+      if(mains[n])mains[n].focus();
+      return;
+    }
+    var key=String(e.key||'').toLowerCase();
+    if(key==='m'||e.key==='ContextMenu'||(e.shiftKey&&e.key==='F10')){e.preventDefault();e.stopImmediatePropagation();scoutSheetOpen(t);return;}
+    if(e.shiftKey)return;
+    if(key==='h'||key==='?'){e.preventDefault();e.stopImmediatePropagation();scoutAct(t,'triage-trend-help');}
+    else if(key==='s'){e.preventDefault();e.stopImmediatePropagation();scoutAct(t,'triage-star');scoutRefocus(t);}
+    else if(key==='l'){e.preventDefault();e.stopImmediatePropagation();scoutAct(t,scoutLockFor(t)?'triage-unlock':'triage-lock','HODL / existing exposure');scoutRefocus(t);}
+    else if(key==='i'){e.preventDefault();e.stopImmediatePropagation();scoutAct(t,'triage-inspect');scoutRefocus(t);}
+    else if(key==='r'){e.preventDefault();e.stopImmediatePropagation();scoutAct(t,'triage-refresh-one');scoutRefocus(t);}
+  },true);
   document.addEventListener('click',function(e){var b=e.target.closest('[data-action]');if(!b)return;var a=b.getAttribute('data-action');if(a.indexOf('triage-')!==0)return;e.preventDefault();e.stopImmediatePropagation();var t=b.getAttribute('data-ticker');
     if(a==='triage-scope'){unifiedScoutScope=b.dataset.scope||'all';triageFav=unifiedScoutScope==='shortlist';triageFilter='all';triageKind='any';triagePopCloseAll();triageUpdate(false);document.getElementById('triage-rows').scrollTop=0;triageFocusScroll=0;var fr=document.getElementById('triage-focus-rows');if(fr)fr.scrollTop=0;}
     else if(a==='triage-add'){var addPair=pairByTicker(t);if(addPair){upsertCustomCoin(addPair);ensureCoinBook(t);unifiedScoutScope='all';triageSelected=t;triageQuery='';triageRemoved=null;save();render();scoutToast(t+' added to Scout. Nothing is fetched until you refresh it.');}}
@@ -14315,7 +14500,7 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
         (triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
     }
     if(scoutTriageLayoutValue()==='ledger'){
-      return '<article class="triage-unified-row triage-ledger-row '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-ledger-main" data-action="triage-row" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-ledger-identity">'+combinedCoin+'</span><span class="triage-ledger-signal"><b>'+esc(trend)+' <span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span></b><small>'+watch+'</small></span><span class="triage-ledger-health">'+healthMarkup+gateMarkup+'</span><span class="triage-ledger-meta"><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong><small>'+location+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button><div class="triage-ledger-actions">'+reviewActions+'</div>'+
+      return '<article class="triage-unified-row triage-ledger-row '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-ledger-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+' record"><span class="triage-ledger-identity">'+combinedCoin+'</span><span class="triage-ledger-signal"><b>'+esc(trend)+' <span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span></b><small>'+watch+'</small></span><span class="triage-ledger-health">'+healthMarkup+gateMarkup+'</span><span class="triage-ledger-meta"><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong><small>'+location+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button>'+
       (triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
     }
     return '<article class="triage-unified-row triage-scan-row '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-scan-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+'"><span class="triage-scan-head">'+coin+healthMarkup+gateMarkup+'</span><span class="triage-scan-evidence">'+evidence+'</span><span class="triage-scan-meta">'+changeMarkup+'<small>· '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button>'+actions+'</article>';
@@ -14727,6 +14912,7 @@ var rank=function(r){return r.review?r.kind==='turn'?0:1:r.context.ready?2:3;};r
       '</div>';
   }
   function triageRenderInspector(){var host=document.getElementById('triage-inspector-host');if(!host)return;var row=unifiedScoutScope==='find'?null:triageCache.filter(function(r){return r.pair.ticker===triageSelected;})[0],panel=document.getElementById('triage-inspector');if(!panel){host.innerHTML='<aside id="triage-inspector" class="triage-inspector"></aside>';panel=document.getElementById('triage-inspector');}var scroll=panel.scrollTop;var rBody=panel.querySelector('.triage-record-body');panel.innerHTML=triageInspectorHtml(row);
+    if(row&&!_vbquery(panel)){var _vbBody=panel.querySelector('.triage-record-body');if(_vbBody)_vbBody.insertAdjacentHTML('afterbegin','<div class="triage-verbs triage-verbs-panel">'+scoutVerbRowHtml(row.pair.ticker,false)+'</div>');}
     var rBody2=panel.querySelector('.triage-record-body');if(rBody2)rBody2.scrollTop=(rBody?rBody.scrollTop:scroll);else panel.scrollTop=scroll;if(triageSheet){panel.classList.add('sheet');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-labelledby','triage-inspector-title');['.triage-scanner','.triage-stats','.nav','#budget','.triage-head'].forEach(function(s){var el=document.querySelector(s);if(el)el.inert=true;});var scrimEl=document.getElementById('triage-scrim');if(scrimEl)scrimEl.hidden=false;if(triageFocusMode){var fboxEl=document.getElementById('triage-focus');if(fboxEl)fboxEl.inert=true;}}}
   TOURS.sizer=['budget','entry','stop','target'];TOURS.market=['budget'];
   window.addEventListener('online',syncCoinsNow);
@@ -14874,4 +15060,3 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a44c00a1ce952dd8',t:'MTc5MTAzMTA5MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
