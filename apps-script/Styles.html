@@ -5562,6 +5562,10 @@ body.command-strip-mode .scout-triage-layout-options{grid-template-columns:repea
 #main .triage-compact-page #triage-rows .triage-ledger-row .triage-ledger-main:active,
 #main .triage-compact-page #triage-rows .triage-ledger-row .triage-ledger-main:focus-visible{background:transparent}
 #main .triage-compact-page #triage-rows .triage-ledger-row:not(.selected):not(.locked):hover{background:rgba(19,31,54,.7)}
+/* SCOUT-TAGPATCH-1 · the tag was 7px on a phone - the smallest text in the app, under a 12px price.
+   8px is the ceiling the 82px coin column can carry: "Refresh failed" measures 82px at 8px, 0px slack.
+   Ledger rows only, so the scan and focus views keep the sizes they have. */
+#main .triage-compact-page #triage-rows .triage-ledger-row .triage-ledger-identity .triage-unified-health{font-size:8px}
 /* Light palette: with no row fill of its own, two hardcoded text colours (the price #a6b5cc and the
    meta #8fa2c0) were left sitting on the page instead of on a dark card, and they washed out. On the
    Paper palette only, they take the palette's own muted colour. Dark palettes are untouched. */
@@ -8097,4 +8101,4 @@ body.command-strip-mode #main .triage-tab-pill:not(.tip-btn):not(.triage-focus-i
   #main .triage-compact-page .triage-ledger-row .triage-ledger-main{grid-template-columns:82px minmax(0,1fr) minmax(0,max-content);column-gap:5px}
 }
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a44fca222ab7223b',t:'MTc5MTA3MDgwMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4520f763b3e709a',t:'MTc5MTA5NDYxMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
