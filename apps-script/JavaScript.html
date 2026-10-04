@@ -13208,9 +13208,8 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
   document.addEventListener('keydown',function(e){
     if(document.getElementById('scout-sheet-host'))return;
     if(e.key==='Escape'){
-      /* the ? is reachable by keyboard now, and focus sits inside the card it opened, so the
-         ticker is read from whatever carries one rather than from the row alone */
-      if(document.getElementById('triage-trend-popover')){e.preventDefault();e.stopImmediatePropagation();var escT=document.activeElement&&document.activeElement.closest?document.activeElement.closest('[data-ticker]'):null;triageMicroShut(escT?escT.getAttribute('data-ticker'):'');}
+      /* the help dot lives inside the row button, so a keyboard cannot reach it; Escape closes it */
+      if(document.getElementById('triage-trend-popover')){e.preventDefault();e.stopImmediatePropagation();scoutAct(document.activeElement&&document.activeElement.closest('.triage-ledger-row')?document.activeElement.closest('.triage-ledger-row').getAttribute('data-ticker'):'','triage-trend-help-close');}
       return;
     }
     var tag=(e.target&&e.target.tagName||'').toLowerCase();
@@ -13263,7 +13262,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
     else if(a==='triage-focus-density')triageFocusToggleDensity();
     else if(a==='triage-focus-clear'){triageQuery='';var focusSearch=document.getElementById('triage-focus-search');if(focusSearch)focusSearch.value='';triageUpdate(false);if(focusSearch)focusSearch.focus();}
     else if(a==='triage-trend-help')triageTrendHelp(t);
-    else if(a==='triage-trend-help-close')triageMicroShut(t);
+    else if(a==='triage-trend-help-close'){var trendTip=document.getElementById('triage-trend-popover');if(trendTip)trendTip.remove();}
     /* SCOUT-HUB-1 · these two replace the Library sheet. triage-row expands a coin in
        place when Edit is off, so nothing jumps; triage-remove is only armed in edit mode. */
     else if(a==='triage-row'){triageExpanded=(triageExpanded===t?'':t);triageUpdate(false);}
@@ -13273,7 +13272,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
     else if(a==='triage-add-manual')triageManualAdd();
     else if(a==='triage-add-jump'){unifiedScoutScope='find';triageQuery='';triageEdit=false;save();render();
       var jumpInput=document.getElementById('triage-search');if(jumpInput)jumpInput.focus();}
-    else if(a==='triage-inspect'){var qaTip=document.getElementById('triage-trend-popover');if(qaTip)qaTip.remove();triageInspect(t);} else if(a==='triage-unfold'){triageExpanded=(triageExpanded===t?'':t);var uaTip=document.getElementById('triage-trend-popover');if(uaTip)uaTip.remove();triageUpdate(false);} else if(a==='triage-unfold-close'){triageExpanded='';triageUpdate(false);} else if(a==='triage-unfold-half')triageUnfoldHalf(b);
+    else if(a==='triage-inspect')triageInspect(t);
     else if(a==='triage-close')triageClose();
     else if(a==='triage-record-sec'){var rk=b.getAttribute('data-key');triageRecordSections[rk]=!triageRecordSections[rk];triageRenderInspector();var rsec=document.getElementById('triage-inspector').querySelector('[data-action="triage-record-sec"][data-key="'+rk+'"]');if(rsec)rsec.focus({preventScroll:true});}
     else if(a==='triage-tab'){triageRecordActiveTab=b.getAttribute('data-key')||'evidence';triageRenderInspector();var pill=document.getElementById('triage-inspector').querySelector('[data-action="triage-tab"][data-key="'+triageRecordActiveTab+'"]');if(pill)pill.focus({preventScroll:true});}
@@ -14442,64 +14441,14 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
     var label=String(o.trend||'Unknown');
     return {label:label,meaning:base.meaning,evidence:base.evidence,next:base.next,code:code};
   }
-  var triageMicroKill=null;
-  function triageMicroShut(ticker){
-    var c=document.getElementById('triage-trend-popover');
-    if(c){
-      var inside=c.contains(document.activeElement); c.remove();
-      if(inside){ var t2=String(ticker||'').replace(/"/g,''); var d=document.querySelector('.triage-unified-row[data-ticker="'+t2+'"] .triage-trend-help'); if(d&&d.focus)d.focus(); }
-    }
-    if(triageMicroKill){triageMicroKill();triageMicroKill=null;}
-  }
   function triageTrendHelp(ticker){
-  var row=(triageCache||[]).filter(function(r){return r.pair.ticker===ticker;})[0]; if(!row)return;
-  var old=document.getElementById('triage-trend-popover');if(old)old.remove();
-  var c=row.pair, m=scoutTrendMeaning(row), locked=!!scoutLockFor(c.ticker), tk=esc(c.ticker);
-  var health=locked?'Locked':row.scanStatus==='failed'?'Refresh failed':(row.scanStatus&&row.scanStatus!=='done')?'Pending':row.mismatch?'Check draft':(row.context&&row.context.ready)?'Ready':'Needs data';
-  var tone=triageHealthTone(row);
-  var fresh=String(row.fresh&&row.fresh.label||'not checked'), loc=String(row.pos&&row.pos.word||'not checked');
-  var change=row.change!=null?((row.change>=0?'+':'')+num(row.change,1)+'%'):'\u2014';
-  var box=document.createElement('section');
-  box.id='triage-trend-popover'; box.className='triage-micro'; box.setAttribute('data-ticker',ticker);
-  box.setAttribute('role','dialog'); box.setAttribute('aria-modal','false'); box.setAttribute('aria-labelledby','triage-micro-title');
-  box.innerHTML='<div class="tq-micro-head"><span class="tq-micro-word triage-tone triage-tone-'+tone+'">'+triageToneSign(tone,health)+'<b id="triage-micro-title">'+esc(m.label)+'</b></span>'+
-      '<span class="tq-micro-who">'+tk+' · '+esc(health)+'</span>'+
-      '<button type="button" data-action="triage-trend-help-close" aria-label="Close the trend meaning">\u00d7</button></div>'+
-    '<p class="tq-say">'+esc(m.meaning)+'</p>'+
-    '<div class="tq-facts"><div><small>Observed cue</small><b>'+esc(m.evidence)+'</b></div>'+
-      '<div><small>What to do next</small><b>'+esc(m.next)+'</b></div></div>'+
-    '<p class="tq-micro-mkt"><strong class="'+(row.change>0?'up':row.change<0?'down':'')+'">'+esc(change)+'</strong> \u00b7 '+esc(loc+' \u00b7 '+fresh)+'</p>'+
-    '<button type="button" class="tq-full" data-action="triage-inspect" data-ticker="'+tk+'">Open the full record \u2192</button>';
-  document.body.appendChild(box);
-  /* anchored at the ? that opened it: beside the word, above it if there is no room below */
-  var dot=document.querySelector('.triage-unified-row[data-ticker="'+tk+'"] .triage-trend-help');
-  var dr=dot?dot.getBoundingClientRect():null, br=box.getBoundingClientRect(), vw=window.innerWidth, vh=window.innerHeight;
-  var left=dr?Math.round(dr.left+dr.width/2-br.width/2):Math.round((vw-br.width)/2);
-  var top=dr?Math.round(dr.bottom+10):Math.round((vh-br.height)/2);
-  left=Math.max(8,Math.min(vw-br.width-8,left));
-  var below=true;
-  if(top+br.height>vh-8){ below=false; top=dr?Math.max(8,Math.round(dr.top-br.height-10)):Math.max(8,vh-br.height-8); }
-  box.style.left=left+'px'; box.style.top=top+'px';
-  if(dr){
-    var nub=document.createElement('i'); nub.className='tq-nub '+(below?'tq-nub-above':'tq-nub-below'); nub.setAttribute('aria-hidden','true');
-    nub.style.left=Math.round(Math.max(10,Math.min(br.width-18,(dr.left+dr.width/2)-left)))+'px';
-    box.appendChild(nub);
+    var row=(triageCache||[]).filter(function(r){return r.pair.ticker===ticker;})[0];
+    if(!row)return;
+    var old=document.getElementById('triage-trend-popover');if(old)old.remove();
+    var m=scoutTrendMeaning(row),box=document.createElement('section');box.id='triage-trend-popover';box.className='triage-trend-popover';box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');box.setAttribute('aria-labelledby','triage-trend-title');
+    box.innerHTML='<div class="triage-trend-popover-head"><div><small>SCOUT TREND MEANING</small><h3 id="triage-trend-title">'+esc(m.label)+'</h3></div><button type="button" data-action="triage-trend-help-close" aria-label="Close trend meaning">×</button></div><p>'+esc(m.meaning)+'</p><div class="triage-trend-facts"><div><small>Observed cue</small><b>'+esc(m.evidence)+'</b></div><div><small>What to do next</small><b>'+esc(m.next)+'</b></div></div><div class="triage-trend-note">This is research evidence, not entry approval. Ready means the evidence is usable; it does not mean Buy.</div><div class="triage-trend-popover-actions"><button type="button" class="primary" data-action="set-training" data-on="1">Open Train</button><button type="button" data-action="triage-trend-help-close">Close</button></div>';
+    document.body.appendChild(box);var close=box.querySelector('[data-action="triage-trend-help-close"]');if(close)close.focus();
   }
-  var close=box.querySelector('[data-action="triage-trend-help-close"]');if(close)close.focus();
-  /* dismissal bound per card, released when it goes */
-  if(triageMicroKill)triageMicroKill();
-  var inside=function(t){ return t&&t.nodeType===1&&box.contains(t); };
-  var onDoc=function(e){ if(inside(e.target))return; triageMicroShut(ticker); };
-  var onKey=function(e){ if(e.key==='Escape')triageMicroShut(ticker); };
-  var onScroll=function(e){ if(inside(e.target))return; triageMicroShut(ticker); };
-  /* the key is taken on the window: the app's own Escape handler listens on the document in the
-     capture phase and stops the event, so a document listener here would never see it */
-  document.addEventListener('click',onDoc,true);
-  window.addEventListener('keydown',onKey,true);
-  window.addEventListener('scroll',onScroll,true);
-  window.addEventListener('resize',onScroll,true);
-  triageMicroKill=function(){ document.removeEventListener('click',onDoc,true); window.removeEventListener('keydown',onKey,true); window.removeEventListener('scroll',onScroll,true); window.removeEventListener('resize',onScroll,true); };
-}
   function unifiedScoutCompactWatch(r){
     var raw=String(r&&r.watch||'No current watch');
     var retest=raw.search(/\s*·\s*Retest:/i);
@@ -14524,80 +14473,13 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
     if(code==='INVALIDATED'||/invalid|outdated|broken|weakened/i.test(label))return 'signal-invalidated';
     return 'signal-unknown';
   }
-  /* ===== SCOUT-QUICKACCESS-1 · the row's own voice, the micro-card, the unfold record =====
-   Built from the design-lab picks: unfold · micro · word 12px · ? open · sign · cue de-duplicated ·
-   24h line kept, coloured, sizes swapped, words shortened on the row only. */
-function triageFreshShort(label){ return String(label == null ? '' : label).replace(/ · cached data withheld$/, ''); }
-function triageCueDedupe(trend, cue){
-  var t = String(trend == null ? '' : trend).trim(), s = String(cue == null ? '' : cue);
-  if (!t || !s) return s;
-  var re = new RegExp('^' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*·\\s*', 'i');
-  var out = s.replace(re, '').trim();
-  return out || s;
-}
-function triageUnfoldHalf(btn){
-  if (!btn) return;
-  var box = btn.closest ? btn.closest('.triage-unfold-halves') : null;
-  if (!box) return;
-  box.setAttribute('data-show', btn.getAttribute('data-half') === 'trend' ? 'trend' : 'rec');
-  box.querySelectorAll('[data-action="triage-unfold-half"]').forEach(function(b){ b.setAttribute('aria-pressed', String(b === btn)); });
-}
-function triageUnfoldBarHtml(r){
-  var tk = esc(r.pair.ticker), locked = !!scoutLockFor(r.pair.ticker);
-  return '<div class="triage-unfold-bar">' +
-    '<button type="button" class="pri" data-action="triage-refresh-one" data-ticker="' + tk + '"' + (!canCloud() || busy || scoutPeekCount() || scoutPeekQueue.length ? ' disabled' : '') + '>' + triageRecordIcon('refresh') + '<span>Refresh</span></button>' +
-    '<button type="button" data-action="triage-open" data-page-target="sizer" data-ticker="' + tk + '"' + (locked ? ' class="locked"' : '') + '>' + triageRecordIcon('sizer') + '<span>' + (locked ? 'Locked' : 'Sizer') + '</span></button>' +
-    '<button type="button" data-action="triage-open" data-page-target="market" data-ticker="' + tk + '">' + triageRecordIcon('market') + '<span>Market</span></button>' +
-    '<button type="button" data-action="pc-open" data-ticker="' + tk + '">' + triageRecordIcon('context') + '<span>Context</span></button>' +
-  '</div>';
-}
-function triageUnfoldHtml(r, o){
-  o = o || {};
-  var c = r.pair, tk = esc(c.ticker), nm = esc(c.name || c.ticker);
-  var lock = scoutLockFor(c.ticker), locked = !!lock, star = state.settings.watchlist.indexOf(c.ticker) >= 0;
-  var m = scoutTrendMeaning(r);
-  var health = o.health || 'Needs data', tone = o.healthTone || 'none';
-  var change = o.change || '—', when = o.freshRaw || o.freshShort || 'not checked', loc = o.location || 'not checked';
-  var d0 = change.charAt(0), chgCls = d0 === '+' ? 'up' : d0 === '−' || d0 === '-' ? 'down' : '';
-  var ready = !!(r.context && r.context.ready);
-  var hyp = ready ? ((r.observation && r.observation.watch) || 'Observe the next completed hour') : 'Do not infer a turn from missing or stale data';
-  var recHalf = '<section class="triage-unfold-sec triage-unfold-rec">' +
-      '<div class="tq-chips">' +
-        '<span class="tq-chip triage-tone triage-tone-' + tone + '">' + triageToneSign(tone, health) + '<span class="triage-tone-val">' + esc(health) + '</span></span>' +
-        '<span class="tq-chip"><strong class="' + chgCls + '">' + esc(change) + '</strong><span>' + esc(loc + ' · ' + when) + '</span></span>' +
-        '<span class="tq-chip tq-plain">Read-only</span>' +
-      '</div>' +
-      '<div class="tq-hyp"><small>HYPOTHESIS</small><b>' + esc(hyp) + '</b></div>' +
-    '</section>';
-  var trendHalf = '<section class="triage-unfold-sec triage-unfold-trend">' +
-      '<small class="tq-kicker">SCOUT TREND MEANING</small>' +
-      '<h4 class="tq-word">' + triageToneSign(tone, health) + '<span>' + esc(m.label) + '</span></h4>' +
-      '<p class="tq-say">' + esc(m.meaning) + '</p>' +
-      '<div class="tq-facts"><div><small>Observed cue</small><b>' + esc(m.evidence) + '</b></div>' +
-        '<div><small>What to do next</small><b>' + esc(m.next) + '</b></div></div>' +
-    '</section>';
-  return '<section class="triage-unfold" data-ticker="' + tk + '" aria-label="' + nm + ' record">' +
-    '<div class="triage-unfold-head"><span class="tq-who"><b>' + tk + '</b> · ' + esc(health) + '</span>' +
-      '<button type="button" class="tq-ic' + (star ? ' on' : '') + '" data-action="triage-star" data-ticker="' + tk + '" aria-pressed="' + star + '" aria-label="' + (star ? 'Remove ' + tk + ' from shortlist' : 'Add ' + tk + ' to shortlist') + '">' + (star ? '★' : '☆') + '</button>' +
-      '<button type="button" class="tq-ic' + (locked ? ' on' : '') + '" data-action="' + (locked ? 'triage-unlock' : 'triage-lock') + '" data-ticker="' + tk + '" aria-label="' + (locked ? 'Unlock for Sizer review' : 'Lock in Scout') + '">' + (locked ? '🔒' : '🔓') + '</button>' +
-      '<button type="button" class="tq-ic" data-action="triage-unfold-close" data-ticker="' + tk + '" aria-label="Close the record">×</button></div>' +
-    '<div class="triage-unfold-halves" data-show="' + (o.show === 'trend' ? 'trend' : 'rec') + '">' +
-      '<div class="triage-unfold-switch" role="group" aria-label="Record or trend meaning">' +
-        '<button type="button" data-action="triage-unfold-half" data-half="rec" aria-pressed="true">Record</button>' +
-        '<button type="button" data-action="triage-unfold-half" data-half="trend" aria-pressed="false">Trend meaning</button></div>' +
-      recHalf + trendHalf + '</div>' +
-    '<div class="triage-unfold-foot">' + triageUnfoldBarHtml(r) +
-      '<button type="button" class="tq-full" data-action="triage-inspect" data-ticker="' + tk + '">Open the full record →</button></div>' +
-    '<p class="tq-note">Research evidence, not entry approval. Ready means the evidence is usable; it does not mean Buy.</p>' +
-  '</section>';
-}
-function unifiedScoutRowHtml(r){
+  function unifiedScoutRowHtml(r){
     var c=r.pair,scanPending=r.scanStatus&&r.scanStatus!=='done',scanFailed=r.scanStatus==='failed',lock=scoutLockFor(c.ticker),locked=!!lock,trend=scanFailed?'Outdated':scanPending?'Refreshing…':r.context.ready?(r.observation.trend||'Observed'):'Unknown',change=!scanPending&&!scanFailed&&r.change!=null?(r.change>=0?'+':'')+num(r.change,1)+'%':'—',star=state.settings.watchlist.indexOf(c.ticker)>=0,health=locked?'Locked':scanFailed?'Refresh failed':scanPending?'Pending':r.mismatch?'Check draft':r.context.ready?'Ready':'Needs data',healthClass=locked?'attention':r.context.ready&&!r.mismatch?'ready':r.mismatch?'attention':'unknown',ticker=esc(c.ticker),name=esc(c.name||c.ticker),price=esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched'),watchText=unifiedScoutCompactWatch(r),watch=scoutCueMarkup(watchText),signalClass=scoutSignalClass(r,trend),location=esc(r.pos&&r.pos.word||'not checked'),reason=locked?'<small class="triage-lock-note">🔒 '+esc(lock.reason)+'</small>':'',openClass=locked?'locked':'',openLabel=locked?'🔒 Locked':'Open';
     var coin='<span class="triage-unified-coin"><b>'+ticker+'</b><small>'+price+'</small>'+reason+'</span>';
     var combinedCoin='<span class="triage-unified-coin"><b>'+ticker+'</b><small>'+price+'</small></span>';
     var trendTone=scanFailed?'warn':scanPending?'none':(r.context&&r.context.ready)?'ok':'none',evidence='<span class="triage-unified-watch"><b class="triage-tone triage-tone-'+trendTone+'" title="'+esc(triageToneWord(trendTone))+'">'+triageToneSign(trendTone)+esc(trend)+'</b><small>'+watch+'</small></span>';
     var changeMarkup='<span class="triage-unified-change '+(r.change>0?'up':r.change<0?'down':'')+'"><b>'+esc(change)+'</b><small>'+location+'</small></span>';
-    var healthTone=triageHealthTone(r),trendSign=triageToneSign(healthTone,health),freshRaw=String(r.fresh&&r.fresh.label||'not checked'),freshShort=triageFreshShort(freshRaw),locShort=location,metaTitle=esc(String(r.pos&&r.pos.word||'not checked')+' \u00b7 '+freshRaw),cue=scoutCueMarkup(triageCueDedupe(trend,watchText)),healthMarkup='<span class="triage-unified-health '+healthClass+' triage-tone triage-tone-'+healthTone+'" title="'+esc(triageToneWord(healthTone,health))+'">'+triageToneSign(healthTone,health)+'<span class="triage-tone-val" aria-hidden="true">'+esc(health)+'</span></span>';
+    var healthTone=triageHealthTone(r),healthMarkup='<span class="triage-unified-health '+healthClass+' triage-tone triage-tone-'+healthTone+'" title="'+esc(triageToneWord(healthTone,health))+'">'+triageToneSign(healthTone,health)+'<span class="triage-tone-val" aria-hidden="true">'+esc(health)+'</span></span>';
     var starAction='<button type="button" class="triage-unified-star '+(star?'on':'')+'" data-action="triage-star" data-ticker="'+ticker+'" aria-pressed="'+star+'" aria-label="'+(star?'Remove '+ticker+' from shortlist':'Add '+ticker+' to shortlist')+'">'+(star?'★':'☆')+'</button>';
     var lockAction='<button type="button" class="triage-unified-lock '+(locked?'on':'')+'" data-action="triage-lock" data-reason="HODL / existing exposure" data-ticker="'+ticker+'" aria-label="'+(locked?'Keep '+ticker+' locked':'Lock '+ticker+' in Scout')+'" title="'+(locked?esc(lock.reason):'Manual Scout lock')+'">'+(locked?'🔒':'Lock')+'</button>';
     var gateMarkup=scoutGateMarkup(r);
@@ -14626,8 +14508,8 @@ function unifiedScoutRowHtml(r){
         (triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
     }
     if(scoutTriageLayoutValue()==='ledger'){
-      return '<article class="triage-unified-row triage-ledger-row '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-ledger-main" data-action="triage-unfold" data-ticker="'+ticker+'" aria-expanded="'+(triageExpanded===c.ticker?'true':'false')+'" aria-label="Inspect '+name+' record \u00b7 '+esc(health)+'"><span class="triage-ledger-identity">'+combinedCoin+healthMarkup+'</span><span class="triage-ledger-signal"><b>'+trendSign+'<span>'+esc(trend)+'</span> <span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span></b></span><span class="triage-ledger-evidence"><small>'+cue+'</small></span><span class="triage-ledger-health">'+gateMarkup+'</span><span class="triage-ledger-meta" title="'+metaTitle+'"><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong><small>'+(locShort?locShort+' \u00b7 ':'')+esc(freshShort)+'</small></span></button>'+
-      (triageExpanded===c.ticker?triageUnfoldHtml(r,{health:health,healthTone:healthTone,trend:trend,change:change,freshRaw:freshRaw,freshShort:freshShort,location:location}):'')+'</article>';
+      return '<article class="triage-unified-row triage-ledger-row '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-ledger-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+' record \u00b7 '+esc(health)+'"><span class="triage-ledger-identity">'+combinedCoin+healthMarkup+'</span><span class="triage-ledger-signal"><b>'+esc(trend)+' <span class="triage-trend-help" data-action="triage-trend-help" data-ticker="'+ticker+'" role="button" tabindex="0" aria-label="What does '+esc(trend)+' mean?">?</span></b></span><span class="triage-ledger-evidence"><small>'+watch+'</small></span><span class="triage-ledger-health">'+gateMarkup+'</span><span class="triage-ledger-meta"><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong><small>'+location+' · '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button>'+
+      (triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
     }
     return '<article class="triage-unified-row triage-scan-row '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+'" data-ticker="'+ticker+'"><button type="button" class="triage-unified-main triage-scan-main" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="Inspect '+name+' · '+esc(health)+'"><span class="triage-scan-head">'+coin+healthMarkup+gateMarkup+'</span><span class="triage-scan-evidence">'+evidence+'</span><span class="triage-scan-meta">'+changeMarkup+'<small>· '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></span></button>'+actions+'</article>';
   }
@@ -15186,4 +15068,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a45458ae9fb71dcb',t:'MTc5MTExODU4NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a452105c6f71709a',t:'MTc5MTA5NDY1MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
