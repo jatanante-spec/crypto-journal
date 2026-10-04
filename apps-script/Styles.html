@@ -8100,5 +8100,98 @@ body.command-strip-mode #main .triage-tab-pill:not(.tip-btn):not(.triage-focus-i
 @media (max-width:820px){
   #main .triage-compact-page .triage-ledger-row .triage-ledger-main{grid-template-columns:82px minmax(0,1fr) minmax(0,max-content);column-gap:5px}
 }
+
+/* ===== SCOUT-QUICKACCESS-1 · built from the design-lab picks =====
+   the row's own voice (sign · de-duplicated cue · the 24h line), the micro-card at the word,
+   and the unfold record inside the row. Ledger rows only: the scan, combined and focus
+   layouts keep what they had. */
+
+/* 1 · the trend word at 12px, preceded by the same sign the tag shows, coloured by the state */
+#main .triage-compact-page .triage-ledger-row .triage-ledger-signal b{display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:15px}
+#main .triage-compact-page .triage-ledger-row .triage-ledger-signal b .triage-tone-sign{width:13px;height:13px}
+#main .triage-compact-page .triage-ledger-row .triage-ledger-signal b .triage-trend-help{margin-left:1px}
+#main .triage-compact-page .signal-improving .triage-ledger-signal b .triage-tone-sign{color:#62d9ff}
+#main .triage-compact-page .signal-stabilising .triage-ledger-signal b .triage-tone-sign{color:#43d69d}
+#main .triage-compact-page .signal-pressure .triage-ledger-signal b .triage-tone-sign{color:#f6cf68}
+#main .triage-compact-page .signal-invalidated .triage-ledger-signal b .triage-tone-sign{color:#ff718e}
+
+/* 2 · the 24h / location line: the figure leads at 12/800, the caption follows at 10.
+       The 10px has to out-rank the app's legibility floor (small{font-size:12px!important}). */
+#main .triage-compact-page .triage-ledger-row .triage-ledger-meta strong{font-size:12px;font-weight:800}
+#main .triage-compact-page .triage-ledger-row .triage-ledger-meta small{font-size:10px!important}
+#main .triage-compact-page .triage-ledger-row .triage-ledger-meta strong.up{color:#43d69d}
+#main .triage-compact-page .triage-ledger-row .triage-ledger-meta strong.down{color:#ff718e}
+body[data-color-theme="paper"] #main .triage-compact-page .triage-ledger-row .triage-ledger-meta strong.up{color:#177a52}
+body[data-color-theme="paper"] #main .triage-compact-page .triage-ledger-row .triage-ledger-meta strong.down{color:#b3233a}
+
+/* 3 · the ? keeps its 13px dot and gains a 32px tap area, without moving the word */
+#main .triage-compact-page .triage-ledger-row .triage-trend-help{position:relative}
+#main .triage-compact-page .triage-ledger-row .triage-trend-help:after{content:'';position:absolute;left:50%;top:50%;width:32px;height:32px;transform:translate(-50%,-50%)}
+#main .triage-compact-page .triage-ledger-row .triage-trend-help:focus-visible{outline:2px solid var(--accent);outline-offset:6px}
+
+/* 4 · the micro-card: the sentence, the cue, the next step — anchored at the word you tapped */
+#triage-trend-popover.triage-micro{position:fixed;z-index:10000;left:auto;right:auto;bottom:auto;transform:none;width:336px;max-width:calc(100vw - 16px);padding:11px;border:1px solid var(--line);border-radius:13px;background:var(--panel);box-shadow:0 20px 55px rgba(0,0,0,.5);display:grid;gap:9px}
+#triage-trend-popover.triage-micro .tq-micro-head{display:flex;align-items:center;gap:7px}
+#triage-trend-popover.triage-micro .tq-micro-word{display:inline-flex;align-items:center;gap:6px;font-size:18px;font-weight:800;line-height:1.1}
+#triage-trend-popover.triage-micro .tq-micro-word .triage-tone-sign{width:16px;height:16px}
+#triage-trend-popover.triage-micro .tq-micro-who{flex:1;min-width:0;color:var(--muted);font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#triage-trend-popover.triage-micro .tq-micro-head button{border:1px solid var(--line);background:var(--input);border-radius:8px;width:30px;height:30px;color:var(--text);font-size:14px;line-height:1;flex:0 0 auto}
+#triage-trend-popover.triage-micro .tq-say{margin:0;font-size:12.5px;line-height:1.5;color:#cfd9e9}
+#triage-trend-popover.triage-micro .tq-micro-mkt{margin:0;color:#8fa2c0;font-size:11px;font-weight:600}
+#triage-trend-popover.triage-micro .tq-micro-mkt strong.up{color:#43d69d}
+#triage-trend-popover.triage-micro .tq-micro-mkt strong.down{color:#ff718e}
+#triage-trend-popover.triage-micro .tq-facts{display:grid;gap:6px;margin:0}
+#triage-trend-popover.triage-micro .tq-facts>div{background:var(--input);border:1px solid var(--line);border-radius:9px;padding:6px 8px}
+#triage-trend-popover.triage-micro .tq-facts small{display:block;font-size:9px!important;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+#triage-trend-popover.triage-micro .tq-facts b{display:block;font-size:11.5px;font-weight:600;margin-top:2px}
+.tq-nub{position:absolute;width:0;height:0;pointer-events:none}
+.tq-nub.tq-nub-above{border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:9px solid var(--panel);top:-9px}
+.tq-nub.tq-nub-below{border-left:8px solid transparent;border-right:8px solid transparent;border-top:9px solid var(--panel);bottom:-9px}
+#main #triage-rows .triage-ledger-row .tq-full{min-height:38px!important;height:auto!important;border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:10px;font-size:12px;font-weight:700;padding:0 12px}
+/* the micro-card lives outside #main, so it needs the plain rule as well */
+.tq-full{min-height:38px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:10px;font-size:12px;font-weight:700;padding:0 12px}
+#main #triage-rows .triage-ledger-row .tq-full:hover{border-color:var(--accent)}
+
+/* 5 · the unfold: the record inside the row, nothing else moves off the list */
+#main .triage-ledger-row .triage-unfold{display:grid;gap:10px;padding:10px 11px 11px;background:var(--input);border-top:1px solid var(--line)}
+#main .triage-ledger-row .triage-unfold-head{display:flex;align-items:center;gap:6px}
+#main .triage-ledger-row .triage-unfold-head .tq-who{flex:1;min-width:0;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#main .triage-ledger-row .triage-unfold-head .tq-who b{font-weight:800}
+#main #triage-rows .triage-ledger-row .triage-unfold-head .tq-ic{width:32px;height:32px!important;min-height:32px!important;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:15px;line-height:1;flex:0 0 auto;padding:0}
+#main .triage-ledger-row .triage-unfold-head .tq-ic.on{border-color:var(--accent);color:var(--accent);background:rgba(255,189,74,.16)}
+#main .triage-ledger-row .triage-unfold-halves{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+#main .triage-ledger-row .triage-unfold-switch{display:none}
+#main .triage-ledger-row .triage-unfold-sec{min-width:0}
+#main .triage-ledger-row .tq-kicker{display:block;color:#62d9ff;font-size:9px;font-weight:800;letter-spacing:.11em}
+#main .triage-ledger-row .tq-word{display:flex;align-items:center;gap:8px;margin:4px 0 0;font-size:22px;font-weight:800;line-height:1.15}
+#main .triage-ledger-row .tq-word .triage-tone-sign{width:18px;height:18px}
+#main .triage-ledger-row .tq-say{margin:8px 0 0;font-size:12.5px;line-height:1.5;color:#cfd9e9}
+#main .triage-ledger-row .tq-facts{display:grid;gap:6px;margin:8px 0 0}
+#main .triage-ledger-row .tq-facts>div{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:6px 8px}
+#main .triage-ledger-row .tq-facts small{display:block;font-size:9px!important;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+#main .triage-ledger-row .tq-facts b{display:block;font-size:11.5px;font-weight:600;margin-top:2px}
+#main .triage-ledger-row .tq-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+#main .triage-ledger-row .tq-chip{display:inline-flex;align-items:center;gap:4px;border-radius:7px;padding:4px 7px;font-size:11px;background:var(--panel);color:var(--muted)}
+#main .triage-ledger-row .tq-chip .triage-tone-sign{width:10px;height:10px}
+#main .triage-ledger-row .tq-chip strong.up{color:#43d69d}
+#main .triage-ledger-row .tq-chip strong.down{color:#ff718e}
+#main .triage-ledger-row .tq-hyp{margin:9px 0 0;border-left:3px solid var(--accent);background:var(--panel);border-radius:0 9px 9px 0;padding:7px 9px}
+#main .triage-ledger-row .tq-hyp small{display:block;font-size:9px!important;font-weight:800;letter-spacing:.1em;color:var(--accent)}
+#main .triage-ledger-row .tq-hyp b{display:block;font-size:12.5px;font-weight:700;margin-top:3px}
+#main .triage-ledger-row .triage-unfold-foot{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-top:1px solid var(--line);padding-top:10px}
+#main .triage-ledger-row .triage-unfold-bar{display:flex;flex-wrap:wrap;gap:6px}
+#main #triage-rows .triage-ledger-row .triage-unfold-bar button{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:1 1 0;min-width:0;min-height:44px!important;height:auto!important;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:11.5px;font-weight:700}
+#main #triage-rows .triage-ledger-row .triage-unfold-bar button.pri{background:var(--accent);border-color:var(--accent);color:#241a00}
+#main #triage-rows .triage-ledger-row .triage-unfold-bar button svg{width:15px;height:15px}
+#main #triage-rows .triage-ledger-row .triage-unfold-bar button[disabled]{opacity:.55}
+#main .triage-ledger-row .tq-note{margin:0;color:var(--muted);font-size:11px;line-height:1.45}
+@media (max-width:760px){
+  #main .triage-ledger-row .triage-unfold-halves{grid-template-columns:minmax(0,1fr);gap:10px}
+  #main .triage-ledger-row .triage-unfold-switch{display:flex;gap:6px}
+  #main #triage-rows .triage-ledger-row .triage-unfold-switch button{flex:1;min-height:36px!important;height:auto!important;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:12px;font-weight:700}
+  #main #triage-rows .triage-ledger-row .triage-unfold-switch button[aria-pressed="true"]{border-color:var(--accent);color:var(--text)}
+  #main .triage-ledger-row .triage-unfold-halves[data-show="rec"] .triage-unfold-trend{display:none}
+  #main .triage-ledger-row .triage-unfold-halves[data-show="trend"] .triage-unfold-rec{display:none}
+}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4544f2ecceeb3e1',t:'MTc5MTExODE5NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a45459751ba41dcb',t:'MTc5MTExODYxNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
