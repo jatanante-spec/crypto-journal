@@ -8109,7 +8109,7 @@ body.command-strip-mode #main .triage-tab-pill:not(.tip-btn):not(.triage-focus-i
 /* 1 · the trend word at 12px, preceded by the same sign the tag shows, coloured by the state */
 #main .triage-compact-page .triage-ledger-row .triage-ledger-signal b{display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:15px}
 #main .triage-compact-page .triage-ledger-row .triage-ledger-signal b .triage-tone-sign{width:13px;height:13px}
-#main .triage-compact-page .triage-ledger-row .triage-ledger-signal b .triage-trend-help{margin-left:1px}
+#main .triage-compact-page .triage-ledger-row .triage-ledger-signal b .triage-trend-qslot{display:inline-block;flex:0 0 24px;width:24px;height:14px}
 #main .triage-compact-page .signal-improving .triage-ledger-signal b .triage-tone-sign{color:#62d9ff}
 #main .triage-compact-page .signal-stabilising .triage-ledger-signal b .triage-tone-sign{color:#43d69d}
 #main .triage-compact-page .signal-pressure .triage-ledger-signal b .triage-tone-sign{color:#f6cf68}
@@ -8124,10 +8124,11 @@ body.command-strip-mode #main .triage-tab-pill:not(.tip-btn):not(.triage-focus-i
 body[data-color-theme="paper"] #main .triage-compact-page .triage-ledger-row .triage-ledger-meta strong.up{color:#177a52}
 body[data-color-theme="paper"] #main .triage-compact-page .triage-ledger-row .triage-ledger-meta strong.down{color:#b3233a}
 
-/* 3 · the ? keeps its 13px dot and gains a 32px tap area, without moving the word */
-#main .triage-compact-page .triage-ledger-row .triage-trend-help{position:relative}
-#main .triage-compact-page .triage-ledger-row .triage-trend-help:after{content:'';position:absolute;left:50%;top:50%;width:32px;height:32px;transform:translate(-50%,-50%)}
-#main .triage-compact-page .triage-ledger-row .triage-trend-help:focus-visible{outline:2px solid var(--accent);outline-offset:6px}
+/* 3 · the ? is a real sibling button: a 13px dot, with an independent 32px keyboard/touch target */
+#main .triage-compact-page .triage-ledger-row{position:relative;overflow:visible}
+#main #triage-rows .triage-ledger-row .triage-trend-hit{position:absolute;left:0;top:0;z-index:6;display:grid;place-items:center;width:32px!important;height:32px!important;min-width:32px!important;min-height:32px!important;padding:0!important;border:0!important;border-radius:8px;background:transparent!important;color:var(--muted);cursor:pointer;touch-action:manipulation}
+#main #triage-rows .triage-ledger-row .triage-trend-hit-dot{display:grid;place-items:center;width:13px;height:13px;border:1px solid #6d86ad;border-radius:50%;background:#142541;color:#cfe0ff;font-size:8px;font-weight:800;line-height:1}
+#main #triage-rows .triage-ledger-row .triage-trend-hit:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 
 /* 4 · the micro-card: the sentence, the cue, the next step — anchored at the word you tapped */
 #triage-trend-popover.triage-micro{position:fixed;z-index:10000;left:auto;right:auto;bottom:auto;transform:none;width:336px;max-width:calc(100vw - 16px);padding:11px;border:1px solid var(--line);border-radius:13px;background:var(--panel);box-shadow:0 20px 55px rgba(0,0,0,.5);display:grid;gap:9px}
@@ -8153,7 +8154,7 @@ body[data-color-theme="paper"] #main .triage-compact-page .triage-ledger-row .tr
 #main #triage-rows .triage-ledger-row .tq-full:hover{border-color:var(--accent)}
 
 /* 5 · the unfold: the record inside the row, nothing else moves off the list */
-#main .triage-ledger-row .triage-unfold{display:grid;gap:10px;padding:10px 11px 11px;background:var(--input);border-top:1px solid var(--line)}
+#main .triage-ledger-row .triage-unfold{grid-column:1 / -1;display:grid;gap:10px;padding:10px 11px 11px;background:var(--input);border-top:1px solid var(--line)}
 #main .triage-ledger-row .triage-unfold-head{display:flex;align-items:center;gap:6px}
 #main .triage-ledger-row .triage-unfold-head .tq-who{flex:1;min-width:0;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #main .triage-ledger-row .triage-unfold-head .tq-who b{font-weight:800}
@@ -8193,5 +8194,16 @@ body[data-color-theme="paper"] #main .triage-compact-page .triage-ledger-row .tr
   #main .triage-ledger-row .triage-unfold-halves[data-show="rec"] .triage-unfold-trend{display:none}
   #main .triage-ledger-row .triage-unfold-halves[data-show="trend"] .triage-unfold-rec{display:none}
 }
+
+/* Quick Access finishing rules: full wording remains readable in details; the narrow row is compact. */
+#triage-trend-popover.triage-micro{max-height:calc(100vh - 16px);overflow:auto;overscroll-behavior:contain}
+#triage-trend-popover.triage-micro .tq-micro-mkt strong{font-size:12px;font-weight:800;white-space:nowrap}
+#triage-trend-popover.triage-micro .tq-micro-caption{font-size:10px;font-weight:400}
+body[data-color-theme="paper"] #triage-trend-popover.triage-micro .tq-micro-mkt strong.up,
+body[data-color-theme="paper"] #main .triage-ledger-row .tq-chip strong.up{color:#177a52}
+body[data-color-theme="paper"] #triage-trend-popover.triage-micro .tq-micro-mkt strong.down,
+body[data-color-theme="paper"] #main .triage-ledger-row .tq-chip strong.down{color:#b3233a}
+#triage-trend-popover.triage-micro .tq-full:focus-visible,
+#main #triage-rows .triage-ledger-row .triage-unfold-switch button:focus-visible,
+#main #triage-rows .triage-ledger-row .triage-unfold-head .tq-ic:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a45459751ba41dcb',t:'MTc5MTExODYxNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
