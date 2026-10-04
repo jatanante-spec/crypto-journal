@@ -22,9 +22,16 @@ if (!index.includes(stylesMarker) || !index.includes(javascriptMarker)) {
   throw new Error('apps-script/Index.html does not contain the expected Apps Script include markers.');
 }
 
+/* Replacement callbacks are important here: JavaScript can contain `$&`, `$'`, or `$``.
+   String.replace interprets those specially when given a replacement string, corrupting
+   the bundled source. A callback returns the replacement literally. */
 const output = index
-  .replace(stylesMarker, styles)
-  .replace(javascriptMarker, `<script>\n${runtime}\n</script>\n${javascript}`);
+  .replace(stylesMarker, () => styles)
+  .replace(javascriptMarker, () => `<script>\n${runtime}\n</script>\n${javascript}`);
+
+if (output.includes(stylesMarker) || output.includes(javascriptMarker)) {
+  throw new Error('An Apps Script include marker remains in the static output.');
+}
 
 const outDir = path.join(root, 'dist');
 await mkdir(outDir, { recursive: true });
