@@ -5732,25 +5732,10 @@
   function crLabels(){var st=crLoad(),m={},k;st.names=st.names||{};for(k in st.names){if(Object.prototype.hasOwnProperty.call(st.names,k))m[k]=st.names[k];}return m;}
   function crName(name){var m=crLabels();return (name&&m[name])||name||'';}
   function crSetName(name,value){var st=crLoad(),v=String(value==null?'':value).replace(/\s+/g,' ').trim().slice(0,40);st.names=st.names||{};if(!v||v===name)delete st.names[name];else st.names[name]=v;crSave();return v||name;}
-  function crDirTone(direction){return direction==='bullish'?'bullish':direction==='bearish'?'bearish':'neutral';}
-  function crStateTone(lead){
-    if(!lead)return 'neutral';
-    if(lead.state===CR1_STATE.confirmed)return 'confirmed';
-    if(lead.state===CR1_STATE.invalidated)return 'invalidated';
-    if(lead.state===CR1_STATE.shape)return 'shape';
-    if(lead.direction==='neutral')return 'neutral';
-    return lead.supported?'awaiting':'shape';
-  }
-  function crReportCopyHtml(lead){
-    var why=esc(lead.why||'').replace(/(\d+(?:\.\d+)?%)/g,'<b class="cr-report-value">$1</b>');
-    var ctx=esc(lead.ctx||'unavailable');
-    return why+' <span class="cr-report-context">Before it: <b>'+ctx+'</b> closes.</span>'
-      +(lead.gapFree?' <span class="cr-report-gap">Gap-free wording (penetration, not a gap).</span>':'');
-  }
   function crShort(r){if(!r.ready)return 'Candles not read';if(!r.lead)return 'No pattern named';return crName(r.lead.name)+(r.lead.direction==='neutral'?'':r.lead.direction==='bullish'?' · supportive context':' · weakening context')+(r.fresh?'':' · older candles');}
   function crLeadHtml(f){
     var r=f.cr||crRead(f.coin,{market:state.market,hourly:state.hourly,hourlyAts:state.hourlyAts},f.c,false),head,read,next;
-    if(!r.ready){return '<section class="cr-lead cr-lead-unready"><header><div class="cr-report-heading"><small>Candle reading · CR1 · advisory</small><h3 class="cr-report-title cr-dir-neutral">Not read · candle evidence unavailable</h3></div><button type="button" class="text-link" data-action="pc-open" data-ticker="'+esc(f.coin)+'">Inspect</button></header><p class="cr-report-copy cr-report-unavailable">'+esc(r.reason)+'</p></section>';}
+    if(!r.ready){return '<section class="cr-lead"><header><div><small>Candle reading · CR1 · advisory</small><h3>Not read · candle evidence unavailable</h3></div><button type="button" class="text-link" data-action="pc-open" data-ticker="'+esc(f.coin)+'">Inspect</button></header><p>'+esc(r.reason)+'</p></section>';}
     if(r.lead){
       head=crName(r.lead.name)+(r.lead.span>1?' · '+r.lead.span+' completed hours':' · latest completed hour');
       read=r.lead.why+' Before it: '+r.lead.ctx+' closes.'+(r.lead.gapFree?' Gap-free wording (penetration, not a gap).':'');
@@ -5758,19 +5743,10 @@
       else if(!r.lead.supported)next=CR1_STATE.shape;
       else next='Watching: '+(r.lead.direction==='bullish'?'a later completed close above '+priceGbp(r.lead.hi,6)+' counts as follow-through here, below '+priceGbp(r.lead.lo,6)+' does not.':'a later completed close below '+priceGbp(r.lead.lo,6)+' counts as follow-through here, above '+priceGbp(r.lead.hi,6)+' does not.')+' Currently: '+r.lead.state+'.';
     }else{head='No pattern named here';read=r.reason;next='Watching next: a shape that meets a written rule. Nothing is invented when the candles do not qualify.';}
-    var lead=r.lead,dirTone=crDirTone(lead&&lead.direction),stateTone=crStateTone(lead),nextTone=lead&&lead.direction==='neutral'?'neutral':stateTone;
-    var meta=lead?'<div class="cr-report-meta"><span class="cr-report-time"><small>FORMED</small><time datetime="'+esc(lead.formedAt||'')+'">'+esc(crTime(lead.formedAt))+'</time></span><span class="cr-report-chip cr-state-'+stateTone+'"><i aria-hidden="true"></i>'+esc(lead.state)+'</span><span class="cr-report-chip cr-dir-'+dirTone+'">'+esc(lead.direction)+'</span></div>':'';
-    var copy=lead?crReportCopyHtml(lead):esc(read),pcLine=f.pc?'<p class="cr-sub cr-report-secondary"><span>Break/retest observer</span> · '+esc(pcLabel(f.pc.code))+'.</p>':'';
-    var out=crStripSvg(r.bars,r.lead,r),extra=r.pending?'<p class="cr-report-pending">'+r.pending+' reading'+(r.pending===1?'':'s')+' awaiting their later candles on this device.</p>':'';
-    return '<section class="cr-lead"><header><div class="cr-report-heading"><small>Candle reading · CR1 · advisory, not entry approval</small><h3 class="cr-report-title cr-dir-'+dirTone+'">'+esc(head)+(lead&&crName(lead.name)!==lead.name?' · your own label':'')+'</h3>'+meta+'</div><button type="button" class="text-link" data-action="pc-open" data-ticker="'+esc(f.coin)+'">Inspect</button></header><p class="foldp cr-report-copy" tabindex="0" role="button" aria-expanded="false" title="Tap to read the rest">'+copy+'</p><p class="cr-note cr-report-next cr-state-'+nextTone+'"><i aria-hidden="true"></i><span>'+esc(next)+'</span></p>'+pcLine+out+extra+'<p class="cd-small">Shapes describe the hours that closed; they never approve a buy.</p></section>';
+    var pcLine=f.pc?'Break/retest observer: '+esc(pcLabel(f.pc.code))+'.':'',out=crStripSvg(r.bars,r.lead,r),extra=r.pending?'<small>'+r.pending+' reading'+(r.pending===1?'':'s')+' awaiting their later candles on this device.</small>':'';
+    return '<section class="cr-lead"><header><div><small>Candle reading · CR1 · advisory, not entry approval</small><h3>'+esc(head)+(r.lead&&crName(r.lead.name)!==r.lead.name?' · your own label':'')+'</h3></div><button type="button" class="text-link" data-action="pc-open" data-ticker="'+esc(f.coin)+'">Inspect</button></header><p class="foldp" tabindex="0" role="button" aria-expanded="false" title="Tap to read the rest">'+esc(read)+'</p><p class="cr-note">'+esc(next)+'</p>'+(pcLine?'<p class="cr-sub">'+pcLine+'</p>':'')+out+(extra?'<p>'+extra+'</p>':'')+'<p class="cd-small">Shapes describe the hours that closed; they never approve a buy.</p></section>';
   }
-  function crStripSvg(bars,lead,r){
-    return '<div class="cr-strip"><div class="cr-chart-key" role="list" aria-label="Candle graph colour key">'
-      +'<span role="listitem"><i class="cr-key-up"></i>Up close</span><span role="listitem"><i class="cr-key-down"></i>Down close</span>'
-      +'<span role="listitem"><i class="cr-key-bullish"></i>Bullish band</span><span role="listitem"><i class="cr-key-bearish"></i>Bearish band</span>'
-      +'<span role="listitem"><i class="cr-key-neutral"></i>Neutral shape</span><span role="listitem"><i class="cr-key-cursor"></i>Inspect cursor</span></div>'
-      +cchHtml({kind:'strip',bars:bars,lead:lead,findings:r&&r.findings,barsAligned:true})+'</div>';
-  }
+  function crStripSvg(bars,lead,r){return '<div class="cr-strip">'+cchHtml({kind:'strip',bars:bars,lead:lead,findings:r&&r.findings,barsAligned:true})+'</div>';}
 
   function crPlural(n, one, many){var k=Number(n)||0;return k+' '+(k===1?one:(many||one+'s'));}
   function crTime(iso){var d=new Date(iso);return isNaN(d.getTime())?'unavailable time':d.toISOString().slice(0,16).replace('T',' ')+' candle start';}
@@ -5859,29 +5835,26 @@
     var H=cchH(kind),top=12,bottom=H-22,fit=Math.max(slot,Math.floor((avail-10)/n)),total=ax+n*fit+10;
     var y=function(p){return bottom-((p-lo)/(hi-lo))*(bottom-top);};
     var x=function(i){return ax+i*fit+fit/2;};
-    var g='<rect class="cch-plot-bg" x="0" y="0" width="'+total+'" height="'+H+'" fill="#0b1220"/>',axis='',i,list=findingsIn(o,bars,v),bands=[];
+    var g='',axis='',i,list=findingsIn(o,bars,v),bands=[];
     if(typeof requestAnimationFrame==='function'&&!CCH.queued){CCH.queued=true;requestAnimationFrame(function(){CCH.queued=false;
       var fix=false;['strip','detail'].forEach(function(k){var el=document.querySelector('.cch-plot[data-kind="'+k+'"]');
         if(el&&el.clientWidth&&Math.abs((CCH.w[k]||0)-el.clientWidth)>8)fix=true;});              // one correction pass, then it converges
       if(fix)cchSet();});}          /* repaint through the same path so scroll and focus survive it */
     for(i=0;i<=4;i++){var pv=lo+(hi-lo)*i/4,py=y(pv),lab=pv.toFixed(pv<1?6:4);
-      g+='<line class="cch-grid" x1="0" x2="'+total+'" y1="'+py.toFixed(1)+'" y2="'+py.toFixed(1)+'" stroke="#263550" stroke-width="1"/>';
+      g+='<line x1="0" x2="'+total+'" y1="'+py.toFixed(1)+'" y2="'+py.toFixed(1)+'" stroke="#22304d"/>';
       axis+='<span class="cch-ax-l" style="top:'+py.toFixed(1)+'px">'+lab+'</span>';
       /* no right-hand copy is needed: the pinned scale stays beside the plot at any scroll position */
     }
     axis='<div class="cch-axis" style="height:'+H+'px;width:'+cchAxisW()+'px" aria-hidden="true">'+axis+'</div>';
-    if(CCH.sel!=null&&CCH.sel>=v.a&&CCH.sel<v.b){var sx0=x(CCH.sel-v.a);g+='<rect class="cch-selected-col" x="'+(sx0-fit/2+1).toFixed(1)+'" y="'+(top-4)+'" width="'+(fit-2)+'" height="'+(bottom-top+8)+'" rx="5" fill="#ffd66b" fill-opacity=".055"/>';}
     var last=bars[bars.length-1];
-    g+='<line class="cch-last-price" x1="0" x2="'+total+'" y1="'+y(last.c).toFixed(1)+'" y2="'+y(last.c).toFixed(1)+'" stroke="#8bbfff" stroke-dasharray="3 5" opacity=".88"/>';
+    g+='<line x1="0" x2="'+total+'" y1="'+y(last.c).toFixed(1)+'" y2="'+y(last.c).toFixed(1)+'" stroke="#7fb4ff" stroke-dasharray="5 4" opacity=".85"/>';
     list.forEach(function(f){var a=Math.max(f.start,v.a)-v.a,bn=Math.min(f.end,v.b-1)-v.a;
-      var xa=ax+a*fit+1,xb=ax+(bn+1)*fit-1,tone=crDirTone(f.direction),toneColor=tone==='bullish'?'#63dcb2':tone==='bearish'?'#fa91a3':'#ffc978';
-      var leadBand=!!(o.lead&&o.lead.start===f.start&&o.lead.end===f.end&&o.lead.name===f.name);
+      var xa=ax+a*fit+1,xb=ax+(bn+1)*fit-1;
       bands.push(f);
-      g+='<rect class="cch-band cch-band-'+tone+(leadBand?' cch-band-lead':'')+'" x="'+xa.toFixed(1)+'" y="'+top+'" width="'+Math.max(fit-2,xb-xa).toFixed(1)+'" height="'+(bottom-top)+'" rx="7" fill="'+toneColor+'" fill-opacity="'+(leadBand?'.16':'.075')+'" stroke="'+toneColor+'" stroke-opacity="'+(leadBand?'.96':'.62')+'" stroke-width="'+(leadBand?'1.8':'1')+'" stroke-dasharray="'+(leadBand?'5 3':'4 4')+'"/>';});
-    slice.forEach(function(bb,ii){var cx=x(ii),dir=bb.c>bb.o?'up':bb.c<bb.o?'down':'flat',col=dir==='up'?'#63dcb2':dir==='down'?'#fa91a3':'#b7c4de',w=Math.max(3,fit*.52),yo=y(bb.o),yc=y(bb.c),fullI=v.a+ii;
-      var inLead=!!(o.lead&&fullI>=o.lead.start&&fullI<=o.lead.end),bodyFill=dir==='flat'?'#b7c4de':col;
-      g+='<line class="cch-wick cch-wick-'+dir+(inLead?' cch-wick-lead':'')+'" x1="'+cx.toFixed(1)+'" x2="'+cx.toFixed(1)+'" y1="'+y(bb.h).toFixed(1)+'" y2="'+y(bb.l).toFixed(1)+'" stroke="'+col+'" stroke-width="'+(inLead?'1.8':'1.35')+'" stroke-linecap="round"/>';
-      g+='<rect class="cch-body cch-body-'+dir+(inLead?' cch-body-lead':'')+'" x="'+(cx-w/2).toFixed(1)+'" y="'+Math.min(yo,yc).toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+Math.max(2,Math.abs(yc-yo)).toFixed(1)+'" rx="1.5" fill="'+bodyFill+'" fill-opacity="'+(dir==='flat'?'.3':'.56')+'" stroke="'+col+'" stroke-width="'+(inLead?'1.8':'1.2')+'"/>';});
+      g+='<rect class="cch-band" x="'+xa.toFixed(1)+'" y="'+top+'" width="'+Math.max(fit-2,xb-xa).toFixed(1)+'" height="'+(bottom-top)+'" rx="7" fill="#7fb4ff21" stroke="#9cc9ff" stroke-dasharray="4 3"/>';});
+    slice.forEach(function(bb,ii){var cx=x(ii),up=bb.c>=bb.o,col=up?'#63dcb2':'#fa91a3',w=Math.max(2,fit*.6),yo=y(bb.o),yc=y(bb.c);
+      g+='<line x1="'+cx.toFixed(1)+'" x2="'+cx.toFixed(1)+'" y1="'+y(bb.h).toFixed(1)+'" y2="'+y(bb.l).toFixed(1)+'" stroke="'+col+'" stroke-width="1.2"/>';
+      g+='<rect class="cch-body" x="'+(cx-w/2).toFixed(1)+'" y="'+Math.min(yo,yc).toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+Math.max(1.4,Math.abs(yc-yo)).toFixed(1)+'" rx="1" fill="'+(up?'#0b1220':col)+'" stroke="'+col+'" stroke-width="1.2"/>';});
     var every=Math.max(1,Math.ceil(n/Math.max(2,Math.floor(Math.min(avail,total)/88)))),prevDay='';
     slice.forEach(function(bb,ii){if(ii%every)return;var day=String(bb.at).slice(0,10),lab=day!==prevDay?cchDay(bb.at):String(bb.at).slice(11,16);
       prevDay=day;
@@ -5900,9 +5873,8 @@
       +'<button type="button" data-action="cch-page" data-d="1" data-cch-key="'+kind+'-next">later ▶</button>'
       +'<button type="button" data-action="cch-y" data-cch-key="'+kind+'-y" aria-pressed="'+(CCH.yFixed?'true':'false')+'">Y: '+(CCH.yFixed?'all '+bars.length:'window')+'</button>';
     var wideWin=n>30;                                                     /* the date joins the chip only once the hours on screen pass a day */
-    var tags=bands.length?bands.map(function(f){var when=bars[f.start]?cchWhen(bars[f.start].at,wideWin):'',tone=crDirTone(f.direction),stateTone=crStateTone(f);
-      var mark=tone==='bullish'?'▲':tone==='bearish'?'▼':'◆';
-      return '<button type="button" class="cch-tag cch-tag-'+tone+' cch-tag-state-'+stateTone+'" data-action="cch-jump" data-i="'+f.end+'" data-cch-key="'+kind+'-j'+f.end+'">'+(when?'<span class="cch-when">'+esc(when)+'</span> ':'')+'<span class="cch-tag-mark" aria-hidden="true">'+mark+'</span> '+esc(f.name)+' · '+(f.end-f.start+1)+' candle'+(f.end>f.start?'s':'')+' · '+esc(f.state)+'</button>';}).join('')
+    var tags=bands.length?bands.map(function(f){var when=bars[f.start]?cchWhen(bars[f.start].at,wideWin):'';
+      return '<button type="button" class="cch-tag" data-action="cch-jump" data-i="'+f.end+'" data-cch-key="'+kind+'-j'+f.end+'">'+(when?'<span class="cch-when">'+esc(when)+'</span> ':'')+'▮ '+esc(f.name)+' · '+(f.end-f.start+1)+' candle'+(f.end>f.start?'s':'')+' · '+esc(f.state)+'</button>';}).join('')
       :'<span class="cd-small">No named formation in these hours.</span>';
     var scanAll=(o.findings&&o.findings.length?o.findings:(o.lead?[o.lead]:[]))||[],sum;
     if(o.barsAligned===false)sum='Looked across '+bars.length+' completed hours · the named readings belong to a different set of candles, so none are counted here.';
@@ -5910,11 +5882,11 @@
       sum='Looked across '+bars.length+' completed hours · '+scanAll.length+' reading'+(scanAll.length===1?'':'s')+' named by them · '+CR1_MULTI_RULES+' of my rules need 3 or more candles · '
         +(big.length?big.length+(big.length===1?' of them does':' of them do')+(named?' ('+named+')':''):'none in this stretch');}
     var read='';
-    if(CCH.sel!=null&&CCH.sel>=0&&CCH.sel<bars.length){var b=bars[CCH.sel],range=Math.max(b.h-b.l,1e-12),body=Math.abs(b.c-b.o),candleDir=b.c>b.o?'up':b.c<b.o?'down':'flat',candleWord=candleDir==='up'?'▲ up close':candleDir==='down'?'▼ down close':'◆ unchanged close';
+    if(CCH.sel!=null&&CCH.sel>=0&&CCH.sel<bars.length){var b=bars[CCH.sel],range=Math.max(b.h-b.l,1e-12),body=Math.abs(b.c-b.o),up=b.c>=b.o;
       var inF=bands.filter(function(f){return CCH.sel>=f.start&&CCH.sel<=f.end;})[0];
-      read='<b>'+esc(cchDay(b.at))+' candle start</b> · <strong class="cch-direction cch-direction-'+candleDir+'">'+candleWord+'</strong>'
-        +' · open <b class="cch-read-value">'+priceGbp(b.o,6)+'</b> · high <b class="cch-read-value">'+priceGbp(b.h,6)+'</b> · low <b class="cch-read-value">'+priceGbp(b.l,6)+'</b> · close <b class="cch-read-value cch-close-'+candleDir+'">'+priceGbp(b.c,6)+'</b>'
-        +' · body <b class="cch-read-value">'+priceGbp(body,6)+'</b> ('+pct1(body/range)+' of range '+priceGbp(range,6)+')'
+      read='<b>'+esc(cchDay(b.at))+' candle start</b> · '+(up?'▲ up':'▼ down')
+        +' · open '+priceGbp(b.o,6)+' · high '+priceGbp(b.h,6)+' · low '+priceGbp(b.l,6)+' · close '+priceGbp(b.c,6)
+        +' · body '+priceGbp(body,6)+' ('+pct1(body/range)+' of range '+priceGbp(range,6)+')'
         +' · upper wick '+priceGbp(b.h-Math.max(b.o,b.c),6)+' · lower wick '+priceGbp(Math.min(b.o,b.c)-b.l,6)
         +'<br><span class="cd-small">'+(inF?('candle '+(CCH.sel-inF.start+1)+' of '+(inF.end-inF.start+1)+' in <b>'+esc(inF.name)+'</b> · '+esc(inF.state)):'not part of a named formation')+'</span>';
     }else read='<span class="cd-small">Tap any candle for its open, high, low, close and which reading it belongs to. Swipe sideways (or ◀ ▶) to move through the hours; pinch or − + changes how many hours are drawn; focus the chart and use the arrow keys.</span>';
@@ -15214,4 +15186,3 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4601df99ff2221b',t:'MTc5MTI0MjAwOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
