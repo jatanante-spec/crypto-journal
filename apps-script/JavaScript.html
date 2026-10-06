@@ -5613,15 +5613,15 @@
     function add(name,start,end,direction,why,gapFree,noDir){
       var hi=-Infinity,lo=Infinity,j,detail=[],atr=atrBefore(start),ctx=kind(start),sup=direction==='bullish'?ctx==='falling':direction==='bearish'?ctx==='rising':false,state;
       for(j=start;j<=end;j++){hi=Math.max(hi,bars[j].h);lo=Math.min(lo,bars[j].l);detail.push({at:bars[j].at,o:bars[j].o,h:bars[j].h,l:bars[j].l,c:bars[j].c,body:Math.abs(bars[j].c-bars[j].o),range:bars[j].h-bars[j].l,up:bars[j].h-Math.max(bars[j].o,bars[j].c),down:Math.min(bars[j].o,bars[j].c)-bars[j].l});}
-      state=direction==='neutral'?(noDir?CR1_STATE.shape:CR1_STATE.neutral):sup?CR1_STATE.awaiting:CR1_STATE.shape;
-      if(sup&&direction!=='neutral'){for(j=end+1;j<n;j++){var ok=direction==='bullish'?bars[j].c>hi:bars[j].c<lo,no=direction==='bullish'?bars[j].c<lo:bars[j].c>hi;if(ok||no){state=ok?CR1_STATE.confirmed:CR1_STATE.invalidated;break;}}}
-      out.push({name:name,start:start,end:end,span:end-start+1,direction:direction,why:why,ctx:ctx,supported:sup,state:state,hi:hi,lo:lo,atr:atr,gapFree:!!gapFree,formedAt:bars[end].at,bars:detail});
+      state=direction==='neutral'?(noDir?CR1_STATE.shape:CR1_STATE.neutral):sup?CR1_STATE.awaiting:CR1_STATE.shape;var decidedAt=null;
+      if(sup&&direction!=='neutral'){for(j=end+1;j<n;j++){var ok=direction==='bullish'?bars[j].c>hi:bars[j].c<lo,no=direction==='bullish'?bars[j].c<lo:bars[j].c>hi;if(ok||no){state=ok?CR1_STATE.confirmed:CR1_STATE.invalidated;decidedAt=bars[j].at;break;}}}
+      out.push({name:name,start:start,end:end,span:end-start+1,direction:direction,why:why,ctx:ctx,supported:sup,state:state,hi:hi,lo:lo,atr:atr,gapFree:!!gapFree,formedAt:bars[end].at,decidedAt:decidedAt,bars:detail});
     }
     for(i=0;i<n;i++){
       var b=bars[i],r=b.h-b.l,body=Math.abs(b.c-b.o),up=b.h-Math.max(b.o,b.c),down=Math.min(b.o,b.c)-b.l,green=b.c>b.o,red=b.c<b.o,ratio=r>0?body/r:0,A=atrBefore(i);
       if(!(r>0))continue;
       if(ratio<=CR1.dojiMax){add('Doji',i,i,'neutral','Body '+pct1(ratio)+' of the range, so this hour opened and closed almost level. Indecision, not a direction.');continue;}
-      if(ratio>CR1.bodyMin&&ratio<=CR1.wickMax&&down>=2*body&&up<=.5*body){var k1=kind(i);add(k1==='falling'?'Hammer':k1==='rising'?'Hanging man':'Long lower wick',i,i,k1==='falling'?'bullish':k1==='rising'?'bearish':'neutral','Lower wick '+num(down/Math.max(body,.000001),1)+'× the body with a small upper wick. After a decline that reads as buyers defending the hour.',false,!(k1==='falling'||k1==='rising'));continue;}
+      if(ratio>CR1.bodyMin&&ratio<=CR1.wickMax&&down>=2*body&&up<=.5*body){var k1=kind(i);add(k1==='falling'?'Hammer':k1==='rising'?'Hanging man':'Long lower wick',i,i,k1==='falling'?'bullish':k1==='rising'?'bearish':'neutral','Lower wick '+num(down/Math.max(body,.000001),1)+'× the body with a small upper wick. '+(k1==='falling'?'After a decline that reads as buyers defending the hour.':k1==='rising'?'After a rise, that long lower wick shows sellers pushing price down within the hour.':'Price dipped and recovered within the hour.'),false,!(k1==='falling'||k1==='rising'));continue;}
       if(ratio>CR1.bodyMin&&ratio<=CR1.wickMax&&up>=2*body&&down<=.5*body){var k2=kind(i);add(k2==='rising'?'Shooting star':k2==='falling'?'Inverted hammer':'Long upper wick',i,i,k2==='rising'?'bearish':k2==='falling'?'bullish':'neutral','Upper wick '+num(up/Math.max(body,.000001),1)+'× the body: a push higher that failed by the close.',false,!(k2==='rising'||k2==='falling'));continue;}
       if(i){
         var p=bars[i-1],pr=p.h-p.l,pb=Math.abs(p.c-p.o);
@@ -5633,8 +5633,8 @@
         if(A2>0){
           var tol=CR1.tweezer*A2;
           if(pb>=CR1.bodyMin*A2&&body>=CR1.bodyMin*A2){
-            if(green&&p.c<p.o&&Math.abs(b.l-p.l)<=tol&&b.c>(p.o+p.c)/2&&b.c>p.c){var k3=kind(i-1);add(k3==='falling'?'Tweezer bottom':'Matching-lows pair',i-1,i,k3==='falling'?'bullish':'neutral','Two consecutive lows within '+pct1(Math.abs(b.l-p.l)/A)+' of an ATR after a decline: the same floor defended twice.',false,k3!=='falling');}
-            if(red&&p.c>p.o&&Math.abs(b.h-p.h)<=tol&&b.c<(p.o+p.c)/2&&b.c<p.c){var k4=kind(i-1);add(k4==='rising'?'Tweezer top':'Matching-highs pair',i-1,i,k4==='rising'?'bearish':'neutral','Two consecutive highs within '+pct1(Math.abs(b.h-p.h)/A)+' of an ATR after a rise: the same ceiling rejected twice.',false,k4!=='rising');}
+            if(green&&p.c<p.o&&Math.abs(b.l-p.l)<=tol&&b.c>(p.o+p.c)/2&&b.c>p.c){var k3=kind(i-1);add(k3==='falling'?'Tweezer bottom':'Matching-lows pair',i-1,i,k3==='falling'?'bullish':'neutral','Two consecutive lows within '+pct1(Math.abs(b.l-p.l)/A)+' of an ATR'+(k3==='falling'?' after a decline: the same floor defended twice.':': the same floor held twice.'),false,k3!=='falling');}
+            if(red&&p.c>p.o&&Math.abs(b.h-p.h)<=tol&&b.c<(p.o+p.c)/2&&b.c<p.c){var k4=kind(i-1);add(k4==='rising'?'Tweezer top':'Matching-highs pair',i-1,i,k4==='rising'?'bearish':'neutral','Two consecutive highs within '+pct1(Math.abs(b.h-p.h)/A)+' of an ATR'+(k4==='rising'?' after a rise: the same ceiling rejected twice.':': the same ceiling reached twice.'),false,k4!=='rising');}
             if(pb>=CR1.methodMin*A2&&body<=pb*CR1.haramiCap&&Math.max(b.o,b.c)<=Math.max(p.o,p.c)&&Math.min(b.o,b.c)>=Math.min(p.o,p.c)){var k5=kind(i-1);
               if(p.c<p.o)add(k5==='falling'?'Bullish harami':'Inside-body pair',i-1,i,k5==='falling'?'bullish':'neutral','The second body sits entirely inside the previous large red body: selling lost follow-through. A pause, not yet a reversal.',false,k5!=='falling');
               else add(k5==='rising'?'Bearish harami':'Inside-body pair',i-1,i,k5==='rising'?'bearish':'neutral','The second body sits entirely inside the previous large green body: buying lost follow-through. A pause, not yet a reversal.',false,k5!=='rising');}
@@ -5771,7 +5771,7 @@
       else next='Watching: '+(r.lead.direction==='bullish'?'a later completed close above '+priceGbp(r.lead.hi,6)+' counts as follow-through here, below '+priceGbp(r.lead.lo,6)+' does not.':'a later completed close below '+priceGbp(r.lead.lo,6)+' counts as follow-through here, above '+priceGbp(r.lead.hi,6)+' does not.')+' Currently: '+r.lead.state+'.';
     }else{head='No pattern named here';read=r.reason;next='Watching next: a shape that meets a written rule. Nothing is invented when the candles do not qualify.';}
     var lead=r.lead,dirTone=crDirTone(lead&&lead.direction),stateTone=crStateTone(lead),nextTone=lead&&lead.direction==='neutral'?'neutral':stateTone;
-    var meta=lead?'<div class="cr-report-meta"><span class="cr-report-time"><small>FORMED</small><time datetime="'+esc(lead.formedAt||'')+'">'+esc(crTime(lead.formedAt))+'</time></span><span class="cr-report-chip cr-state-'+stateTone+'"><i aria-hidden="true"></i>'+esc(lead.state)+'</span><span class="cr-report-chip cr-dir-'+dirTone+'">'+esc(lead.direction)+'</span></div>':'';
+    var meta=lead?'<div class="cr-report-meta"><span class="cr-report-time"><small>FORMED</small><time datetime="'+esc(lead.formedAt||'')+'">'+esc(crSpan(lead.bars&&lead.bars[0]?lead.bars[0].at:lead.formedAt,lead.formedAt))+'</time></span><span class="cr-report-chip cr-state-'+stateTone+'"><i aria-hidden="true"></i>'+esc(lead.state)+'</span><span class="cr-report-chip cr-dir-'+dirTone+'">'+esc(lead.direction)+'</span></div>':'';
     var copy=lead?crReportCopyHtml(lead):esc(read),pcLine=f.pc?'<p class="cr-sub cr-report-secondary"><span>Break/retest observer</span> · '+esc(pcLabel(f.pc.code))+'.</p>':'';
     var out=crStripSvg(r.bars,r.lead,r),extra=r.pending?'<p class="cr-report-pending">'+r.pending+' reading'+(r.pending===1?'':'s')+' awaiting their later candles on this device.</p>':'';
     return '<section class="cr-lead"><header><div class="cr-report-heading"><small>Candle reading · CR1 · advisory, not entry approval</small><h3 class="cr-report-title cr-dir-'+dirTone+'">'+esc(head)+(lead&&crName(lead.name)!==lead.name?' · your own label':'')+'</h3>'+meta+'</div><button type="button" class="text-link" data-action="pc-open" data-ticker="'+esc(f.coin)+'">Inspect</button></header><p class="foldp cr-report-copy" tabindex="0" role="button" aria-expanded="false" title="Tap to read the rest">'+copy+'</p><p class="cr-note cr-report-next cr-state-'+nextTone+'"><i aria-hidden="true"></i><span>'+esc(next)+'</span></p>'+pcLine+out+extra+'<p class="cd-small">Shapes describe the hours that closed; they never approve a buy.</p></section>';
@@ -5779,19 +5779,32 @@
   function crStripSvg(bars,lead,r){
     return '<div class="cr-strip"><div class="cr-chart-key" role="list" aria-label="Candle graph colour key">'
       +'<span role="listitem"><i class="cr-key-up"></i>Up close</span><span role="listitem"><i class="cr-key-down"></i>Down close</span>'
-      +'<span role="listitem"><i class="cr-key-bullish"></i>Bullish band</span><span role="listitem"><i class="cr-key-bearish"></i>Bearish band</span>'
-      +'<span role="listitem"><i class="cr-key-neutral"></i>Neutral shape</span><span role="listitem"><i class="cr-key-cursor"></i>Inspect cursor</span></div>'
+      +'<span role="listitem"><b class="cr-key-m cr-key-m-bull">▲</b>bullish reading</span><span role="listitem"><b class="cr-key-m cr-key-m-bear">▼</b>bearish reading</span>'
+      +'<span role="listitem"><b class="cr-key-m cr-key-m-neu">●</b>neutral reading</span><span role="listitem"><i class="cr-key-glow"></i>Newest / tapped reading</span></div>'
       +cchHtml({kind:'strip',bars:bars,lead:lead,findings:r&&r.findings,barsAligned:true})+'</div>';
   }
 
   function crPlural(n, one, many){var k=Number(n)||0;return k+' '+(k===1?one:(many||one+'s'));}
-  function crTime(iso){var d=new Date(iso);return isNaN(d.getTime())?'unavailable time':d.toISOString().slice(0,16).replace('T',' ')+' candle start';}
+  /* CLOCK-1: every candle time on this card follows the device clock, like the climate line and the volume card.
+     Bars stay keyed by their UTC start; only the words change. A span names the hours it covers, start to end,
+     and shows the zone (BST / GMT in the UK), so the hour the clocks change reads "01:00 BST–01:00 GMT". */
+  var CR_DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],CR_MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],crZoneFmt=null;
+  function crD(iso){var d=new Date(iso);return isNaN(d.getTime())?null:d;}
+  function crHM(d){return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
+  function crDayS(d){return CR_DAYS[d.getDay()]+' '+d.getDate();}
+  function crDayL(d){return crDayS(d)+' '+CR_MONTHS[d.getMonth()];}
+  function crDayKey(d){return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();}
+  function crZone(d){try{crZoneFmt=crZoneFmt||new Intl.DateTimeFormat('en-GB',{timeZoneName:'short'});var z=crZoneFmt.formatToParts(d).filter(function(x){return x.type==='timeZoneName';})[0];return z?z.value:'';}catch(e){return '';}}
+  function crSpanParts(startIso,endIso){var a=crD(startIso),e=crD(endIso||startIso);if(!a||!e)return null;var b=new Date(e.getTime()+3600000),za=crZone(a),zb=crZone(b);
+    return {a:a,b:b,day:crDayL(a),from:crHM(a)+(za!==zb&&za?' '+za:''),to:crHM(b)+(zb?' '+zb:''),toShort:crHM(b)+(za!==zb&&zb?' '+zb:''),zone:zb};}
+  function crSpan(startIso,endIso){var s=crSpanParts(startIso,endIso);return s?s.day+' · '+s.from+'–'+s.to:'unavailable time';}
+  function crTime(iso){var d=crD(iso);if(!d)return 'unavailable time';var z=crZone(d);return crDayL(d)+' '+crHM(d)+(z?' '+z:'')+' candle start';}
   function crFindingsHtml(r){
     if(!r.ready)return '<p>'+esc(r.reason)+'</p>';
     var flt=!!((crLoad().chart||{}).show3plus),shown=flt?r.findings.filter(function(x){return x.span>=3;}):r.findings;
     var bar='<p class="cr-filter"><button type="button" data-action="cr-3plus" data-cd-key="cr-3plus" aria-pressed="'+(flt?'true':'false')+'">'+(flt?'✓ ':'')+'Only readings built from 3 or more candles</button>'+(flt?'<small>'+esc((r.findings.length-shown.length)+' of '+r.findings.length+' hidden · the chart still draws every band')+'</small>':'')+'</p>';
     var hidden=flt&&!shown.length&&r.findings.length?'<p>No reading here was built from 3 or more candles. '+CR1_MULTI_RULES+' of my rules need them and on an hourly chart they fire a few times a month: switch the filter off to see the '+r.findings.length+' reading'+(r.findings.length===1?'':'s')+' that did form.</p>':'';
-    var body=shown.length?shown.map(function(x,i){return '<article class="cr-finding"><b>'+esc(crName(x.name))+'</b>'+(crName(x.name)!==x.name?'<small>written as '+esc(x.name)+'</small>':'')+'<small>'+crTime(x.bars[0].at)+' → '+crTime(x.formedAt)+' · '+esc(x.span)+' candle'+(x.span>1?'s':'')+' · '+esc(x.direction)+' · '+esc(x.state)+'</small><p>'+esc(x.why)+'</p><p class="cd-small">'+esc('Context before: '+x.ctx+' · ATR at start: '+priceGbp(x.atr,6)+(x.gapFree?' · gap-free wording':''))+'</p>'+x.bars.map(function(b){return '<p class="cd-small">'+esc(crTime(b.at))+' · open '+priceGbp(b.o,6)+' · high '+priceGbp(b.h,6)+' · low '+priceGbp(b.l,6)+' · close '+priceGbp(b.c,6)+' · body '+priceGbp(b.body,6)+' ('+pct1(b.body/Math.max(b.range,1e-12))+' of range '+priceGbp(b.range,6)+') · upper wick '+priceGbp(b.up,6)+' · lower wick '+priceGbp(b.down,6)+'</p>';}).join('')+'</article>';}).join(''):'';
+    var body=shown.length?shown.map(function(x,i){return '<article class="cr-finding"><b>'+esc(crName(x.name))+'</b>'+(crName(x.name)!==x.name?'<small>written as '+esc(x.name)+'</small>':'')+'<small>'+esc(crSpan(x.bars[0].at,x.formedAt))+' · '+esc(x.span)+' candle'+(x.span>1?'s':'')+' · '+esc(x.direction)+' · '+esc(x.state)+'</small><p>'+esc(x.why)+'</p><p class="cd-small">'+esc('Context before: '+x.ctx+' · ATR at start: '+priceGbp(x.atr,6)+(x.gapFree?' · gap-free wording':''))+'</p>'+x.bars.map(function(b){return '<p class="cd-small">'+esc(crTime(b.at))+' · open '+priceGbp(b.o,6)+' · high '+priceGbp(b.h,6)+' · low '+priceGbp(b.l,6)+' · close '+priceGbp(b.c,6)+' · body '+priceGbp(b.body,6)+' ('+pct1(b.body/Math.max(b.range,1e-12))+' of range '+priceGbp(b.range,6)+') · upper wick '+priceGbp(b.up,6)+' · lower wick '+priceGbp(b.down,6)+'</p>';}).join('')+'</article>';}).join(''):'';
     var counts=r.counts&&r.counts.length?'<details data-p1-detail="cr-counts"><summary>My own forward sample · '+crPlural(r.counts.reduce(function(a,c){return a+c.seen;},0),'reading')+' logged on this device</summary><table class="cr-table"><thead><tr><th>Reading</th><th>Logged</th><th>Followed through</th><th>Against</th><th>Nothing</th><th>Awaiting</th></tr></thead><tbody>'+r.counts.map(function(c){return '<tr><td>'+esc(crName(c.name))+'</td><td>'+c.seen+'</td><td>'+c.confirmed+'</td><td>'+c.invalidated+'</td><td>'+c.unresolved+'</td><td>'+c.pending+'</td></tr>';}).join('')+'</tbody></table><p class="cd-small">Counts build only from candles observed after each reading on this device. They are not a backtest, a hit rate for the pattern in general, or a prediction. Zero means no sample, not proof of failure.</p></details>':'';
     return bar+hidden+(body?'':'<p>No qualifying pattern in the last '+r.bars.length+' completed hours under the written rules.</p>')+body+counts;
   }
@@ -5833,30 +5846,32 @@
      (how many hours, and which hours the vertical scale uses) live in the candle reader's own local store.
      Under the plot it states how many hours were searched and how many of them needed 3+ candles, because an
      empty-looking stretch is a fact about the data rather than a limit on the rules. */
-  var CCH={count:-1,yFixed:false,sel:null,focus:'',reveal:null,scroll:{},w:{},queued:false,loaded:false};
+  var CCH={count:-1,yFixed:false,sel:null,focus:'',reveal:null,scroll:{},w:{},queued:false,loaded:false,rview:'key',rdir:'all',open:null,selF:null};
   function cchSlot(){return 11;}
   function cchAxis(){return 0;}          /* the price scale is HTML outside the scroller, so the drawing keeps every pixel for candles */
   function cchAxisW(){return window.innerWidth>=820?74:68;}
-  function cchH(kind){var wide=window.innerWidth>=820;return kind==='strip'?(wide?176:158):(wide?252:218);}
+  function cchH(kind){var wide=window.innerWidth>=820;return (kind==='strip'?(wide?176:158):(wide?252:218))+16;}   /* +16: room for day names above and hour labels below */
   function cchLoadPrefs(){if(CCH.loaded)return;CCH.loaded=true;
     try{var c=crLoad().chart;if(c){CCH.count=cchPref(c.count);CCH.yFixed=!!c.yFixed;}}catch(e){CCH.count=-1;}}
   function cchSavePrefs(){try{var st=crLoad(),ch=st.chart||(st.chart={});ch.count=CCH.count|0;ch.yFixed=!!CCH.yFixed;crSave();}catch(e){}}   /* merge, so the Inspect filter set beside these two survives */
   function cchPref(v){if(v===0||v==='0')return 0;var n=Math.round(+v);return (n>=8&&n<=200)?n:-1;}   // only a real zero means "every retained hour"; junk means fit
   function cchEstimate(kind){var w=window.innerWidth;
     return w>=1100?(kind==='strip'?760:940):(w>=820?(kind==='strip'?600:820):Math.max(240,w-(kind==='strip'?58:80)));}
-  function cchWidth(kind){var el=document.querySelector('.cch-plot[data-kind="'+kind+'"]');
-    if(el&&el.clientWidth){CCH.w[kind]=el.clientWidth;return el.clientWidth;}
+  /* FIT-1: measure the room the row gives the plot (row minus the price scale). Reading the plot itself only ever
+     returned the width of the last drawing, so an early estimate stuck and up to a fifth of the card stayed empty. */
+  function cchMeasure(kind){var el=document.querySelector('.cch-plot[data-kind="'+kind+'"]'),row=el&&el.parentNode;if(!row||!row.clientWidth)return 0;
+    var ax=row.querySelector('.cch-axis'),w=row.clientWidth-(ax?ax.offsetWidth:cchAxisW());return w>40?w:0;}
+  function cchWidth(kind){var m=cchMeasure(kind);if(m){CCH.w[kind]=m;return m;}
     return Math.max(120,(CCH.w[kind]||cchEstimate(kind))-cchAxisW());}
   /* Both charts are laid out against the narrower of the two columns, so "fit" means the same number of
      candles at the same pixel slot in the Market strip and in the candle detail, and neither needs a swipe. */
-  function cchSharedWidth(kind){var other=cchWidth(kind==='strip'?'detail':'strip');return Math.min(cchWidth(kind),other);}
+  function cchSharedWidth(kind){var o=kind==='strip'?'detail':'strip',mine=cchWidth(kind);return cchMeasure(o)?Math.min(mine,cchWidth(o)):mine;}   /* only a chart that is on screen narrows the other */
   function cchAuto(avail){return Math.max(8,Math.floor((avail-10)/cchSlot()));}   // as many hours as fit at a readable size
   function cchCur(wrap){return CCH.count>0?CCH.count:((wrap&&+wrap.getAttribute('data-cch-n'))||24);}   // what is on screen right now
   function cchWindow(n,avail){var c=CCH.count<0?cchAuto(avail):CCH.count;   // -1 = as many as fit at a readable size, 0 = every retained hour
     if(!(c>0))c=n;c=Math.max(1,Math.min(n,c));return {a:n-c,b:n,c:c};}
-  function cchWhen(iso,long){var d=new Date(iso);if(isNaN(d.getTime()))return 'unknown time';
-    return (long?d.toISOString().slice(5,10)+' ':'')+d.toISOString().slice(11,16);}   /* long form adds the date once the window passes a day */
-  function cchDay(iso){var d=new Date(iso);return isNaN(d.getTime())?'unavailable time':d.toISOString().slice(5,16).replace('T',' ');}
+  function cchWhen(iso,long){var d=crD(iso);if(!d)return 'unknown time';return (long?crDayS(d)+' ':'')+crHM(d);}   /* device clock (CLOCK-1) */   /* long form adds the date once the window passes a day */
+  function cchDay(iso){var d=crD(iso);return d?crDayS(d)+' '+crHM(d):'unavailable time';}
   function cchHtml(o){
     cchLoadPrefs();
     var kind=o.kind||'detail',bars=(o.bars||[]).slice(-80);
@@ -5867,55 +5882,80 @@
     var dom=CCH.yFixed?bars:slice;
     var lo=Math.min.apply(null,dom.map(function(b){return b.l;})),hi=Math.max.apply(null,dom.map(function(b){return b.h;}));
     if(!(hi>lo))hi=lo+Math.max(Math.abs(lo)*1e-4,1e-9);
-    var pad=(hi-lo)*.12;lo-=pad;hi+=pad;
-    var H=cchH(kind),top=12,bottom=H-22,fit=Math.max(slot,Math.floor((avail-10)/n)),total=ax+n*fit+10;
+    var pad=(hi-lo)*.10;lo-=pad;hi+=pad;
+    var H=cchH(kind),top=26,bottom=H-24,fit=Math.max(slot,Math.floor((avail-10)/n)),total=ax+n*fit+10;
     var y=function(p){return bottom-((p-lo)/(hi-lo))*(bottom-top);};
     var x=function(i){return ax+i*fit+fit/2;};
-    var g='<rect class="cch-plot-bg" x="0" y="0" width="'+total+'" height="'+H+'" fill="#0b1220"/>',axis='',i,list=findingsIn(o,bars,v),bands=[];
+    var id='cch-'+kind+'-',list=findingsIn(o,bars,v),bands=list,selKey=CCH.selF||'',axis='',i;
     if(typeof requestAnimationFrame==='function'&&!CCH.queued){CCH.queued=true;requestAnimationFrame(function(){CCH.queued=false;
-      var fix=false;['strip','detail'].forEach(function(k){var el=document.querySelector('.cch-plot[data-kind="'+k+'"]');
-        if(el&&el.clientWidth&&Math.abs((CCH.w[k]||0)-el.clientWidth)>8)fix=true;});              // one correction pass, then it converges
+      var fix=false;['strip','detail'].forEach(function(k){var m=cchMeasure(k);
+        if(m&&Math.abs((CCH.w[k]||0)-m)>8)fix=true;});              // one correction pass, then it converges
       if(fix)cchSet();});}          /* repaint through the same path so scroll and focus survive it */
-    for(i=0;i<=4;i++){var pv=lo+(hi-lo)*i/4,py=y(pv),lab=pv.toFixed(pv<1?6:4);
-      g+='<line class="cch-grid" x1="0" x2="'+total+'" y1="'+py.toFixed(1)+'" y2="'+py.toFixed(1)+'" stroke="#263550" stroke-width="1"/>';
-      axis+='<span class="cch-ax-l" style="top:'+py.toFixed(1)+'px">'+lab+'</span>';
-      /* no right-hand copy is needed: the pinned scale stays beside the plot at any scroll position */
-    }
-    axis='<div class="cch-axis" style="height:'+H+'px;width:'+cchAxisW()+'px" aria-hidden="true">'+axis+'</div>';
-    if(CCH.sel!=null&&CCH.sel>=v.a&&CCH.sel<v.b){var sx0=x(CCH.sel-v.a);g+='<rect class="cch-selected-col" x="'+(sx0-fit/2+1).toFixed(1)+'" y="'+(top-4)+'" width="'+(fit-2)+'" height="'+(bottom-top+8)+'" rx="5" fill="#ffd66b" fill-opacity=".055"/>';}
-    var last=bars[bars.length-1];
-    g+='<line class="cch-last-price" x1="0" x2="'+total+'" y1="'+y(last.c).toFixed(1)+'" y2="'+y(last.c).toFixed(1)+'" stroke="#8bbfff" stroke-dasharray="3 5" opacity=".88"/>';
-    list.forEach(function(f){var a=Math.max(f.start,v.a)-v.a,bn=Math.min(f.end,v.b-1)-v.a;
-      var xa=ax+a*fit+1,xb=ax+(bn+1)*fit-1,tone=crDirTone(f.direction),toneColor=tone==='bullish'?'#63dcb2':tone==='bearish'?'#fa91a3':'#ffc978';
-      var leadBand=!!(o.lead&&o.lead.start===f.start&&o.lead.end===f.end&&o.lead.name===f.name);
-      bands.push(f);
-      g+='<rect class="cch-band cch-band-'+tone+(leadBand?' cch-band-lead':'')+'" x="'+xa.toFixed(1)+'" y="'+top+'" width="'+Math.max(fit-2,xb-xa).toFixed(1)+'" height="'+(bottom-top)+'" rx="7" fill="'+toneColor+'" fill-opacity="'+(leadBand?'.16':'.075')+'" stroke="'+toneColor+'" stroke-opacity="'+(leadBand?'.96':'.62')+'" stroke-width="'+(leadBand?'1.8':'1')+'" stroke-dasharray="'+(leadBand?'5 3':'4 4')+'"/>';});
-    slice.forEach(function(bb,ii){var cx=x(ii),dir=bb.c>bb.o?'up':bb.c<bb.o?'down':'flat',col=dir==='up'?'#63dcb2':dir==='down'?'#fa91a3':'#b7c4de',w=Math.max(3,fit*.52),yo=y(bb.o),yc=y(bb.c),fullI=v.a+ii;
-      var inLead=!!(o.lead&&fullI>=o.lead.start&&fullI<=o.lead.end),bodyFill=dir==='flat'?'#b7c4de':col;
-      g+='<line class="cch-wick cch-wick-'+dir+(inLead?' cch-wick-lead':'')+'" x1="'+cx.toFixed(1)+'" x2="'+cx.toFixed(1)+'" y1="'+y(bb.h).toFixed(1)+'" y2="'+y(bb.l).toFixed(1)+'" stroke="'+col+'" stroke-width="'+(inLead?'1.8':'1.35')+'" stroke-linecap="round"/>';
-      g+='<rect class="cch-body cch-body-'+dir+(inLead?' cch-body-lead':'')+'" x="'+(cx-w/2).toFixed(1)+'" y="'+Math.min(yo,yc).toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+Math.max(2,Math.abs(yc-yo)).toFixed(1)+'" rx="1.5" fill="'+bodyFill+'" fill-opacity="'+(dir==='flat'?'.3':'.56')+'" stroke="'+col+'" stroke-width="'+(inLead?'1.8':'1.2')+'"/>';});
-    var every=Math.max(1,Math.ceil(n/Math.max(2,Math.floor(Math.min(avail,total)/88)))),prevDay='';
-    slice.forEach(function(bb,ii){if(ii%every)return;var day=String(bb.at).slice(0,10),lab=day!==prevDay?cchDay(bb.at):String(bb.at).slice(11,16);
-      prevDay=day;
-      var anc=ii===0?'start':(ii>=slice.length-every?'end':'middle');   /* a middle-anchored label at either end runs under the price gutter and is cut */
-      g+='<text x="'+x(ii).toFixed(1)+'" y="'+(H-6)+'" font-size="12" fill="#93a0c0" text-anchor="'+anc+'">'+esc(lab)+'</text>';});
-    if(CCH.sel!=null&&CCH.sel>=v.a&&CCH.sel<v.b){var sx=x(CCH.sel-v.a);
-      g+='<line class="cch-cursor" x1="'+sx.toFixed(1)+'" x2="'+sx.toFixed(1)+'" y1="'+(top-6)+'" y2="'+bottom+'" stroke="#ffd66b" stroke-width="1.4"/>';}
+    /* LOOK-2: soft gradient candles on a quiet grid, the price scale on the right with a live price tag, day names
+       at each midnight, small ▲ ▼ ● marks for readings instead of 40 overlapping boxes, and a glow only for the
+       reading that matters now (the lead, or the one you tapped). Geometry is unchanged, so tap and keys still map. */
+    var g='<defs><linearGradient id="'+id+'bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#101a2b"/><stop offset="1" stop-color="#0a101b"/></linearGradient>'
+      +'<linearGradient id="'+id+'up" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4af2bd"/><stop offset="1" stop-color="#16b483"/></linearGradient>'
+      +'<linearGradient id="'+id+'dn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8197"/><stop offset="1" stop-color="#e0425d"/></linearGradient>'
+      +['bullish','bearish','neutral'].map(function(t){return '<linearGradient id="'+id+'gl-'+t+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+CCH_TONE[t]+'" stop-opacity=".26"/><stop offset="1" stop-color="'+CCH_TONE[t]+'" stop-opacity=".03"/></linearGradient>';}).join('')
+      +'<filter id="'+id+'sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity=".45"/></filter></defs>';
+    g+='<rect class="cch-plot-bg" x="0" y="0" width="'+total+'" height="'+H+'" fill="url(#'+id+'bg)"/>';
+    var step=cchStep(hi-lo,4),dp,k0;
+    for(dp=0;dp<8;dp++){var sm=step*Math.pow(10,dp);if(Math.abs(sm-Math.round(sm))<1e-6)break;}
+    dp=Math.max(dp,hi<1000?2:0);
+    for(k0=Math.ceil(lo/step);k0*step<=hi;k0++){var pv=k0*step,py=y(pv);if(py<top-2||py>bottom+2)continue;var nearPill=Math.abs(py-y(bars[bars.length-1].c))<11;
+      g+='<line class="cch-grid" x1="0" x2="'+total+'" y1="'+py.toFixed(1)+'" y2="'+py.toFixed(1)+'" stroke="#ffffff" stroke-opacity=".055" stroke-width="1"/>';
+      if(!nearPill)axis+='<span class="cch-ax-l" style="top:'+py.toFixed(1)+'px">'+pv.toFixed(dp)+'</span>';}   /* the live price tag wins over a label it would cover */
+    var prevKey=null;slice.forEach(function(bb,ii){var d=crD(bb.at);if(!d)return;var key=crDayKey(d);
+      if(prevKey!==null&&key!==prevKey){var xx=ax+ii*fit;
+        g+='<line class="cch-day" x1="'+xx.toFixed(1)+'" x2="'+xx.toFixed(1)+'" y1="4" y2="'+bottom+'" stroke="#ffffff" stroke-opacity=".10" stroke-dasharray="2 3"/>'
+          +'<text class="cch-day-l" x="'+(xx+5).toFixed(1)+'" y="15" font-size="10.5" font-weight="600" fill="#7d8bab">'+esc(crDayL(d))+'</text>';}
+      prevKey=key;});
+    for(i=1;i<n;i++){var d0=crD(slice[i-1].at),d1=crD(slice[i].at);if(!d0||!d1||d0.getTimezoneOffset()===d1.getTimezoneOffset())continue;   /* the hour the clocks change */
+      var cx0=ax+i*fit,back=d1.getTimezoneOffset()>d0.getTimezoneOffset();
+      g+='<line class="cch-clock" x1="'+cx0.toFixed(1)+'" x2="'+cx0.toFixed(1)+'" y1="'+(top-6)+'" y2="'+bottom+'" stroke="#ffbd4a" stroke-width="1.4" stroke-dasharray="4 3"/>'
+        +'<text x="'+(cx0+5).toFixed(1)+'" y="'+(top+6)+'" font-size="10.5" font-weight="700" fill="#ffbd4a">clocks '+(back?'go back':'go forward')+'</text>';}
+    var glow=[];list.forEach(function(f){var isLead=!!(o.lead&&o.lead.start===f.start&&o.lead.end===f.end&&o.lead.name===f.name);if(isLead||cchKey(f)===selKey)glow.push(f);});
+    glow.forEach(function(f){var a=Math.max(f.start,v.a)-v.a,bn=Math.min(f.end,v.b-1)-v.a,xa=ax+a*fit+1,xb=ax+(bn+1)*fit-1,tone=crDirTone(f.direction);
+      g+='<rect class="cch-glow cch-glow-'+tone+'" x="'+xa.toFixed(1)+'" y="'+(top-4)+'" width="'+Math.max(2,xb-xa).toFixed(1)+'" height="'+(bottom-top+4)+'" rx="6" fill="url(#'+id+'gl-'+tone+')"/>'
+        +'<line x1="'+(xa+2).toFixed(1)+'" x2="'+Math.max(xa+3,xb-2).toFixed(1)+'" y1="'+(bottom+3)+'" y2="'+(bottom+3)+'" stroke="'+CCH_TONE[tone]+'" stroke-width="2.4" stroke-linecap="round"/>';});
+    if(CCH.sel!=null&&CCH.sel>=v.a&&CCH.sel<v.b){var sxc=x(CCH.sel-v.a);
+      g+='<line class="cch-cursor" x1="'+sxc.toFixed(1)+'" x2="'+sxc.toFixed(1)+'" y1="'+(top-6)+'" y2="'+bottom+'" stroke="#ffd66b" stroke-opacity=".8" stroke-width="1.2" stroke-dasharray="3 3"/>';}
+    var last=bars[bars.length-1],lastUp=last.c>=last.o;
+    g+='<line class="cch-last-price" x1="0" x2="'+total+'" y1="'+y(last.c).toFixed(1)+'" y2="'+y(last.c).toFixed(1)+'" stroke="'+(lastUp?'#63dcb2':'#fa91a3')+'" stroke-opacity=".6" stroke-dasharray="2 4"/>';
+    slice.forEach(function(bb,ii){var cx=x(ii),dir=bb.c>bb.o?'up':bb.c<bb.o?'down':'flat',col=dir==='up'?'#3fe0ac':dir==='down'?'#f77b91':'#b7c4de',w=Math.max(3,fit*.62),yo=y(bb.o),yc=y(bb.c);
+      var hb=Math.max(1.6,Math.abs(yc-yo)),rx=Math.min(2,w/4),dim=(CCH.sel!=null&&v.a+ii!==CCH.sel)?' opacity=".82"':'';
+      g+='<g class="cch-candle cch-candle-'+dir+'"'+dim+'><line class="cch-wick" x1="'+cx.toFixed(1)+'" x2="'+cx.toFixed(1)+'" y1="'+y(bb.h).toFixed(1)+'" y2="'+y(bb.l).toFixed(1)+'" stroke="'+col+'" stroke-width="1.2" stroke-opacity=".9" stroke-linecap="round"/>'
+        +'<rect class="cch-body cch-body-'+dir+'" x="'+(cx-w/2).toFixed(1)+'" y="'+Math.min(yo,yc).toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+hb.toFixed(1)+'" rx="'+rx+'" fill="'+(dir==='flat'?'#b7c4de':'url(#'+id+(dir==='up'?'up':'dn')+')')+'" stroke="'+(dir==='flat'?'#b7c4de':dir==='up'?'#22c993':'#e65a72')+'" stroke-width=".8"/></g>';});
+    var above={},below={};
+    list.forEach(function(f){if(f.end<v.a||f.end>=v.b)return;var ii=f.end-v.a,b=bars[f.end],cx=x(ii),tone=crDirTone(f.direction),col=CCH_TONE[tone],big=glow.indexOf(f)>=0,s=big?5.5:4,kk,yy;
+      if(tone==='bullish'){kk=below[ii]=(below[ii]||0)+1;yy=Math.min(bottom-2,y(b.l)+7+(kk-1)*9);g+='<path class="cch-mark cch-mark-bullish" d="M'+cx.toFixed(1)+' '+yy.toFixed(1)+' l'+s+' '+(s*1.5)+' h'+(-2*s)+'z" fill="'+col+'" fill-opacity="'+(big?1:.85)+'"/>';}
+      else if(tone==='bearish'){kk=above[ii]=(above[ii]||0)+1;yy=Math.max(top+2,y(b.h)-7-(kk-1)*9);g+='<path class="cch-mark cch-mark-bearish" d="M'+cx.toFixed(1)+' '+yy.toFixed(1)+' l'+s+' '+(-s*1.5)+' h'+(-2*s)+'z" fill="'+col+'" fill-opacity="'+(big?1:.85)+'"/>';}
+      else{kk=above[ii]=(above[ii]||0)+1;yy=Math.max(top,y(b.h)-6-(kk-1)*7);g+='<circle class="cch-mark cch-mark-neutral" cx="'+cx.toFixed(1)+'" cy="'+yy.toFixed(1)+'" r="'+(big?3.4:2.2)+'" fill="'+col+'" fill-opacity="'+(big?1:.55)+'"/>';}});
+    var every=Math.max(1,Math.ceil(n/Math.max(2,Math.floor(Math.min(avail,total)/72))));
+    slice.forEach(function(bb,ii){if(ii%every)return;var d=crD(bb.at);if(!d)return;
+      var anc=ii===0?'start':(ii>=slice.length-every?'end':'middle');   /* a middle-anchored label at either end would be cut */
+      g+='<text x="'+x(ii).toFixed(1)+'" y="'+(H-7)+'" font-size="11" fill="#7d8bab" text-anchor="'+anc+'">'+esc(crHM(d))+'</text>';});
+    if(CCH.sel!=null&&CCH.sel>=v.a&&CCH.sel<v.b){var sb=bars[CCH.sel],sx=x(CCH.sel-v.a),prevC=CCH.sel>0?bars[CCH.sel-1].c:sb.o,chg=prevC?(sb.c-prevC)/prevC*100:0,upC=sb.c>=sb.o;
+      var when=crSpan(sb.at,sb.at),tw=Math.max(176,when.length*6.4+20),th=62,tx=sx+12+tw>total?sx-12-tw:sx+12,ty=top;if(tx<2)tx=2;
+      g+='<g class="cch-tip" pointer-events="none"><rect x="'+tx.toFixed(1)+'" y="'+ty+'" width="'+tw.toFixed(0)+'" height="'+th+'" rx="7" fill="#162236" stroke="#2f4262" filter="url(#'+id+'sh)"/>'
+        +'<text x="'+(tx+10).toFixed(1)+'" y="'+(ty+16)+'" font-size="11" font-weight="700" fill="#e8eefb">'+esc(when)+'</text>'
+        +'<text x="'+(tx+10).toFixed(1)+'" y="'+(ty+33)+'" font-size="11" fill="#93a0c0">O <tspan fill="#e8eefb">'+cchNum(sb.o)+'</tspan>  H <tspan fill="#e8eefb">'+cchNum(sb.h)+'</tspan>  L <tspan fill="#e8eefb">'+cchNum(sb.l)+'</tspan></text>'
+        +'<text x="'+(tx+10).toFixed(1)+'" y="'+(ty+50)+'" font-size="11" fill="#93a0c0">C <tspan fill="'+(upC?'#63dcb2':'#fa91a3')+'" font-weight="700">'+cchNum(sb.c)+'</tspan>  <tspan fill="'+(chg>=0?'#63dcb2':'#fa91a3')+'">'+(chg>=0?'+':'')+chg.toFixed(2)+'%</tspan> vs last hour</text></g>';}
+    axis+='<span class="cch-ax-pill" style="top:'+y(last.c).toFixed(1)+'px;background:'+(lastUp?'#3fe0ac':'#f77b91')+'">'+cchNum(last.c)+'</span>';
+    axis='<div class="cch-axis cch-axis-r" style="height:'+H+'px;width:'+cchAxisW()+'px" aria-hidden="true">'+axis+'</div>';
     var chips=[[-1,'fit'],[12,'12h'],[24,'24h'],[48,'48h'],[0,'all '+bars.length]].map(function(o){var c=o[0];
       var on=c<0?CCH.count<0:(c===0?(CCH.count===0||CCH.count>=bars.length):CCH.count===c);
       return '<button type="button" class="cch-chip" data-action="cch-count" data-count="'+c+'" data-cch-key="'+kind+'-c'+c+'" aria-pressed="'+(on?'true':'false')+'">'+o[1]+'</button>';}).join('');
-    var cap='<span class="cch-cap">'+n+' of '+bars.length+' completed hours · '+(total>selfW?'swipe to move':'fills the width')+'</span>';   /* LR1: a note belongs on the note row, where nothing clips */
+    var zones=[];slice.forEach(function(bb){var d=crD(bb.at),z=d?crZone(d):'';if(z&&zones.indexOf(z)<0)zones.push(z);});
+    var capText=n+' of '+bars.length+' completed hours · '+(total>selfW+2?'swipe to move':'fills the width')+(zones.length?' · times in '+zones.join(' and '):'');
     var ctl='<button type="button" data-action="cch-zoom" data-d="in" data-cch-key="'+kind+'-in" aria-label="Show fewer hours, bigger candles">−</button>'
       +'<button type="button" data-action="cch-zoom" data-d="out" data-cch-key="'+kind+'-out" aria-label="Show more hours, smaller candles">+</button>'
       +'<span class="cch-gap"></span>'
       +'<button type="button" data-action="cch-page" data-d="-1" data-cch-key="'+kind+'-prev">◀ earlier</button>'
       +'<button type="button" data-action="cch-page" data-d="1" data-cch-key="'+kind+'-next">later ▶</button>'
       +'<button type="button" data-action="cch-y" data-cch-key="'+kind+'-y" aria-pressed="'+(CCH.yFixed?'true':'false')+'">Y: '+(CCH.yFixed?'all '+bars.length:'window')+'</button>';
-    var wideWin=n>30;                                                     /* the date joins the chip only once the hours on screen pass a day */
-    var tags=bands.length?bands.map(function(f){var when=bars[f.start]?cchWhen(bars[f.start].at,wideWin):'',tone=crDirTone(f.direction),stateTone=crStateTone(f);
-      var mark=tone==='bullish'?'▲':tone==='bearish'?'▼':'◆';
-      return '<button type="button" class="cch-tag cch-tag-'+tone+' cch-tag-state-'+stateTone+'" data-action="cch-jump" data-i="'+f.end+'" data-cch-key="'+kind+'-j'+f.end+'">'+(when?'<span class="cch-when">'+esc(when)+'</span> ':'')+'<span class="cch-tag-mark" aria-hidden="true">'+mark+'</span> '+esc(f.name)+' · '+(f.end-f.start+1)+' candle'+(f.end>f.start?'s':'')+' · '+esc(f.state)+'</button>';}).join('')
-      :'<span class="cd-small">No named formation in these hours.</span>';
+    var wideWin=n>30;
     var scanAll=(o.findings&&o.findings.length?o.findings:(o.lead?[o.lead]:[]))||[],sum;
     if(o.barsAligned===false)sum='Looked across '+bars.length+' completed hours · the named readings belong to a different set of candles, so none are counted here.';
     else{var big=scanAll.filter(function(f){return f.end-f.start+1>=3;}),named=big.slice(0,3).map(function(f){return esc(f.name)+(big.length<=3?' at '+(bars[f.start]?cchWhen(bars[f.start].at,wideWin):'unavailable time'):'');}).join(', ');
@@ -5923,23 +5963,97 @@
         +(big.length?big.length+(big.length===1?' of them does':' of them do')+(named?' ('+named+')':''):'none in this stretch');}
     var read='';
     if(CCH.sel!=null&&CCH.sel>=0&&CCH.sel<bars.length){var b=bars[CCH.sel],range=Math.max(b.h-b.l,1e-12),body=Math.abs(b.c-b.o),candleDir=b.c>b.o?'up':b.c<b.o?'down':'flat',candleWord=candleDir==='up'?'▲ up close':candleDir==='down'?'▼ down close':'◆ unchanged close';
-      var inF=bands.filter(function(f){return CCH.sel>=f.start&&CCH.sel<=f.end;})[0];
-      read='<b>'+esc(cchDay(b.at))+' candle start</b> · <strong class="cch-direction cch-direction-'+candleDir+'">'+candleWord+'</strong>'
+      var inAll=bands.filter(function(f){return CCH.sel>=f.start&&CCH.sel<=f.end;}),inF=inAll.filter(function(f){return cchKey(f)===CCH.selF;})[0]||inAll[0];   /* the reading you tapped wins when a candle sits in two */
+      read='<b>'+esc(crSpan(b.at,b.at))+'</b> · <strong class="cch-direction cch-direction-'+candleDir+'">'+candleWord+'</strong>'
         +' · open <b class="cch-read-value">'+priceGbp(b.o,6)+'</b> · high <b class="cch-read-value">'+priceGbp(b.h,6)+'</b> · low <b class="cch-read-value">'+priceGbp(b.l,6)+'</b> · close <b class="cch-read-value cch-close-'+candleDir+'">'+priceGbp(b.c,6)+'</b>'
         +' · body <b class="cch-read-value">'+priceGbp(body,6)+'</b> ('+pct1(body/range)+' of range '+priceGbp(range,6)+')'
         +' · upper wick '+priceGbp(b.h-Math.max(b.o,b.c),6)+' · lower wick '+priceGbp(Math.min(b.o,b.c)-b.l,6)
-        +'<br><span class="cd-small">'+(inF?('candle '+(CCH.sel-inF.start+1)+' of '+(inF.end-inF.start+1)+' in <b>'+esc(inF.name)+'</b> · '+esc(inF.state)):'not part of a named formation')+'</span>';
-    }else read='<span class="cd-small">Tap any candle for its open, high, low, close and which reading it belongs to. Swipe sideways (or ◀ ▶) to move through the hours; pinch or − + changes how many hours are drawn; focus the chart and use the arrow keys.</span>';
-    var note=kind==='detail'?'<p class="cd-small">'+esc((o.provider||'')+(o.atr?' · hourly ATR '+priceGbp(o.atr,6)+' scales every rule, not fixed pence':''))+' · candle detail uses its own OHLC scale. A shaded band marks the named CR1 formation and its label sits below the chart so nothing is cut off. Reference overlay, ticket fit and grey cone remain on the main line chart.</p>':'';
+        +'<br><span class="cd-small">'+(inF?('candle '+(CCH.sel-inF.start+1)+' of '+(inF.end-inF.start+1)+' in <b>'+esc(crName(inF.name))+'</b> · '+esc(inF.state)):'not part of a named formation')+'</span>';
+    }else read='<span class="cd-small">Tap any candle for its open, high, low, close and which reading it belongs to. Tap a reading below to see why it was named and what happened next. Swipe sideways (or ◀ ▶) to move through the hours; pinch or − + changes how many hours are drawn; focus the chart and use the arrow keys.</span>';
+    var note=kind==='detail'?'<p class="cd-small">'+esc((o.provider||'')+(o.atr?' · hourly ATR '+priceGbp(o.atr,6)+' scales every rule, not fixed pence':''))+' · candle detail uses its own OHLC scale. A mark above or below a candle shows where a named CR1 formation ended; the list below the chart explains each one. Reference overlay, ticket fit and grey cone remain on the main line chart.</p>':'';
     var svg='<svg class="cch-svg" viewBox="0 0 '+total+' '+H+'" width="'+total+'" height="'+H+'" preserveAspectRatio="xMinYMid meet" aria-hidden="true">'+g+'</svg>';
     return '<div class="cch cch-'+kind+'" data-cch-kind="'+kind+'" data-cch-total="'+total+'" data-cch-bars="'+bars.length+'" data-cch-start="'+v.a+'" data-cch-n="'+n+'" data-cch-auto="'+v.c+'" data-cch-fit="'+fit+'" data-cch-ax="'+ax+'">'
       +'<div class="cch-bar" role="group" aria-label="How many hours to draw, zoom and page">'+chips+'<span class="cch-gap"></span>'+ctl+'</div>'
-      +'<div class="cch-row">'+axis
+      +'<div class="cch-row">'
       +'<div class="cch-plot" tabindex="0" role="application" data-kind="'+kind+'" data-cch-key="'+kind+'-plot" aria-label="Completed hourly candles, newest on the right. Left and right arrows move the inspect cursor, up and down change how many hours are drawn, Home and End jump to the ends of the window.">'
-      +svg+'</div></div>'
-      +'<div class="cch-tags">'+tags+cap+'</div>'
-      +'<p class="cd-small cch-sum">'+sum+'</p>'
-      +'<p class="cch-read" aria-live="polite">'+read+'</p>'+note+'</div>';
+      +svg+'</div>'+axis+'</div>'
+      +'<p class="cch-read" aria-live="polite">'+read+'</p>'
+      +cchReadingsHtml(o,bars,bands,kind,n,capText)
+      +'<p class="cd-small cch-sum">'+sum+'</p>'+note+'</div>';
+  }
+  /* READINGS-2: the readings under the chart. Key view first: the newest reading plus every reading the rules
+     actually tracked (a directional shape with the right closes before it). Shapes and indecision stay one tap
+     away under All. Every word comes from the reading itself (why, ctx, state, hi, lo); nothing is reworded or
+     scored, and the mix bar describes these readings, it is not a signal. */
+  var CCH_TONE={bullish:'#63dcb2',bearish:'#fa91a3',neutral:'#ffc978'};
+  var CCH_BADGE={confirmed:'✓ Confirmed',invalidated:'✕ Invalidated',awaiting:'… Awaiting',shape:'Shape only',neutral:'Indecision'};
+  var CCH_ALT={'Long lower wick':'After falling closes it would be read as a Hammer, after rising closes as a Hanging man.',
+    'Long upper wick':'After rising closes it would be read as a Shooting star, after falling closes as an Inverted hammer.',
+    'Matching-lows pair':'After falling closes the same two candles would be read as a Tweezer bottom.',
+    'Matching-highs pair':'After rising closes the same two candles would be read as a Tweezer top.',
+    'Inside-body pair':'After closes moving the same way as the big candle it would be read as a harami.',
+    'Star shape':'After a move into it, the same three candles would be read as a Morning or Evening star.',
+    'Three-candle advance':'After falling closes it would be read as Three white soldiers.',
+    'Three-candle decline':'After rising closes it would be read as Three black crows.',
+    'Three matching lows':'After falling closes it would be read as Triple-bottom tweezers.',
+    'Three matching highs':'After rising closes it would be read as Triple-top tweezers.',
+    'Green body spanning two reds':'After falling closes it would be read as a Concealing baby swallow.',
+    'Pullback inside a green candle':'After falling closes it would be read as Rising three methods.',
+    'Advance inside a red candle':'After rising closes it would be read as Falling three methods.'};
+  function cchKey(f){return f?f.name+'@'+f.formedAt:'';}
+  function cchNum(v){var a=Math.abs(v);return Number(v).toFixed(a>=1000?1:a>=10?2:a>=1?3:a>=.1?4:6);}
+  function cchStep(range,count){var raw=range/count;if(!(raw>0))return 1;var mag=Math.pow(10,Math.floor(Math.log(raw)/Math.LN10)),nn=raw/mag;return +(((nn<1.5?1:nn<2.25?2:nn<3.5?2.5:nn<7?5:10)*mag).toPrecision(3));}
+  function cchCtxWord(c){return c==='falling'||c==='rising'?c:c==='mixed'?'mixed (no clear trend)':'not known (too few candles before it)';}
+  function cchGlyph(f,bars){
+    var a=Math.max(0,f.start-3),idx=[],i;for(i=a;i<=f.end;i++)if(bars[i])idx.push(i);if(!idx.length)return '';
+    var lo=Math.min.apply(null,idx.map(function(k){return bars[k].l;})),hi=Math.max.apply(null,idx.map(function(k){return bars[k].h;}));if(!(hi>lo))hi=lo+1e-9;
+    var W=52,H=28,step=W/idx.length,bw=Math.max(3,step*.56),col=CCH_TONE[crDirTone(f.direction)],x0=(f.start-a)*step;
+    function y(p){return 2+(H-4)*(1-(p-lo)/(hi-lo));}
+    var g='<rect x="'+(x0+.5).toFixed(1)+'" y=".5" width="'+Math.max(1,(f.end-f.start+1)*step-1).toFixed(1)+'" height="'+(H-1)+'" rx="4" fill="'+col+'" fill-opacity=".10" stroke="'+col+'" stroke-opacity=".35"/>';
+    idx.forEach(function(k,j){var b=bars[k],cx=j*step+step/2,c=k<f.start?'#5b6782':(b.c>=b.o?'#3fe0ac':'#f77b91');
+      g+='<line x1="'+cx.toFixed(1)+'" x2="'+cx.toFixed(1)+'" y1="'+y(b.h).toFixed(1)+'" y2="'+y(b.l).toFixed(1)+'" stroke="'+c+'" stroke-width="1"/>'
+        +'<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+Math.min(y(b.o),y(b.c)).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(1.4,Math.abs(y(b.o)-y(b.c))).toFixed(1)+'" rx="1" fill="'+c+'"/>';});
+    return '<svg class="cch-rr-gl" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" aria-hidden="true">'+g+'</svg>';
+  }
+  function cchMoreHtml(f){
+    var st=crStateTone(f),tone=crDirTone(f.direction),later=f.decidedAt?Math.round((Date.parse(f.decidedAt)-Date.parse(f.formedAt))/3600000):0,txt;
+    var whenD=f.decidedAt?'The '+crSpan(f.decidedAt,f.decidedAt)+' candle':'A later candle',hrs=later>0?', '+later+' h after it formed.':'.';
+    if(st==='confirmed')txt='<b class="cch-ok">Tracked and confirmed.</b> '+esc(whenD)+' closed '+(tone==='bullish'?'above the pattern’s high ('+priceGbp(f.hi)+')':'below the pattern’s low ('+priceGbp(f.lo)+')')+hrs;
+    else if(st==='invalidated')txt='<b class="cch-no">Tracked and invalidated.</b> '+esc(whenD)+' closed '+(tone==='bullish'?'below the pattern’s low ('+priceGbp(f.lo)+')':'above the pattern’s high ('+priceGbp(f.hi)+')')+', the opposite way'+hrs;
+    else if(st==='awaiting')txt='<b>Tracked, waiting.</b> A later completed close '+(tone==='bullish'?'above '+priceGbp(f.hi)+' counts as follow-through here, below '+priceGbp(f.lo)+' does not.':'below '+priceGbp(f.lo)+' counts as follow-through here, above '+priceGbp(f.hi)+' does not.');
+    else if(f.direction==='neutral'&&f.state===CR1_STATE.neutral)txt='<b>Indecision.</b> This shape never gets a direction, so it isn’t tracked.';
+    else if(tone!=='neutral')txt='<b>Not tracked.</b> A '+tone+' shape needs '+(tone==='bullish'?'falling':'rising')+' closes before it, so there is a move for it to turn. Here they were '+esc(cchCtxWord(f.ctx))+', so it stays a shape only.';
+    else txt='<b>Shape only.</b> The closes before it were '+esc(cchCtxWord(f.ctx))+', so no direction is claimed. '+esc(CCH_ALT[f.name]||'');
+    return '<div class="cch-rr-more"><p>'+txt+'</p><p class="cd-small">Before it: '+esc(f.ctx==='mixed'?'mixed closes, no clear trend':(f.ctx==='falling'||f.ctx==='rising')?f.ctx+' closes':'too few candles to judge')+' · pattern range '+priceGbp(f.lo)+' – '+priceGbp(f.hi)+' · '+f.span+' candle'+(f.span>1?'s':'')+(f.gapFree?' · gap-free wording (penetration, not a gap)':'')+'</p></div>';
+  }
+  function cchReadingsHtml(o,bars,bands,kind,hours,capText){
+    if(o.barsAligned===false)return '<div class="cch-rd"><p class="cd-small">'+esc(capText)+'</p></div>';
+    var all=bands.slice().sort(function(p,q){return q.end-p.end||((q.end-q.start)-(p.end-p.start))||p.start-q.start;}),cnt={bullish:0,bearish:0,neutral:0},sc={confirmed:0,invalidated:0,awaiting:0,shape:0,neutral:0};
+    all.forEach(function(f){cnt[crDirTone(f.direction)]++;sc[crStateTone(f)]++;});
+    var key=all.filter(function(f,k){return k===0||(f.supported&&f.direction!=='neutral');}),view=CCH.rview==='all'?'all':'key',dirF=CCH.rdir||'all';
+    var shown=view==='key'?key:all.filter(function(f){return dirF==='all'||crDirTone(f.direction)===dirF;}),tot=all.length||1;
+    var h='<div class="cch-rd" data-cch-rd="'+kind+'"><div class="cch-rd-head"><div><b>Readings</b> <span>· '+all.length+' in these '+hours+' hours · newest first · your time</span></div>'
+      +'<span class="cch-rd-view" role="group" aria-label="Which readings to list"><button type="button" data-action="cch-rview" data-v="key" data-cch-key="'+kind+'-rv-key" aria-pressed="'+(view==='key')+'">Key '+key.length+'</button><button type="button" data-action="cch-rview" data-v="all" data-cch-key="'+kind+'-rv-all" aria-pressed="'+(view==='all')+'">All '+all.length+'</button></span></div>';
+    if(!all.length)return h+'<p class="cd-small cch-rd-empty">No named formation in these hours. That is a result, not a failure.</p><div class="cch-rd-foot"><span>'+esc(capText)+'</span></div></div>';
+    h+='<div class="cch-rd-mix"><div class="cch-rd-meter" title="Direction mix of these readings"><i style="width:'+(cnt.bullish/tot*100).toFixed(1)+'%;background:#3fe0ac"></i><i style="width:'+(cnt.neutral/tot*100).toFixed(1)+'%;background:#6b5a3a"></i><i style="width:'+(cnt.bearish/tot*100).toFixed(1)+'%;background:#f77b91"></i></div>'
+      +'<div class="cch-rd-legend"><span class="cch-c-bull">▲ <b>'+cnt.bullish+'</b> bullish</span><span class="cch-c-neu">◆ <b>'+cnt.neutral+'</b> neutral</span><span class="cch-c-bear">▼ <b>'+cnt.bearish+'</b> bearish</span><span class="cch-rd-sep">·</span>'
+      +'<span>✓ <b>'+sc.confirmed+'</b> confirmed</span><span>✕ <b>'+sc.invalidated+'</b> invalidated</span>'+(sc.awaiting?'<span>… <b>'+sc.awaiting+'</b> awaiting</span>':'')+'<span><b>'+sc.shape+'</b> shape only</span><span><b>'+sc.neutral+'</b> indecision</span></div></div>';
+    if(view==='all')h+='<div class="cch-rd-filt" role="group" aria-label="Filter by direction">'+[['all','All'],['bullish','▲ Bullish'],['bearish','▼ Bearish'],['neutral','◆ Neutral']].map(function(p){return '<button type="button" data-action="cch-rdir" data-v="'+p[0]+'" data-cch-key="'+kind+'-rd-'+p[0]+'" aria-pressed="'+(dirF===p[0])+'">'+p[1]+'</button>';}).join('')+'</div>';
+    var today=crDayKey(new Date()),yest=crDayKey(new Date(Date.now()-86400000)),prevDay=null,newest=cchKey(all[0]),selKey=CCH.selF||'';
+    shown.forEach(function(f){var sp=crSpanParts(f.bars&&f.bars[0]?f.bars[0].at:bars[f.start].at,f.formedAt);if(!sp)return;
+      var dk=crDayKey(sp.a);if(dk!==prevDay){prevDay=dk;h+='<div class="cch-rd-day">'+(dk===today?'Today · ':dk===yest?'Yesterday · ':'')+esc(sp.day)+'</div>';}
+      var k=cchKey(f),tone=crDirTone(f.direction),st=crStateTone(f),muted=!(f.supported&&f.direction!=='neutral')&&k!==newest,isSel=k===selKey,hit=!isSel&&CCH.sel!=null&&CCH.sel>=f.start&&CCH.sel<=f.end,open=CCH.open===k;
+      h+='<button type="button" class="cch-rr'+(muted?' cch-rr-muted':'')+(isSel?' cch-rr-sel':'')+(hit?' cch-rr-hit':'')+'" data-action="cch-read" data-k="'+esc(k)+'" data-i="'+f.end+'" data-cch-key="'+kind+'-r-'+esc(k)+'" aria-expanded="'+(open?'true':'false')+'">'
+        +'<span class="cch-rr-bar" style="background:'+CCH_TONE[tone]+'"></span>'
+        +'<span class="cch-rr-tm">'+esc(sp.from)+'<small>–'+esc(sp.toShort)+'</small></span>'+cchGlyph(f,bars)
+        +'<span class="cch-rr-mn"><b><span class="cch-rr-ic" style="color:'+CCH_TONE[tone]+'" aria-hidden="true">'+(tone==='bullish'?'▲':tone==='bearish'?'▼':'◆')+'</span>'+esc(crName(f.name))+(k===newest?' <span class="cch-rr-latest">LATEST</span>':'')+'</b><small>'+esc(f.why)+'</small></span>'
+        +'<span class="cch-bdg cch-bdg-'+st+'">'+CCH_BADGE[st]+'</span></button>';
+      if(open)h+=cchMoreHtml(f);});
+    if(!shown.length)h+='<p class="cd-small cch-rd-empty">No readings match this filter.</p>';
+    var hidden=all.length-key.length,tracked=key.filter(function(f){return f.supported&&f.direction!=='neutral';}).length;
+    h+='<div class="cch-rd-foot"><span>'+(view==='key'?esc((tracked===key.length?'The '+(tracked===1?'reading':tracked+' readings')+' the rules tracked':'Newest reading + '+(tracked===1?'the 1 reading':'the '+tracked+' readings')+' the rules tracked')+(hidden?' · '+hidden+' shape-only and indecision reading'+(hidden===1?'':'s')+' under All':'')):'Faded rows were not tracked: no directional claim, or the closes before them did not fit.')+' · '+esc(capText)+'</span>'
+      +(view==='key'?(hidden?'<button type="button" data-action="cch-rview" data-v="all" data-cch-key="'+kind+'-rv-all2">Show all '+all.length+'</button>':''):'<button type="button" data-action="cch-rview" data-v="key" data-cch-key="'+kind+'-rv-key2">Back to key readings</button>')+'</div></div>';
+    return h;
   }
   function findingsIn(o,bars,v){
     if(o.barsAligned===false)return [];
@@ -5964,6 +6078,9 @@
       else if(CCH.scroll[k]!=null)p.scrollLeft=Math.min(Math.max(0,CCH.scroll[k]),max);});
     CCH.reveal=null;
     if(CCH.focus){var el=document.querySelector('[data-cch-key="'+CCH.focus+'"]');if(el)el.focus({preventScroll:true});}}
+  /* FIT-1: refit when the window or phone rotation changes the room, so "fit" keeps filling the card */
+  var cchResizeT=0;window.addEventListener('resize',function(){clearTimeout(cchResizeT);cchResizeT=setTimeout(function(){
+    var fix=false;['strip','detail'].forEach(function(k){var m=cchMeasure(k);if(m&&Math.abs((CCH.w[k]||0)-m)>8)fix=true;});if(fix)cchSet();},180);},{passive:true});
   function cchPick(e){var p=e.target.closest?e.target.closest('.cch-plot'):null;if(!p)return null;
     var wrap=p.closest('.cch'),svg=p.querySelector('svg');if(!svg||!wrap)return null;
     var vb=(svg.getAttribute('viewBox')||'0 0 1 1').split(' '),total=+vb[2]||1,r=svg.getBoundingClientRect(),scale=r.width/total||1;
@@ -5976,7 +6093,7 @@
   document.addEventListener('pointerup',function(e){var t=CCH.tap;CCH.tap=null;if(!t)return;
     var p=e.target.closest&&e.target.closest('.cch-plot');if(!p||p.getAttribute('data-kind')!==t.kind)return;
     if(Math.abs(e.clientX-t.x)+Math.abs(e.clientY-t.y)+Math.abs(p.scrollLeft-t.sl)>8)return;
-    var i=cchPick(e);if(i==null)return;CCH.sel=i;CCH.reveal=null;cchSet();},true);
+    var i=cchPick(e);if(i==null)return;CCH.sel=i;CCH.reveal=null;CCH.selF=null;cchSet();},true);
   document.addEventListener('click',function(e){var b=e.target.closest?e.target.closest('[data-action]'):null;if(!b)return;
     var a=b.dataset.action;if(a.indexOf('cch-')!==0)return;
     e.preventDefault();e.stopImmediatePropagation();
@@ -5986,6 +6103,9 @@
       CCH.count=(nx>=8&&nx<barsN)?nx:(nx<8?-1:0);}
     else if(a==='cch-y'){CCH.yFixed=!CCH.yFixed;}
     else if(a==='cch-jump'){var i=+b.dataset.i;CCH.sel=i;CCH.reveal=i;cchSet();return;}
+    else if(a==='cch-read'){var rk=b.dataset.k||'',ri=+b.dataset.i;CCH.open=CCH.open===rk?null:rk;CCH.selF=rk;if(isFinite(ri)){CCH.sel=ri;CCH.reveal=ri;}cchSet();return;}
+    else if(a==='cch-rview'){CCH.rview=b.dataset.v==='all'?'all':'key';cchSet();return;}
+    else if(a==='cch-rdir'){CCH.rdir=b.dataset.v||'all';cchSet();return;}
     else if(a==='cch-page'){var p=b.closest('.cch').querySelector('.cch-plot');
       if(p)p.scrollBy({left:(+b.dataset.d||0)*Math.max(120,p.clientWidth*0.7),behavior:'smooth'});return;}
     cchSavePrefs();cchSet();},true);
