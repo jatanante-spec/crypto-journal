@@ -1,6 +1,9 @@
 <script>
 (function () {
   var KEY = "crypto-scalping-journal-v1";
+  /* BACKEND-WORDING-1 · this file is shared by the Apps Script app (Google Sheet storage) and the Supabase
+     site. dev/supabase_runtime.js sets window.CJ_BACKEND = "supabase"; without it the sheet wording stays. */
+  function storeText(sheetText, accountText){return typeof window!=="undefined"&&window.CJ_BACKEND==="supabase"?accountText:sheetText;}
   /* Startup surface is a device-local presentation preference. It remembers only the
      four primary tabs; transient More/manual/training/modal views never become the launch tab. */
   var PRIMARY_PAGES = {scout:true,sizer:true,journal:true,market:true};
@@ -1872,7 +1875,7 @@
   function queueCloudSave() {
     if (!canCloud()) return;
     clearTimeout(syncTimer);
-    syncMsg = isThinState(state)&&!hasPendingPlanDeletes() ? "Saving settings…" : "Saving to sheet…";
+    syncMsg = isThinState(state)&&!hasPendingPlanDeletes() ? "Saving settings…" : storeText("Saving to sheet…", "Saving to your account…");
     syncOk = false;
     syncTimer = setTimeout(pushCloud, 500);
   }
@@ -1881,7 +1884,7 @@
     if (!canCloud()) return;
     clearTimeout(syncTimer);
     syncTimer = null;
-    syncMsg = isThinState(state)&&!hasPendingPlanDeletes() ? "Saving settings…" : "Saving to sheet…";
+    syncMsg = isThinState(state)&&!hasPendingPlanDeletes() ? "Saving settings…" : storeText("Saving to sheet…", "Saving to your account…");
     syncOk = false;
     pushCloud();
   }
@@ -1909,6 +1912,15 @@
     if (syncTimer) return;
     if (!force && Date.now() - lastPullAt < 8000) return;
     pullCloud();
+  }
+
+  /* RESYNC-1 · opening Journal / More, or coming back to the browser tab, used to force a full pull every
+     time (settings + trades + plans, then a price check), even seconds after the last one. Now it pulls
+     only when the last pull is older than 30 s. Sync now and the 12 s Journal timer are unchanged. */
+  var RESYNC_STALE_MS = 30 * 1000;
+  function requestPullIfStale() {
+    if (Date.now() - lastPullAt < RESYNC_STALE_MS) return;
+    requestPull(true);
   }
 
   function pullCloud() {
@@ -1941,7 +1953,7 @@
         }
         if (isThinState(state) && !isThinState(remote)) {
           syncOk = true;
-          syncMsg = "Loaded from your sheet";
+          syncMsg = storeText("Loaded from your sheet", "Loaded from your account");
           applyRemote(remote);
           return;
         }
@@ -1953,7 +1965,7 @@
         var remoteN = realTradeCount(remote);
         if (state.updatedAt && remote.updatedAt && state.updatedAt > remote.updatedAt && localN < remoteN) {
           syncOk = true;
-          syncMsg = "Loaded from your sheet";
+          syncMsg = storeText("Loaded from your sheet", "Loaded from your account");
           applyRemote(remote);
           return;
         }
@@ -1963,7 +1975,7 @@
         }
         if (!state.updatedAt || (remote.updatedAt && remote.updatedAt > state.updatedAt)) {
           syncOk = true;
-          syncMsg = "Loaded from your sheet";
+          syncMsg = storeText("Loaded from your sheet", "Loaded from your account");
           applyRemote(remote);
           return;
         }
@@ -11043,7 +11055,7 @@
     hold: "Amber Held long on open Journal after this many hours. Nudge only - not a hard lock. Past that clock you may be in a short swing hold on purpose.",
     lane: "Journal lane cues adds HOLD/DECIDE/ACT tag on the open lane (Hours outlook stays in the manage card only).",
     palette: "Device-only colour palette. Does not change signals, safeguards, cloud data or another device.",
-    sheet: "Phone and laptop share one Google Sheet. A browser with only the example trade cannot overwrite that sheet. If a log vanished, check Drive, that file, File, Version history, or a Backup JSON if you saved one."
+    sheet: storeText("Phone and laptop share one Google Sheet. A browser with only the example trade cannot overwrite that sheet. If a log vanished, check Drive, that file, File, Version history, or a Backup JSON if you saved one.", "Phone and laptop share one account. A browser with only the example trade cannot overwrite your saved journal. If a log vanished, open a Backup JSON if you saved one.")
   };
   function moreTag(key) {
     if (!MORE_HELP[key]) return "";
@@ -11627,7 +11639,7 @@
       '<div class="more-screen">' +
         '<div class="page-head more-head"><div><h2>More</h2>' +
           '<p class="status ' + (syncOk ? "live" : "sample") + '">' + esc(syncMsg) +
-            " · trades live in your Google Sheet.</p></div>" +
+            storeText(" · trades live in your Google Sheet.</p></div>", " · trades are saved to your account.</p></div>") +
           '<button class="btn secondary more-updates" type="button" data-page="updates">Updates</button>' +
         "</div>" +
         moreFilterRailHtml() +
@@ -11650,7 +11662,7 @@
           "<p>A row logged with <b>Log this buy</b> keeps the gate verdicts it was logged under, one quiet line inside Details, and the closed list grows a <b>By gate</b> panel after three stamped rows: rows, win rate and average R split by what passed and what did not. Your own sample, read backwards. No forecast.</p>", true) +
         manualSec("21 Sep 2026 — SYNC1 · deletes that stick, a sync that fits, and a torn sheet that is refused instead of replaced",
           "<p class=\"update-when\">Previous pass. Three repairs to the cloud sync, from reading the code that does it. No new buttons, nothing to learn.</p>" +
-          "<p>A delete is now a delete. Removing a trade leaves a marker that travels with the sync, and both the sheet and any device that pulls honour it — so a phone still holding the old row cannot put it back. Deleting your last trade used to be answered with “Refused to overwrite your journal with empty sample data” and the row quietly stayed. The rule is delete-wins: if one device deletes a row that another device edited in the meantime, that edit is lost. There is no “recently deleted” list and nothing to undo — the Journal looks exactly as it did.</p>" +
+          storeText("<p>A delete is now a delete. Removing a trade leaves a marker that travels with the sync, and both the sheet and any device that pulls honour it — so a phone still holding the old row cannot put it back. Deleting your last trade used to be answered with “Refused to overwrite your journal with empty sample data” and the row quietly stayed. The rule is delete-wins: if one device deletes a row that another device edited in the meantime, that edit is lost. There is no “recently deleted” list and nothing to undo — the Journal looks exactly as it did.</p>", "<p>A delete is now a delete. Removing a trade leaves a marker that travels with the sync, and both your account and any device that pulls honour it — so a phone still holding the old row cannot put it back. Deleting your last trade used to be answered with “Refused to overwrite your journal with empty sample data” and the row quietly stayed. The rule is delete-wins: if one device deletes a row that another device edited in the meantime, that edit is lost. There is no “recently deleted” list and nothing to undo — the Journal looks exactly as it did.</p>") +
           "<p>Sync stopped growing. A save used to ship every saved coin’s 168-candle history, which any device can refetch in a second: 12 peeked coins made one save about 308k characters against a 200k limit. The same 12 coins now cost about 31k, measured by this app’s own line under the coin library. Candles are dropped only when sending — nothing is removed from your device, so charts and the Scout cues behave as before. The practical ceiling moves from roughly 13 saved coins to a couple of hundred.</p>" +
           "<p>The _JournalApp tab is safer to write. Saves now take the same 20-second script lock the coin list already used, the marker and the data go out in one write instead of three, and a torn or unreadable document is now an error that stops the save — “Saved journal could not be read, so nothing was overwritten” — instead of being mistaken for an empty journal and replaced.</p>" +
           "<p>Gates, Tide, Timing, sizing, your fixed Entry, the Review/Apply pair and the candle chart are all the same code they were.</p>", true) +
@@ -11944,7 +11956,7 @@
           "<ul>" +
             "<li><b>Find · Library · Favourites · Scout</b> — Find any CoinGecko coin; Library saves coins; favourites have " + "no seat cap" + "; Scout glances Tide/Hour/Loc from books or one Peek without switching the active coin. One active pair at a time; each coin keeps its own tape. Day stop is the whole account.</li>" +
             "<li>No volume and no portfolio view.</li>" +
-            "<li>Trades live in this browser and sync to a hidden Google Sheet (_JournalApp or Crypto Scalping Journal — App Sync).</li>" +
+            storeText("<li>Trades live in this browser and sync to a hidden Google Sheet (_JournalApp or Crypto Scalping Journal — App Sync).</li>", "<li>Trades live in this browser and sync to your Supabase account. Each account only sees its own data.</li>") +
             "<li>A browser with only the example trade cannot overwrite a fat journal. Pull prefers the copy with real trades.</li>" +
             "<li>Cards show net P/L after Maker/Taker × 2. Log from Sizer uses Taker. Stats need about 20 closed trades.</li>" +
             "<li>CSV / JSON export. Backup JSON in Settings. Reset clears this browser only.</li>" +
@@ -11973,7 +11985,7 @@
         p1ManualHtml() +
         manualSec("1. What this app is",
           "<p>This is a ticket planner and a trade log. It does not place orders. Revolut X does that. You copy prices from here to Revolut, then come back and tap Log.</p>" +
-          "<p>Phone and laptop share one Google Sheet. Fetch pulls a live price so the Picture is fresh. Fetch does not place a trade.</p>" +
+          storeText("<p>Phone and laptop share one Google Sheet. Fetch pulls a live price so the Picture is fresh. Fetch does not place a trade.</p>", "<p>Phone and laptop share one account. Fetch pulls a live price so the Picture is fresh. Fetch does not place a trade.</p>") +
           "<p><b>Three layers:</b> <b>Horizons</b> (months / weeks / days) + Market <b>Swing map</b> / grey cone are multi-day backdrop. <b>Gates</b> are same-session scalp Bid rules (Cheaper half, Hour cool, day stop). Holding overnight is a short swing you manage — not what Climate OK means.</p>",
           true) +
         manualSec("1b. Swing backdrop vs scalp",
@@ -12097,10 +12109,10 @@
           "<p>Trend & RSI (from Settings) is the 16 daily closes behind the spark line, plus Hour RSI after Fetch. Daily colour follows RSI, not the UP trend. You rarely need that page once Fetch works.</p>") +
         manualSec("13. Settings, sync, backup",
           "<p>Settings holds capital, risk %, fees, min R:R, day loss cap, profit target, the 2-loss streak, and Coin library (Library + favourites).</p>" +
-          "<p>Journal pulls the Google Sheet when you open it, when you come back to the tab, and about every 12 seconds while you stay on Journal. You should not need a full refresh to see a trade logged on the other device. Sync now still forces a pull.</p>" +
+          storeText("<p>Journal pulls the Google Sheet when you open it, when you come back to the tab, and about every 12 seconds while you stay on Journal. You should not need a full refresh to see a trade logged on the other device. Sync now still forces a pull.</p>", "<p>Journal pulls your account when you open it (if the last pull is over 30 seconds old), when you come back to the tab, and about every 12 seconds while you stay on Journal. You should not need a full refresh to see a trade logged on the other device. Sync now still forces a pull.</p>") +
           "<p>Phone and laptop must use the same deployed web app. A browser with only the example trade cannot overwrite a real journal.</p>" +
-          "<p>If a log vanished: Drive → search Crypto Scalping Journal — App Sync (or the Sheet you attached the script to) → File → Version history. Or open a Backup JSON you saved.</p>" +
-          "<p>Reset sample data clears this browser only. The sheet copy is kept. Tap Sync now to get it back.</p>" +
+          storeText("<p>If a log vanished: Drive → search Crypto Scalping Journal — App Sync (or the Sheet you attached the script to) → File → Version history. Or open a Backup JSON you saved.</p>", "<p>If a log vanished: open a Backup JSON you saved. Your journal is stored in your Supabase account, separate from every other account.</p>") +
+          storeText("<p>Reset sample data clears this browser only. The sheet copy is kept. Tap Sync now to get it back.</p>", "<p>Reset sample data clears this browser only. Your account copy is kept. Tap Sync now to get it back.</p>") +
           "<p>Updates is on this More page. It is a changelog, not a buy signal.</p>") +
         manualSec("14. Training",
           "<p>Training adds a ? on boxes. Train / Exit and Walk live on the day bar (and Trade / Training in the desktop nav). Tap any status pill for a tip. Open card wash = ticket vs Entry; bar glow = tape — different signals. Soft hold hours (Settings) only nudges Held long. Trade mode hides tips. The Manual is always here even in Trade mode.</p>" +
@@ -13783,7 +13795,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
       hideCoach();
       hidePillPop();
       render();
-      if (page === "journal" || page === "settings") requestPull(true);
+      if (page === "journal" || page === "settings") requestPullIfStale();
       return;
     }
     var btn = e.target.closest("[data-action]");
@@ -14140,7 +14152,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
     } else if (action === "backup") {
       downloadText("scalping-journal-backup.json", JSON.stringify(state, null, 2), "application/json");
     } else if (action === "reset") {
-      if (confirm("Clear trades on THIS phone or laptop only? The Google Sheet copy is kept. Tap Sync now after if you want it back.")) {
+      if (confirm(storeText("Clear trades on THIS phone or laptop only? The Google Sheet copy is kept. Tap Sync now after if you want it back.", "Clear trades on THIS phone or laptop only? Your account copy is kept. Tap Sync now after if you want it back."))) {
         state = defaultState();
         draft = blankTrade(state.settings.coinTicker);
         save();
@@ -14236,7 +14248,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
   document.addEventListener("visibilitychange", function () {
     if (document.hidden) return;
     syncCoinsNow();
-    requestPull(true);
+    requestPullIfStale();
     maybeRefreshLive();
   });
   refreshTimer = setInterval(function () {
@@ -15214,4 +15226,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4601df99ff2221b',t:'MTc5MTI0MjAwOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a464d6364cad8cad',t:'MTc5MTI5MTQ5Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
