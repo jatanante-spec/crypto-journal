@@ -70,8 +70,8 @@ jobs:
 
           const runtimeScript = `<script>\n${runtime}\n</script>`;
           const output = index
-            .replace(stylesMarker, styles)
-            .replace(javascriptMarker, `${runtimeScript}\n${javascript}`);
+            .replace(stylesMarker, () => styles)
+            .replace(javascriptMarker, () => `${runtimeScript}\n${javascript}`);
 
           const functionDir = path.join(root, 'supabase', 'functions', 'journal-online');
           await mkdir(functionDir, { recursive: true });
