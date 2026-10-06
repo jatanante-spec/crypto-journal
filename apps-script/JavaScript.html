@@ -378,6 +378,7 @@
   var syncTimer = null;
   var pullEpoch = 0;
   var applyingRemote = false;
+  var applyingOtherTab = false;   /* TABS-1: true while adopting a change another tab of this app just saved */
   var coach = { id: null, tour: false, step: 0 };
   /** Market swing map: Low/High price cards stay until tapped off. */
   var swingPivotHints = { lo: false, hi: false };
@@ -1639,7 +1640,7 @@
       keepLibraryTicker(activeCoinIntent||state.settings.coinTicker);
       state.settings.coinLibrary=library;
       state.settings.watchlist=rows.filter(function(c){return c.favourite;}).map(function(c){return c.ticker;});
-      normalizeWatchlist(state.settings);localStorage.setItem(KEY,JSON.stringify(state));
+      normalizeWatchlist(state.settings);if(!applyingOtherTab)localStorage.setItem(KEY,JSON.stringify(state));   /* TABS-1 */
       coinSyncSnapshot=snapshot;coinSyncReady=true;
     }finally{coinSyncApplying=false;}
   }
@@ -1838,11 +1839,12 @@
           : new Date().toISOString())
       : next.updatedAt;
     if(coinSyncSnapshot)applyCoinSnapshot(coinSyncSnapshot);
-    localStorage.setItem(KEY, JSON.stringify(state));
+    if (!applyingOtherTab) localStorage.setItem(KEY, JSON.stringify(state));   /* TABS-1: writing back here woke the other tab, which wrote back too, forever */
     draft = blankTrade(state.settings.coinTicker);
     applyingRemote = false;
     render();
     if (remotePlanIdsToPurge.length) purgeDeletedPlansOnCloud(remotePlanIdsToPurge);
+    if (applyingOtherTab) return;   /* TABS-1: the tab that saved it also stores and uploads it */
     if (mergedScoutBooks.preserved) {
       state.updatedAt=new Date().toISOString();
       localStorage.setItem(KEY, JSON.stringify(state));
@@ -13916,6 +13918,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
       hidePillPop();
       render();
       if (page === "journal" || page === "settings") requestPullIfStale();
+      if (page === "market") maybeRefreshLive();   /* MARKET-FETCH-1: no waiting for the timer when Market opens on old or sample data */
       return;
     }
     var btn = e.target.closest("[data-action]");
@@ -14399,9 +14402,10 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
       return;
     }
     if (e.key !== KEY || !e.newValue || applyingRemote) return;
+    applyingOtherTab = true;
     try {
       applyRemote(JSON.parse(e.newValue));
-    } catch (err) {}
+    } catch (err) {} finally { applyingOtherTab = false; }
   });
 
   window.addEventListener("scroll", function () {
