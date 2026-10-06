@@ -13,6 +13,10 @@
 (function () {
   'use strict';
 
+  // Tells the shared app code it is running on Supabase, so messages say "your account"
+  // instead of "Google Sheet" (BACKEND-WORDING-1 in JavaScript.html).
+  window.CJ_BACKEND = 'supabase';
+
   var PROJECT_URL = 'https://cvwdegezormxxhskojmf.supabase.co';
   var MARKET_FUNCTION_PATH = '/functions/v1/market-data';
   var KEY_STORAGE = 'crypto-journal-dev-supabase-anon-key-v1';
