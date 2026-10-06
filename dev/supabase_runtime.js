@@ -108,24 +108,70 @@
     return fallback || 'Supabase request failed.';
   }
 
-  async function refreshSession() {
-    if (!session || !session.refresh_token || !anonKey) return false;
-    var response = await fetch(PROJECT_URL + '/auth/v1/token?grant_type=refresh_token', {
-      method: 'POST',
-      headers: { apikey: anonKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: session.refresh_token })
-    });
-    var text = await response.text();
-    var body = text ? JSON.parse(text) : null;
-    if (!response.ok || !body || !body.access_token) return false;
-    session = body;
-    saveJson(SESSION_STORAGE, session);
-    return true;
+  // Expired or revoked sessions: forget them and show the sign-in screen
+  // instead of leaving the app stuck on repeated "401" errors.
+  var sessionExpiredShown = false;
+  function handleExpiredSession() {
+    session = null;
+    try { localStorage.removeItem(SESSION_STORAGE); } catch (_) {}
+    if (!sessionExpiredShown && document.body) {
+      sessionExpiredShown = true;
+      var badge = document.getElementById('cj-supabase-dev-badge');
+      if (badge) badge.remove();
+      var detail = document.getElementById('cj-supabase-dev-account-detail');
+      if (detail) detail.remove();
+      if (!document.getElementById('cj-supabase-dev-auth')) authUi('Your session expired. Please sign in again.');
+    }
+  }
+
+  // Several requests can hit 401 at the same moment (loadJournalState runs
+  // three in parallel). Share one refresh call so the same refresh token is
+  // never spent multiple times, which Supabase treats as token reuse.
+  var refreshInFlight = null;
+  function refreshSession() {
+    if (!session || !session.refresh_token || !anonKey) return Promise.resolve(false);
+    if (refreshInFlight) return refreshInFlight;
+    var refreshToken = session.refresh_token;
+    refreshInFlight = (async function () {
+      try {
+        var response = await fetch(PROJECT_URL + '/auth/v1/token?grant_type=refresh_token', {
+          method: 'POST',
+          headers: { apikey: anonKey, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: refreshToken })
+        });
+        var text = await response.text();
+        var body = null;
+        try { body = text ? JSON.parse(text) : null; } catch (_) { body = null; }
+        if (!response.ok || !body || !body.access_token) {
+          // 4xx = refresh token invalid/expired/revoked. Network or 5xx errors
+          // keep the session so a temporary outage does not sign the user out.
+          if (response.status >= 400 && response.status < 500) handleExpiredSession();
+          return false;
+        }
+        session = body;
+        saveJson(SESSION_STORAGE, session);
+        return true;
+      } catch (_) {
+        return false;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
+    return refreshInFlight;
+  }
+
+  // Refresh shortly before the access token expires rather than waiting for
+  // a request to fail first.
+  async function ensureFreshSession() {
+    if (!session || !session.access_token) return;
+    var expiresAt = Number(session.expires_at || 0);
+    if (expiresAt && expiresAt - Math.floor(Date.now() / 1000) < 60) await refreshSession();
   }
 
   async function request(path, options, retried) {
     if (!anonKey) throw new Error('The development site has not been configured with its public Supabase key yet.');
     options = options || {};
+    if (!retried && path.indexOf('/auth/v1/logout') !== 0) await ensureFreshSession();
     var headers = new Headers(options.headers || {});
     headers.set('apikey', anonKey);
     if (session && session.access_token) headers.set('Authorization', 'Bearer ' + session.access_token);
@@ -136,8 +182,13 @@
     var body = null;
     try { body = text ? JSON.parse(text) : null; } catch (_) { body = text; }
 
-    if (response.status === 401 && !retried && await refreshSession()) {
+    var hadSession = !!session;
+    if (response.status === 401 && !retried && session && await refreshSession()) {
       return request(path, options, true);
+    }
+    if (response.status === 401 && hadSession && path.indexOf('/auth/v1/logout') !== 0) {
+      handleExpiredSession();
+      throw new Error('Your session expired. Please sign in again.');
     }
     if (!response.ok) throw new Error(response.status + ': ' + apiError(body, response.statusText));
     return body;
@@ -440,6 +491,25 @@
     };
   }
 
+  // Delete tombstoned rows in a few batched requests (source_id=in.(...))
+  // instead of one DELETE per id. Previously every save could fire up to
+  // 1,000 parallel requests once the tombstone lists filled up.
+  var DELETE_BATCH = 80;
+  function pgQuote(value) {
+    return '"' + String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+  }
+  async function deleteBySourceIds(table, userId, ids) {
+    ids = arrayOrEmpty(ids).filter(Boolean);
+    for (var i = 0; i < ids.length; i += DELETE_BATCH) {
+      var chunk = ids.slice(i, i + DELETE_BATCH);
+      await request('/rest/v1/' + table + '?user_id=' + eq(userId) +
+        '&source_id=' + encodeURIComponent('in.(' + chunk.map(pgQuote).join(',') + ')'), {
+        method: 'DELETE',
+        headers: { Prefer: 'return=minimal' }
+      });
+    }
+  }
+
   async function saveJournalState(payload) {
     var userId = currentUserId();
     payload = payload || {};
@@ -482,27 +552,13 @@
     }
 
     var deletedIds = Object.keys(planDeletedMap(deletedPlans));
-    if (deletedIds.length) {
-      await Promise.all(deletedIds.map(function (id) {
-        return request('/rest/v1/saved_plans?user_id=' + eq(userId) + '&source_id=' + eq(id), {
-          method: 'DELETE',
-          headers: { Prefer: 'return=minimal' }
-        });
-      }));
-    }
+    await deleteBySourceIds('saved_plans', userId, deletedIds);
 
     // Journal deletion is separate from Saved Plan deletion. Only explicit
     // Journal tombstones reach this loop; linked trades are never touched by
     // deleting a Saved Plan.
     var deletedTradeIds = Object.keys(tradeDeletedMap(deletedTrades));
-    if (deletedTradeIds.length) {
-      await Promise.all(deletedTradeIds.map(function (id) {
-        return request('/rest/v1/journal_trades?user_id=' + eq(userId) + '&source_id=' + eq(id), {
-          method: 'DELETE',
-          headers: { Prefer: 'return=minimal' }
-        });
-      }));
-    }
+    await deleteBySourceIds('journal_trades', userId, deletedTradeIds);
     return { ok: true, updatedAt: safePayload.updatedAt || new Date().toISOString() };
   }
 
@@ -550,6 +606,9 @@
   }
 
   async function dispatch(method, args) {
+    if (!session || !session.access_token) {
+      throw new Error('Sign in to load data and fetch prices.');
+    }
     if (method === 'loadJournalState') return loadJournalState();
     if (method === 'saveJournalState') return saveJournalState(args[0] || {});
     if (method === 'deleteSavedPlan') return deleteSavedPlan(args[0]);
@@ -597,7 +656,7 @@
     window.google.script.run = makeRunner({});
   }
 
-  function authUi() {
+  function authUi(initialMessage) {
     var root = document.createElement('div');
     root.id = 'cj-supabase-dev-auth';
     root.innerHTML = '<style>' +
@@ -624,6 +683,7 @@
     var emailInput = document.getElementById('cj-sb-email');
     var passwordInput = document.getElementById('cj-sb-password');
     var status = document.getElementById('cj-sb-status');
+    if (initialMessage) status.textContent = initialMessage;
 
     async function authenticate(mode) {
       var email = emailInput.value.trim();
