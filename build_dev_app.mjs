@@ -22,8 +22,8 @@ if (!index.includes(stylesMarker) || !index.includes(javascriptMarker)) {
 
 const runtimeScript = `<script>\n${runtime}\n</script>`;
 const output = index
-  .replace(stylesMarker, styles)
-  .replace(javascriptMarker, `${runtimeScript}\n${javascript}`);
+  .replace(stylesMarker, () => styles)
+  .replace(javascriptMarker, () => `${runtimeScript}\n${javascript}`);
 
 await mkdir(outputDir, { recursive: true });
 await writeFile(path.join(outputDir, 'index.html'), output, 'utf8');
