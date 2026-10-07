@@ -2137,6 +2137,32 @@
     };
   }
 
+  /* CLIMATE-PLUS-1 · one Volume rule, chosen in More > Look, labels the Evidence read below AND the
+     climate Participation reading, so the two can never disagree about the same hour. Display only. */
+  var VOLUME_RULES = {
+    sensitive: { short: "Sensitive", label: "Sensitive \u00b7 0.85\u00d7 / 1.2\u00d7", quiet: 0.85, active: 1.2, activeIncl: false, extreme: null,
+      words: { thin: "Quiet", normal: "Normal", active: "Confirming" },
+      detail: "Quiet below 0.85\u00d7, Confirming above 1.2\u00d7 the previous-20-hour median. Reacts to small changes, so most hours read Quiet or Confirming." },
+    strict: { short: "Strict", label: "Strict \u00b7 0.6\u00d7 / 1.5\u00d7 / 2.5\u00d7", quiet: 0.6, active: 1.5, activeIncl: true, extreme: 2.5,
+      words: { thin: "Quiet", normal: "Normal", active: "Active", extreme: "Extreme" },
+      detail: "Quiet below 0.6\u00d7, Active from 1.5\u00d7, Extreme from 2.5\u00d7 the previous-20-hour median. Only flags clearly unusual hours; about half of all hours read Normal." }
+  };
+  function volumeRuleValue() {
+    var v = state && state.settings ? String(state.settings.volumeRule || "sensitive") : "sensitive";
+    return VOLUME_RULES[v] ? v : "sensitive";
+  }
+  function volumeRuleState(ratio) {
+    var r = VOLUME_RULES[volumeRuleValue()];
+    if (ratio < r.quiet) return "thin";
+    if (r.extreme != null && ratio >= r.extreme) return "extreme";
+    if (r.activeIncl ? ratio >= r.active : ratio > r.active) return "active";
+    return "normal";
+  }
+  function volumeSourceShort() {
+    var vs = state && state.market && state.market.hourlyFeed && state.market.hourlyFeed.volumeSource;
+    return vs && vs.status === "READY" && vs.source ? String(vs.source) : "";
+  }
+
   /** Volume Evidence display/audit layer. It never feeds the existing entry verdict or score. */
   function hourVolumeEvidenceRead(volumes, closes, ats, feed) {
     volumes = Array.isArray(volumes) ? volumes : [];
@@ -2153,15 +2179,16 @@
     };
     if (volumes.length < 8) return unknown("Need at least 8 hourly volume observations before showing a volume read.");
     var last = volumes[volumes.length - 1];
-    if (last == null || !isFinite(Number(last)) || Number(last) < 0) {
-      return unknown("The latest completed hourly volume is missing or invalid. It is not treated as zero.");
+    // A reported 0 is treated as missing too: feeds print 0 for hours they have no figure for.
+    if (last == null || !isFinite(Number(last)) || Number(last) <= 0) {
+      return unknown("The latest completed hourly volume is missing, zero or invalid. Missing volume is not quiet volume.");
     }
     last = Number(last);
     var prior = [];
     var i;
     for (i = Math.max(0, volumes.length - 21); i < volumes.length - 1; i++) {
       var v = volumes[i];
-      if (v != null && isFinite(Number(v)) && Number(v) >= 0) prior.push(Number(v));
+      if (v != null && isFinite(Number(v)) && Number(v) > 0) prior.push(Number(v));
     }
     if (prior.length < 15) return unknown("Not enough valid prior hourly volume observations for a stable median.");
     prior.sort(function (a, b) { return a - b; });
@@ -2169,17 +2196,16 @@
     var baseline = prior.length % 2 ? prior[mid] : (prior[mid - 1] + prior[mid]) / 2;
     if (!(baseline > 0) || !isFinite(baseline)) return unknown("The prior volume baseline is empty or invalid.");
     var ratio = last / baseline;
-    var state = ratio < 0.6 ? "thin" : ratio >= 2.5 ? "extreme" : ratio >= 1.5 ? "active" : "normal";
-    var label = state === "thin" ? "Thin · " + num(ratio, 1) + "× median"
-      : state === "extreme" ? "Extreme · " + num(ratio, 1) + "× median"
-      : state === "active" ? "Active · " + num(ratio, 1) + "× median"
-      : "Normal · " + num(ratio, 1) + "× median";
+    var rule = VOLUME_RULES[volumeRuleValue()];
+    var state = volumeRuleState(ratio);
+    // 2 decimals: 0.58\u00d7 and 0.64\u00d7 both round to "0.6\u00d7" and hide which side of a threshold they sit.
+    var label = (rule.words[state] || "Normal") + " · " + num(ratio, 2) + "× median";
     var say = state === "thin"
-      ? "The latest completed hour is " + num(ratio, 1) + "× the previous-20-hour median. Weaker confirmation; not a sell signal."
+      ? "The latest completed hour is " + num(ratio, 2) + "× the previous-20-hour median. Weaker confirmation; not a sell signal."
       : state === "extreme"
-        ? "The latest completed hour is " + num(ratio, 1) + "× the previous-20-hour median. Extreme activity can be continuation or exhaustion; review the close and structure."
+        ? "The latest completed hour is " + num(ratio, 2) + "× the previous-20-hour median. Extreme activity can be continuation or exhaustion; review the close and structure."
         : state === "active"
-          ? "The latest completed hour is " + num(ratio, 1) + "× the previous-20-hour median. Participation supports context only; it does not unlock a BUY."
+          ? "The latest completed hour is " + num(ratio, 2) + "× the previous-20-hour median. Participation supports context only; it does not unlock a BUY."
           : "The latest completed hour is near its previous-20-hour median. No unusual volume confirmation is present.";
     return {state:state,label:label,say:say,ratio:ratio,baseline:baseline,last:last,barAt:ats.length?ats[ats.length-1]:null,source:feed.source||"Hourly feed",sourceStatus:feed.status||"READY",ready:true,priorCount:prior.length};
   }
@@ -6463,15 +6489,15 @@
       '<p class="climate-boundary">Observation only · '+esc(r.label)+' does not change entry Gates, sizing or ticket state.</p></div>';
   }
   function climateRingHtml(readings){
-    var rad = 34, c = 2*Math.PI*rad, seg = c/4, gap = 6, dash = seg - gap;
+    var rad = 34, c = 2*Math.PI*rad, seg = c/Math.max(1, readings.length), gap = readings.length > 4 ? 4 : 6, dash = seg - gap;
     var aligned = readings.filter(function(x){ return x.tone === 'good'; }).length;
-    return '<div class="climate-ring"><svg viewBox="0 0 88 88" role="img" aria-label="'+aligned+' of 4 readings aligned">' +
+    return '<div class="climate-ring"><svg viewBox="0 0 88 88" role="img" aria-label="'+aligned+' of '+readings.length+' readings aligned">' +
       '<circle cx="44" cy="44" r="'+rad+'" fill="none" stroke="#22314f" stroke-width="11"/>' +
       readings.map(function(x, i){
         return '<circle cx="44" cy="44" r="'+rad+'" fill="none" stroke="'+(CLIMATE_TONE_HEX[x.tone]||CLIMATE_TONE_HEX.unknown)+
           '" stroke-width="11" stroke-dasharray="'+dash.toFixed(1)+' '+(c-dash).toFixed(1)+'" stroke-dashoffset="'+(-(i*seg)).toFixed(1)+
           '" transform="rotate(-90 44 44)" stroke-linecap="round" opacity="'+(x.tone==='unknown'?0.32:1)+'"/>'; }).join('') +
-      '</svg><span class="climate-ring-centre"><b>'+aligned+'<i>/4</i></b><small>ALIGNED</small></span></div>';
+      '</svg><span class="climate-ring-centre"><b>'+aligned+'<i>/'+readings.length+'</i></b><small>ALIGNED</small></span></div>';
   }
   /* CLIMATE-LAYOUT-3 · E · One panel. The four readings share one box: rows on a phone,
      columns on a wide screen, with one shared details drawer. Same readings, numbers and
@@ -6500,10 +6526,28 @@
       ends = at([[0,'0'],[30,'30'],[50,'50'],[70,'70'],[100,'100']]);
       legend = 'Hourly RSI. Shaded: 30 or below is stretched, 70 or above is hot / late.';
     } else if (s.kind === 'ratio'){
+      var rlo = s.lo > 0 ? s.lo : 0.85, rhi = s.hi > 0 ? s.hi : 1.2, xlo = rlo * 50, xhi = rhi * 50;
       pos = clampPct(s.v / 2 * 100);
-      h = zone(42.5,60) + tick(42.5) + tick(60);
-      ends = at([[0,'0\u00d7'],[42.5,'0.85\u00d7'],[60,'1.2\u00d7'],[100,'2\u00d7']]);
-      legend = 'Completed-hour volume against the recent median. Shaded: normal band.';
+      h = zone(xlo,xhi) + tick(xlo) + tick(xhi);
+      ends = at([[0,'0\u00d7'],[xlo,num(rlo,2).replace(/0$/,'')+'\u00d7'],[xhi,num(rhi,2).replace(/0$/,'')+'\u00d7'],[100,'2\u00d7']]);
+      legend = 'Completed-hour volume against the recent median. Shaded: normal band for your Volume rule.';
+    } else if (s.kind === 'pctl'){
+      pos = clampPct(s.v);
+      h = zone(0,25) + zone(75,100) + tick(25) + tick(75) + tick(95);
+      ends = at([[0,'0'],[25,'25th'],[75,'75th'],[100,'100th']]);
+      legend = 'Where this hour\u2019s ATR sits among the recent hours. Shaded: unusually calm (left) and unusually wide (right); tick at 95th = extreme.';
+    } else if (s.kind === 'fund'){
+      var fmax = (s.thr > 0 ? s.thr : 0.03) * 2;
+      pos = clampPct(50 + s.v / fmax * 50);
+      h = zone(0,25) + zone(75,100) + tick(50,'ref') + tick(50 + (s.thr > 0 ? s.thr / 3 : 0.01) / fmax * 50);
+      ends = at([[0,'\u2212'+num(fmax,2)+'%'],[50,'0'],[100,'+'+num(fmax,2)+'%']]);
+      legend = 'Funding per period. Shaded: crowded \u2014 shorts paying (left), longs paying (right). Small tick: the usual small positive resting rate.';
+    } else if (s.kind === 'trio'){
+      var trioCol = { up:CLIMATE_TONE_HEX.good, down:CLIMATE_TONE_HEX.bad, flat:CLIMATE_TONE_HEX.unknown };
+      return '<span class="climate-pn-trio">' + s.parts.map(function(p){
+          return '<i class="'+(p[1]?'':'none')+'" style="background:'+(trioCol[p[1]]||'transparent')+'"></i>'; }).join('') + '</span>' +
+        (big ? '<span class="climate-pn-trio-lab">' + s.parts.map(function(p){ return '<span>'+esc(p[0])+'</span>'; }).join('') + '</span>' +
+          '<span class="climate-pn-legend">One block per trend: green up, red down, grey flat. Shown side by side, never added up.</span>' : '');
     } else {
       pos = clampPct(s.v);
       h = zone(0,25) + zone(75,100) + tick(50);
@@ -6625,10 +6669,83 @@
   }
   function climateLayoutSettingsHtml() {
     var current = climateLayoutValue();
-    return '<p class="muted more-look-lead">Choose how the four independent readings are drawn. ' +
+    return '<p class="muted more-look-lead">Choose how the independent readings are drawn. ' +
       'Presentation only \u2014 the readings, numbers and boundaries are identical in every layout.</p>' +
       climateLayoutGroupsHtml(current) +
       moreChoiceNote(CLIMATE_LAYOUTS[current].label, CLIMATE_LAYOUTS[current].detail);
+  }
+  /* CLIMATE-PLUS-1 · Volatility, Backdrop and Positioning. Context only, like the other readings:
+     they do not change the climate status, entry Gates, sizing or tickets. Inputs are the small
+     market.climateCtx summary from market-data (Coinbase candles, OKX perpetual funding / open
+     interest). A part older than its freshness window, or missing, reads Unknown -- never guessed. */
+  var CLIMATE_COUNT_WORD = ['None','One','Two','Three','Four','Five','Six','Seven','Eight','Nine'];
+  function climateCtxPart(part, maxHours){
+    var x = part && part.at ? part : null;
+    if (!x) return null;
+    var age = Date.now() - Date.parse(x.at);
+    return isFinite(age) && age >= -600000 && age <= maxHours * 3600000 ? x : null;
+  }
+  function climatePctStr(x, dp){ return (x < 0 ? '\u2212' : '+') + Math.abs(x).toFixed(dp) + '%'; }
+  function climateOrd(n){ var sfx = ['th','st','nd','rd'], v = n % 100; return n + (sfx[(v - 20) % 10] || sfx[v] || sfx[0]); }
+  function climateTrendDir(x){
+    if (!x || !(x.close > 0) || !(x.ema > 0) || !(x.emaPrev > 0)) return null;
+    return x.close > x.ema && x.ema > x.emaPrev ? 'up' : x.close < x.ema && x.ema < x.emaPrev ? 'down' : 'flat';
+  }
+  function climatePlusReadings(usable, t){
+    var ctx = (state.market && state.market.climateCtx) || {}, price = Number(t.price) || 0;
+    var cur = String(state.settings.vsCurrency || 'gbp').toUpperCase(), coin = String(state.settings.coinTicker || 'SOL').toUpperCase();
+    var dg = priceDigits(price || 1), out = [];
+    // Volatility · hourly ATR(14) against its own last ~30 days
+    var vo = usable ? climateCtxPart(ctx.volatility, 3) : null;
+    var atrNow = vo ? (vo.currency === cur && vo.atr > 0 ? Number(vo.atr) : price > 0 ? vo.atrPct / 100 * price : 0) : 0;
+    if (vo && !(atrNow > 0 && isFinite(vo.pctl))) vo = null;
+    var volaValue = !vo ? 'Unknown' : vo.pctl < 25 ? 'Calm' : vo.pctl < 75 ? 'Normal' : vo.pctl < 95 ? 'Elevated' : 'Extreme';
+    var days = vo ? Math.max(1, Math.round(vo.hours / 24)) : 30, daily = currentAtr();
+    var tgt = Number(state.sizer && state.sizer.target) - Number(state.sizer && state.sizer.entry);
+    var tgtNote = vo && tgt > 0 && isFinite(tgt) ? ' Your draft target is ' + gbp(tgt, dg) + ' away: about ' +
+      (Math.pow(tgt / atrNow, 2) < 1 ? 'under 1' : num(Math.pow(tgt / atrNow, 2), Math.pow(tgt / atrNow, 2) < 10 ? 1 : 0)) +
+      ' typical hours of travel at this pace (moves grow roughly with the square root of time).' : '';
+    out.push({id:'volatility', label:'Volatility', value:volaValue,
+      tone: volaValue === 'Normal' ? 'good' : volaValue === 'Extreme' ? 'bad' : volaValue === 'Unknown' ? 'unknown' : 'mid',
+      detail: vo ? 'Hourly ATR ' + gbp(atrNow, dg) + ' \u00b7 ' + climateOrd(vo.pctl) + ' percentile of ' + days + ' days' : 'Validated hourly range data unavailable',
+      prose: 'Volatility is how far price typically travels in one completed hour, compared with its own last ' + days + ' days. It says nothing about direction. Calm means a target takes longer to reach; Elevated or Extreme means ordinary noise reaches a stop more easily. The daily figure is the one to size a swing stop against.' + tgtNote,
+      nums: [['Hourly ATR(14)', vo ? gbp(atrNow, dg) : 'Unknown'], ['ATR % of price', vo ? num(vo.atrPct, 2) + '%' : 'Unknown'],
+        [days + '-day percentile', vo ? climateOrd(vo.pctl) : 'Unknown'], ['Typical 4 h move', vo ? '\u00b1' + gbp(atrNow * 2, dg) : 'Unknown'],
+        ['Daily ATR(14)', daily > 0 ? gbp(daily, dg) + (price > 0 ? ' \u00b7 ' + num(daily / price * 100, 1) + '%' : '') : 'Unknown'],
+        ['Source', vo ? vo.source : 'Unavailable']],
+      key: vo ? '\u00b1' + gbp(atrNow, dg) + ' / h' : '', scale: vo ? {kind:'pctl', v:vo.pctl} : null});
+    // Backdrop · coin daily, coin 4-hour, BTC daily
+    var bd = usable && ctx.backdrop ? ctx.backdrop : {};
+    var parts = [[coin + ' daily', 'D', climateCtxPart(bd.coin, 51)], [coin + ' 4-hour', '4h', climateCtxPart(bd.h4, 11)]];
+    if (coin !== 'BTC') parts.push(['BTC daily', 'BTC', climateCtxPart(bd.btc, 51)]);
+    var known = parts.filter(function(p){ return climateTrendDir(p[2]); });
+    var up = known.filter(function(p){ return climateTrendDir(p[2]) === 'up'; }).length, dn = known.filter(function(p){ return climateTrendDir(p[2]) === 'down'; }).length;
+    var bdValue = !usable || known.length < 2 ? 'Unknown' : up >= 2 && dn === 0 ? 'Tailwind' : dn >= 2 && up === 0 ? 'Headwind' : 'Mixed';
+    var arrow = {up:'\u25B2', down:'\u25BC', flat:'\u2013'};
+    out.push({id:'backdrop', label:'Backdrop', value:bdValue,
+      tone: bdValue === 'Tailwind' ? 'good' : bdValue === 'Headwind' ? 'bad' : bdValue === 'Mixed' ? 'neutral' : 'unknown',
+      detail: bdValue === 'Unknown' ? 'Higher-timeframe trends unavailable' : parts.map(function(p){ return p[0] + ' ' + (climateTrendDir(p[2]) || 'unknown'); }).join(' \u00b7 '),
+      prose: 'Backdrop checks whether the bigger picture agrees with a long: the ' + coin + ' daily and 4-hour trends' + (coin !== 'BTC' ? ' and the BTC daily trend (BTC usually leads the market)' : '') + '. Up = close above a rising 20-period EMA; down = close below a falling one; anything else is flat. Completed candles only. Mixed is common and is not a warning on its own.',
+      nums: parts.map(function(p){ var d = climateTrendDir(p[2]);
+        return [p[0], d ? d.toUpperCase() + (p[1] !== 'BTC' ? ' \u00b7 EMA20 ' + priceGbp(p[2].ema) : '') : 'Unknown']; }).concat([['Source', 'Coinbase candles']]),
+      key: bdValue === 'Unknown' ? '' : parts.map(function(p){ var d = climateTrendDir(p[2]); return p[1] + (d ? arrow[d] : '?'); }).join(' '),
+      scale: bdValue === 'Unknown' ? null : {kind:'trio', parts: parts.map(function(p){ return [p[0], climateTrendDir(p[2])]; })}});
+    // Positioning · perpetual funding + open interest
+    var po = usable ? climateCtxPart(ctx.positioning, 3) : null;
+    if (po && !isFinite(po.funding)) po = null;
+    var ivl = po && po.intervalH > 0 ? Number(po.intervalH) : 8, thr = 0.03 * ivl / 8;
+    var poValue = !po ? 'Unknown' : po.funding >= thr ? 'Crowded long' : po.funding <= -thr ? 'Crowded short' : 'Balanced';
+    var oiTxt = po && po.oiChg24 != null && isFinite(po.oiChg24) ? climatePctStr(po.oiChg24, 1) : '';
+    out.push({id:'positioning', label:'Positioning', value:poValue,
+      tone: poValue === 'Balanced' ? 'neutral' : poValue === 'Unknown' ? 'unknown' : 'mid',
+      detail: po ? 'Funding ' + climatePctStr(po.funding, 3) + ' per ' + ivl + ' h' + (oiTxt ? ' \u00b7 open interest ' + oiTxt + ' in 24 h' : '') : 'Futures positioning unavailable',
+      prose: 'Positioning shows whether futures traders are leaning one way. Very positive funding means longs are crowded and sharp flushes down are more likely; very negative means crowded shorts and squeeze risk. Rising open interest means the crowd is growing. This is the global ' + coin + '-USDT perpetual market on OKX, not your ' + cur + ' pair.',
+      nums: [['Funding now', po ? climatePctStr(po.funding, 3) + ' / ' + ivl + ' h' : 'Unknown'],
+        ['Average (' + (po && po.fundingN ? po.fundingN : 30) + ' periods)', po && po.fundingAvg != null ? climatePctStr(po.fundingAvg, 3) : 'Unknown'],
+        ['Open interest', po && po.oiUsd > 0 ? '$' + num(po.oiUsd / 1e6, 0) + 'M' : 'Unknown'], ['OI change 24 h', oiTxt || 'Unknown'],
+        ['Source', po ? po.source : 'Unavailable']],
+      key: po ? climatePctStr(po.funding, 3) + ' / ' + ivl + 'h' : '', scale: po ? {kind:'fund', v:po.funding, thr:thr} : null});
+    return out;
   }
   function marketClimateHtml(f){
     var t=f.t||{},c=f.c||{},o=f.observation||{},fresh=f.fresh||marketFreshness();
@@ -6670,11 +6787,16 @@
     var momentumNums=[['Hourly RSI',t.hourRsi==null?'Unknown':num(t.hourRsi,1)],['Hourly direction',t.hourTrend||'Unknown'],['EMA20',ema?priceGbp(ema):'Unknown']];
     var momentumBody='<p>Momentum is descriptive here. RSI and hourly direction are not stand-alone triggers and do not override the existing verdict.</p><div class="market-climate-data-grid">'+climateDataCell('Hourly RSI',t.hourRsi==null?'Unknown':num(t.hourRsi,1))+climateDataCell('Hourly direction',t.hourTrend||'Unknown')+climateDataCell('EMA20',ema?priceGbp(ema):'Unknown')+'</div>';
     var ratio=t.volRatio!=null&&isFinite(Number(t.volRatio))?Number(t.volRatio):null;
-    var participationValue=!usable||!t.volReady?'Unknown':ratio!=null&&ratio<.85?'Quiet':ratio!=null&&ratio>1.2?'Confirming':'Normal';
-    var participationTone=participationValue==='Confirming'?'good':participationValue==='Quiet'?'mid':participationValue==='Normal'?'neutral':'unknown';
-    var participationDetail=!usable||!t.volReady?'Validated hourly volume unavailable':ratio==null?'Volume state available · ratio unknown':(num(ratio,1)+'× recent median');
-    var participationProse='Participation tests whether activity is confirming the move. A quiet move is not automatically bearish; it is simply weaker confirmation.';
-    var participationNums=[['State',t.volEvidenceLabel||t.volState||'Unknown'],['Ratio',ratio==null?'Unknown':num(ratio,1)+'× median'],['Bar',t.volBarAt?crSpan(t.volBarAt):'Unknown']];
+    // CLIMATE-PLUS-1 · same rule and same words as the Evidence read (More > Look > Volume rule).
+    var volRule=VOLUME_RULES[volumeRuleValue()],volSrc=volumeSourceShort();
+    var participationValue=!usable||!t.volReady?'Unknown':ratio==null?'Normal':(volRule.words[volumeRuleState(ratio)]||'Normal');
+    var participationTone=participationValue==='Confirming'||participationValue==='Active'?'good':participationValue==='Quiet'||participationValue==='Extreme'?'mid':participationValue==='Normal'?'neutral':'unknown';
+    var participationDetail=!usable||!t.volReady?'Validated hourly volume unavailable':ratio==null?'Volume state available · ratio unknown':(num(ratio,2)+'× recent median');
+    var participationProse='Participation tests whether activity is confirming the move. A quiet move is not automatically bearish; it is simply weaker confirmation.'+
+      (participationValue==='Extreme'?' Extreme volume can mark a climax as well as strength.':'')+
+      ' Hourly volume comes from '+(volSrc||'the hourly candle feed')+'; an hour without a volume figure counts as missing, never as quiet.';
+    var participationNums=[['State',t.volEvidenceLabel||t.volState||'Unknown'],['Ratio',ratio==null?'Unknown':num(ratio,2)+'× median'],['Bar',t.volBarAt?crSpan(t.volBarAt):'Unknown'],
+      ['Source',volSrc||'Candle feed'],['Volume rule',volRule.short]];
     var participationBody='<p>Participation tests whether activity is confirming the move. A quiet move is not automatically bearish; it is simply weaker confirmation.</p><div class="market-climate-data-grid">'+climateDataCell('State',t.volEvidenceLabel||t.volState||'Unknown')+climateDataCell('Ratio',ratio==null?'Unknown':num(ratio,1)+'× median')+climateDataCell('Bar',t.volBarAt?crSpan(t.volBarAt):'Unknown')+'</div>';
     var rangeKnown=Number(t.high)>Number(t.low)&&Number(t.price)>0;
     var locationValue=!usable||!rangeKnown?'Unknown':t.nearHigh?'Near high':t.nearLow?'Near low':t.locPct<50?'Lower half':'Upper half';
@@ -6693,12 +6815,13 @@
         key:momentumValue!=='Unknown'?'RSI '+num(t.hourRsi,1)+(t.hourTrend==='UP'?' \u25B2':t.hourTrend==='DOWN'?' \u25BC':''):'',
         scale:momentumValue!=='Unknown'?{kind:'rsi',v:Number(t.hourRsi)}:null},
       {id:'participation',label:'Participation',value:participationValue,detail:participationDetail,tone:participationTone,prose:participationProse,nums:participationNums,
-        key:participationValue!=='Unknown'&&ratio!=null?num(ratio,1)+'\u00d7 median':'',
-        scale:participationValue!=='Unknown'&&ratio!=null?{kind:'ratio',v:ratio}:null},
+        key:participationValue!=='Unknown'&&ratio!=null?num(ratio,2)+'\u00d7 median':'',
+        scale:participationValue!=='Unknown'&&ratio!=null?{kind:'ratio',v:ratio,lo:volRule.quiet,hi:volRule.active}:null},
       {id:'location',label:'Location',value:locationValue,detail:locationDetail,tone:locationTone,prose:locationProse,nums:locationNums,
         key:locationValue!=='Unknown'?priceGbp(t.price):'',
         scale:locationValue!=='Unknown'?{kind:'range',v:Number(t.locPct),lo:priceGbp(t.low),hi:priceGbp(t.high)}:null}
-    ];
+    ].concat(climatePlusReadings(usable,t));
+    var readingsTitle=(CLIMATE_COUNT_WORD[climateReadings.length]||String(climateReadings.length))+' independent readings';
     var track=['SUPPORTIVE','BALANCED','FRAGILE','UNKNOWN'].indexOf(status);if(track<0)track=1;
     var trackLabels=['Supportive','Balanced','Fragile','Unknown'];
     var trackHtml=trackLabels.map(function(label,i){return '<span class="market-climate-track-point '+(i===track?'active':'')+'">'+label+'</span>';}).join('');
@@ -6706,7 +6829,7 @@
     var methodObserved=invalid?'Completed close broke the latest structure reference.':c.hl?'A higher low and completed close are retained as hourly observations.':'The current validated hourly series does not establish a confirmed turn.';
     var methodInterpreted=invalid?'The earlier watch is invalidated; no new continuation confirmation exists.':c1==='Watch invalidated'?'The continuation watch is invalidated; no new entry is inferred.':c1||'No continuation conclusion is available.';
     var methodPractical=invalid?'Re-observe the next completed hour. Do not promote this layer into a new plan.':'Use the climate as context, then read the existing Gates and ticket independently.';
-    return '<section class="market-climate climate-'+tone+'" aria-labelledby="market-climate-title"><header class="market-climate-head"><div><small class="market-climate-kicker">Coin climate · observation layer</small><h2 id="market-climate-title">Market climate</h2><p>'+esc(fresh.label||'Freshness unavailable')+' · '+esc(String(f.coin||state.settings.coinTicker).toUpperCase())+' / '+esc(String(state.settings.vsCurrency||'gbp').toUpperCase())+'</p></div><span class="market-climate-status climate-'+tone+'"><i></i>'+esc(status+' · '+statusWord)+'</span></header><p class="market-climate-subtitle">'+esc(subtitle)+'</p><div class="market-climate-track" aria-label="Climate continuum">'+trackHtml+'</div><div class="market-climate-readout"><b>What the data says</b><span>'+esc(readout)+'</span></div><div class="market-climate-meta"><span>Completed hour · '+esc(barLabel)+'</span><span>Freshness · '+esc(fresh.label||'unknown')+'</span><span>T1 / C1 · observation only</span></div><div class="market-climate-glance"><div class="market-climate-glance-head"><h3>Four independent readings</h3><small>No magic composite · inspect each dimension</small></div>'+marketClimateLayoutHtml(climateReadings,barLabel)+'</div><section class="climate-story" aria-label="Latest change and what it means"><div class="climate-story-head"><small>Latest observed change</small><b>'+esc(invalid?'Structure weakened during the completed hour':obsLabel)+'</b><p>'+esc(invalid?'Earlier watch evidence remains in history; it is not rewritten.':'This is a descriptive observation, not an automatic entry instruction.')+'</p></div><ol class="climate-story-steps"><li><small><i>1</i>Observed</small><p>'+esc(methodObserved)+'</p></li><li><small><i>2</i>Interpreted</small><p>'+esc(methodInterpreted)+'</p></li><li><small><i>3</i>Practical</small><p>'+esc(methodPractical)+'</p></li></ol><details class="climate-story-evidence"><summary>Evidence behind the climate<small>Reference · continuation · feed</small></summary><div class="climate-story-evidence-body"><div class="market-climate-data-grid">'+climateDataCell('Structure reference',ref)+climateDataCell('Continuation',c1)+climateDataCell('Feed',t.volReady?'Hourly volume usable':'Check hourly feed')+'</div><p class="market-climate-footnote">Climate is a transparent descriptive layer. It does not change the existing engine, risk, sizing, plan, Journal or order behaviour. If evidence is stale or incomplete, the correct state is Unknown.</p></div></details></section><div class="market-climate-actions"><button type="button" class="btn secondary" data-action="cd-why">Open entry Gates separately</button><span>Climate explains the environment · Gates evaluate the ticket</span></div></section>';
+    return '<section class="market-climate climate-'+tone+'" aria-labelledby="market-climate-title"><header class="market-climate-head"><div><small class="market-climate-kicker">Coin climate · observation layer</small><h2 id="market-climate-title">Market climate</h2><p>'+esc(fresh.label||'Freshness unavailable')+' · '+esc(String(f.coin||state.settings.coinTicker).toUpperCase())+' / '+esc(String(state.settings.vsCurrency||'gbp').toUpperCase())+'</p></div><span class="market-climate-status climate-'+tone+'"><i></i>'+esc(status+' · '+statusWord)+'</span></header><p class="market-climate-subtitle">'+esc(subtitle)+'</p><div class="market-climate-track" aria-label="Climate continuum">'+trackHtml+'</div><div class="market-climate-readout"><b>What the data says</b><span>'+esc(readout)+'</span></div><div class="market-climate-meta"><span>Completed hour · '+esc(barLabel)+'</span><span>Freshness · '+esc(fresh.label||'unknown')+'</span><span>T1 / C1 · observation only</span></div><div class="market-climate-glance"><div class="market-climate-glance-head"><h3>'+esc(readingsTitle)+'</h3><small>No magic composite · inspect each dimension</small></div>'+marketClimateLayoutHtml(climateReadings,barLabel)+'</div><section class="climate-story" aria-label="Latest change and what it means"><div class="climate-story-head"><small>Latest observed change</small><b>'+esc(invalid?'Structure weakened during the completed hour':obsLabel)+'</b><p>'+esc(invalid?'Earlier watch evidence remains in history; it is not rewritten.':'This is a descriptive observation, not an automatic entry instruction.')+'</p></div><ol class="climate-story-steps"><li><small><i>1</i>Observed</small><p>'+esc(methodObserved)+'</p></li><li><small><i>2</i>Interpreted</small><p>'+esc(methodInterpreted)+'</p></li><li><small><i>3</i>Practical</small><p>'+esc(methodPractical)+'</p></li></ol><details class="climate-story-evidence"><summary>Evidence behind the climate<small>Reference · continuation · feed</small></summary><div class="climate-story-evidence-body"><div class="market-climate-data-grid">'+climateDataCell('Structure reference',ref)+climateDataCell('Continuation',c1)+climateDataCell('Feed',t.volReady?'Hourly volume usable'+(volumeSourceShort()?' · '+volumeSourceShort():''):'Check hourly feed')+'</div><p class="market-climate-footnote">Climate is a transparent descriptive layer. It does not change the existing engine, risk, sizing, plan, Journal or order behaviour. If evidence is stale or incomplete, the correct state is Unknown.</p></div></details></section><div class="market-climate-actions"><button type="button" class="btn secondary" data-action="cd-why">Open entry Gates separately</button><span>Climate explains the environment · Gates evaluate the ticket</span></div></section>';
   }
   function cdMismatch(f){var entry=Number(state.sizer.entry),quote=Number(f.t.price);return f.fresh.kind!=='sample'&&!f.fresh.stale&&entry>0&&quote>0&&Math.abs(entry/quote-1)>.15;}
   function cdChartOptions(c,ticket,include){var low=Math.min.apply(null,c.prices),high=Math.max.apply(null,c.prices),all=[];['entry','stop','target'].forEach(function(k){var v=Number(ticket[k]);if(v>0&&isFinite(v))all.push({v:v,label:k,col:k==='stop'?'#f397a5':k==='target'?'#b6d68e':'#d8dfe8'});});return {levels:include?all:all.filter(function(l){return l.v>=low&&l.v<=high;}),excluded:include?[]:all.filter(function(l){return l.v<low||l.v>high;})};}
@@ -11307,7 +11430,7 @@
       same("profitTargetPct", 3) && same("softHoldHours", 5) && same("stopAfterLosses", 2));
     if (id === "look") return savedPalette !== "signal" || isHcTheme(colorTheme) || comfortDirty() ||
       coinDeskLayoutValue() !== "instrument" || scoutTriageLayoutValue() !== "glance" ||
-      climateLayoutValue() !== "chip";
+      climateLayoutValue() !== "panel" || volumeRuleValue() !== "sensitive";
     return false;
   }
   function moreFilterRailHtml() {
@@ -11756,9 +11879,16 @@
     { id: "comfort", glyph: "\u25D1", title: "Comfort", cls: "comfort-settings" },
     { id: "coin", glyph: "\u25A6", title: "Coin Desk layout", cls: "coin-desk-layout-settings" },
     { id: "scout", glyph: "\u25A4", title: "Scout record layout", cls: "scout-triage-layout-settings" },
-    { id: "climate", glyph: "\u25A3", title: "Market climate layout", cls: "climate-layout-settings" }
+    { id: "climate", glyph: "\u25A3", title: "Market climate layout", cls: "climate-layout-settings" },
+    { id: "volume", glyph: "\u2261", title: "Volume rule", cls: "volume-rule-settings" }
   ];
-  var MORE_LOOK_GROUPS = [["Appearance", ["palette", "hc", "comfort"]], ["Layouts", ["coin", "scout", "climate"]]];
+  var MORE_LOOK_GROUPS = [["Appearance", ["palette", "hc", "comfort"]], ["Layouts", ["coin", "scout", "climate"]], ["Readings", ["volume"]]];
+  function volumeRuleSettingsHtml() {
+    var current = volumeRuleValue();
+    return '<p class="muted more-look-lead">How the hourly volume is labelled. One rule is used by the Participation reading and the Volume Evidence, so they always agree. Display only \u2014 it does not change entry Gates, sizing or tickets.</p>' +
+      moreChoiceChips(["sensitive", "strict"], current, "set-volume-rule", function (k) { return VOLUME_RULES[k].short; }) +
+      moreChoiceNote(VOLUME_RULES[current].label, VOLUME_RULES[current].detail);
+  }
   function moreLookSummary(id) {
     if (id === "palette") return (MORE_THEME_SHORT[savedPalette] || savedPalette) + (isHcTheme(colorTheme) ? " \u00b7 paused" : "");
     if (id === "hc") return isHcTheme(colorTheme) ? HC_THEME_LABEL[colorTheme] : "Off \u00b7 standard palettes";
@@ -11766,6 +11896,7 @@
     if (id === "coin") return COIN_DESK_LAYOUTS[coinDeskLayoutValue()].short;
     if (id === "scout") return SCOUT_TRIAGE_LAYOUTS[scoutTriageLayoutValue()].short;
     if (id === "climate") return CLIMATE_LAYOUTS[climateLayoutValue()].short;
+    if (id === "volume") return VOLUME_RULES[volumeRuleValue()].label;
     return "";
   }
   function moreLookCardBody(id) {
@@ -11775,6 +11906,7 @@
     if (id === "coin") return coinDeskLayoutSettingsHtml();
     if (id === "scout") return scoutTriageLayoutSettingsHtml(true);
     if (id === "climate") return climateLayoutSettingsHtml();
+    if (id === "volume") return volumeRuleSettingsHtml();
     return "";
   }
   function moreLookCardHtml(c) {
@@ -14069,6 +14201,15 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
       render();
       return;
     }
+    if (action === "set-volume-rule") {
+      var volumeRule = btn.getAttribute("data-layout");
+      if (!VOLUME_RULES[volumeRule]) return;
+      state.settings.volumeRule = volumeRule;
+      errorMsg = "";
+      save();
+      render();
+      return;
+    }
     if (action === "set-climate-layout") {
       var climateLayout = btn.getAttribute("data-layout");
       if (!CLIMATE_LAYOUTS[climateLayout]) return;
@@ -14419,6 +14560,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
         state.market.atrDataVersion = live && live.atrDataVersion === 2 ? 2 : 0;
         state.market.atrHourly = live && live.atrDataVersion === 2 ? Number(live.atrHourly) || 0 : 0;
         state.market.hourlyFeed = live && live.market ? live.market.hourlyFeed || null : null;
+        state.market.climateCtx = live && live.market ? live.market.climateCtx || null : null;
         if (!(live && live.hourly && live.hourly.length >= 15)) {
           state.hourly = []; state.hourlyVolumes = []; state.hourlyAts = [];
         }

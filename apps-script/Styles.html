@@ -7553,6 +7553,16 @@ body.command-strip-mode #main .climate-story-evidence>summary{align-items:center
 .climate-plain-tools{flex:1 1 auto;min-width:0;flex-wrap:wrap;justify-content:flex-end}
 .climate-plain-tools .climate-chips{margin-top:0;justify-content:flex-end}
 .climate-tile-chip .climate-label,.climate-tile-ring .climate-label{letter-spacing:.05em}
+/* CLIMATE-PLUS-1 · Backdrop's three trend blocks sit in the scale slot. No dot: nothing is ranked or added up. */
+.climate-pn-trio{display:flex;gap:3px;height:7px;align-self:center;min-width:0}
+.climate-pn-trio i{flex:1;border-radius:2px;opacity:.85}
+.climate-pn-trio i.none{background:repeating-linear-gradient(90deg,#3e4d70 0 4px,transparent 4px 8px)!important}
+.climate-pn-big .climate-pn-trio{height:10px;margin-top:3px}
+.climate-pn-trio-lab{display:flex;gap:3px;margin-top:3px;font-size:8.5px;color:var(--muted)}
+.climate-pn-trio-lab span{flex:1;min-width:0;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@container (min-width:620px){ .climate-pn-cell .climate-pn-trio{grid-area:scale} }
+.climate-pn-cell{grid-template-columns:88px minmax(0,1fr) 80px}
+@container (min-width:620px){ .climate-pn-cell{grid-template-columns:minmax(0,1fr) auto} }
 .climate-layout-group{margin-top:12px}
 .climate-layout-group:first-of-type{margin-top:0}
 .climate-layout-group h4{margin:0 0 6px;font-size:8.5px;font-weight:800;letter-spacing:.12em;
