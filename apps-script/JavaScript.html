@@ -1402,6 +1402,7 @@
     return { kind: "live", label: label, stale: false };
   }
 
+  var climateCtxTriedAt = 0;   /* CLIMATE-PLUS-2 */
   function maybeRefreshLive() {
     if(page==='scout'||scoutPeekCount()||scoutPeekQueue.length)return;
     if (!canCloud() || busy || applyingRemote || editingId) return;
@@ -1411,7 +1412,14 @@
     // While managing an open ticket (Journal or Sizer), keep marks fresher than the idle 10m cadence.
     var managingOpen = opens && (page === "journal" || page === "sizer" || previewFlatOn());
     var need = managingOpen ? 60 * 1000 : REFRESH_MS;
-    if (age < need) return;
+    /* CLIMATE-PLUS-2 · a Scout Peek keeps the price fresh but carries no climate context (Volatility,
+       Backdrop, Positioning), so the price-age test alone never asked for it. On Market, a missing or
+       10-minute-old context now asks for one full fetch too -- at most once every 10 minutes. */
+    var cc = state.market && state.market.climateCtx;
+    var ccAge = cc && cc.retrievedAt ? Date.now() - new Date(cc.retrievedAt).getTime() : Infinity;
+    var wantCtx = page === "market" && !(ccAge < REFRESH_MS) && Date.now() - climateCtxTriedAt >= REFRESH_MS;
+    if (age < need && !wantCtx) return;
+    if (wantCtx) climateCtxTriedAt = Date.now();
     runLiveFetch();
   }
 
