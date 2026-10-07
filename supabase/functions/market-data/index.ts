@@ -6,6 +6,7 @@
  * CoinGecko market data -> Yahoo market fallback; Yahoo genuine hourly OHLC
  * -> Kraken validated OHLC -> CoinGecko price-only hourly observations.
  * Price-only hourly data never supplies an invented hourly ATR.
+ * Hourly volume is overlaid from Coinbase for the same hours when available (CLIMATE-PLUS-1).
  *
  * This file is development-only. It does not read or write journal state.
  * Supabase Auth/JWT verification remains enabled at deployment time.
@@ -113,6 +114,8 @@ async function peekLive(coinId, vs, ticker) {
 }
 
 async function fetchLive(coinId, vs, ticker) {
+  // CLIMATE-PLUS-1 · started first so it runs alongside the existing calls; it never rejects.
+  const climateCtxJob = cpClimateCtx_(coinId, vs, ticker);
   const market = await fetchMarket(coinId, vs, ticker);
   market.hourTrendSupport = null;
   market.hourlyFeed = null;
@@ -145,6 +148,7 @@ async function fetchLive(coinId, vs, ticker) {
   } catch (err) {
     console.warn("hourly failed: " + err);
   }
+  market.climateCtx = await climateCtxJob;
   return {
     market: market,
     closes: closes,
@@ -175,22 +179,25 @@ function bpFeedReason_(err) {
 async function fetchHourlyPack(coinId, vs, ticker) {
   const id=String(coinId||'solana'),cur=String(vs||'gbp').toLowerCase(),symbol=String(ticker||'SOL').toUpperCase(),attempts=[];
   function attach(p,source,status,note){
-    p.feed={fx:p.fx||null,version:1,coinId:id,ticker:symbol,currency:cur,source:source,status:status,barAt:p.ats&&p.ats.length?p.ats[p.ats.length-1]:null,count:(p.closes||[]).length,retrievedAt:new Date().toISOString(),attempts:attempts.slice(),note:note};return p;
+    p.feed={fx:p.fx||null,volumeSource:p.volumeSource||null,version:1,coinId:id,ticker:symbol,currency:cur,source:source,status:status,barAt:p.ats&&p.ats.length?p.ats[p.ats.length-1]:null,count:(p.closes||[]).length,retrievedAt:new Date().toISOString(),attempts:attempts.slice(),note:note};return p;
   }
   try {
     bpKrakenAsset_(id,symbol); // Shared canonical ID/ticker allowlist before either candle provider.
     const p=await fetchHourlyFromYahoo_(symbol,cur);
     if(!(p.atrHourly>0&&isFinite(p.atrHourly)))throw new Error('Hourly ATR invalid');
+    await cpOverlayVolume_(p,symbol,cur,'Yahoo');
     attempts.push({source:'Yahoo',status:'READY'});
     return attach(p,'Yahoo hourly OHLC (GBP may use USD conversion)','READY','Candles and ATR come from the same hourly series. Quote/range can use a different provider. Yahoo GBP fallback may scale USD candles using its cached GBPUSD rate, not historical hourly FX.');
   }catch(e){attempts.push({source:'Yahoo',status:'FAILED',reason:bpFeedReason_(e)});}
   try {
     const p=await fetchHourlyFromKraken_(id,cur,symbol);
+    await cpOverlayVolume_(p,symbol,cur,'Kraken');
     attempts.push({source:'Kraken',status:'READY'});
     return attach(p,'Kraken '+p.pair+' hourly OHLC','READY',p.fx?'USD exchange candles converted to GBP using one completed GBP/USD candle close at '+p.fx.at+'. This is not historical hourly FX adjustment or a native GBP market. Quote/range providers may differ.':'Native quote-currency exchange candles; no FX conversion. Candle and quote/range providers may differ.');
   }catch(e){attempts.push({source:'Kraken',status:'FAILED',reason:bpFeedReason_(e)});}
   try {
     const p=await fetchHourlyFromCoinGecko_(id,cur);
+    await cpOverlayVolume_(p,symbol,cur,'CoinGecko');
     attempts.push({source:'CoinGecko',status:'PRICE_ONLY'});
     return attach(p,'CoinGecko hourly price observations','PRICE_ONLY','Chart prices refreshed, but genuine hourly candles were unavailable. No hourly ATR or stop/target proposal is invented.');
   }catch(e){attempts.push({source:'CoinGecko',status:'FAILED',reason:bpFeedReason_(e)});}
@@ -332,7 +339,8 @@ async function fetchHourlyFromYahoo_(ticker, currency) {
     if (Number(h) < Number(l) || Number(c) > Number(h) || Number(c) < Number(l)) return;
     const v = raw.volume && raw.volume[i];
     pack.closes.push(Number(c));
-    pack.volumes.push(v != null && isFinite(Number(v)) && Number(v) >= 0 ? Number(v) : null);
+    // Yahoo crypto often reports 0 for hours it has no volume for: missing data, never "quiet".
+    pack.volumes.push(v != null && isFinite(Number(v)) && Number(v) > 0 ? Number(v) : null);
     pack.ats.push(new Date(ts).toISOString());
     pack.bars.push({o:raw.open&&raw.open[i]!=null?Number(raw.open[i]):null,h:Number(h), l:Number(l), c:Number(c)});
   });
@@ -749,6 +757,179 @@ function hourlyAdx_(bars, at) {
   return adx==null?null:{version:1,adx:adx,plus:pdi,minus:mdi,at:at,source:'Yahoo 60m OHLC',period:14,smoothing:'Wilder'};
 }
 
+
+/* CLIMATE-PLUS-1 · extra public context for the Market climate. Display only: nothing here feeds the
+   entry verdict, Gates, sizing or tickets. Sources: Coinbase Exchange candles (hourly volume, volatility,
+   backdrop trends) and OKX perpetual-swap funding / open interest. Every call has a short timeout and is
+   cached briefly; a failure only leaves that one reading Unknown and is listed in climateCtx.errors. */
+function cpMsg_(e) { return String((e && e.message) || e || "failed"); }
+async function cpJson_(url, ms) {
+  const res = await fetch(url, {
+    headers: { Accept: "application/json", "User-Agent": "Mozilla/5.0 (compatible; CryptoScalpingJournal/1.0)" },
+    signal: AbortSignal.timeout(ms || 5000),
+  });
+  const text = await res.text(), host = url.split("/")[2] || "source";
+  if (res.status !== 200) throw new Error(host + " " + res.status);
+  try { return JSON.parse(text); } catch (e) { throw new Error("Invalid JSON from " + host + "."); }
+}
+async function cpCached_(key, seconds, make) {
+  const hit = edgeCache.get(key);
+  if (hit) { try { return JSON.parse(hit); } catch (e) { /* refetch */ } }
+  const value = await make();
+  try { edgeCache.put(key, JSON.stringify(value), seconds); } catch (e) { /* cache is best effort */ }
+  return value;
+}
+/** Completed Coinbase candles, oldest first: [{t(ms),o,h,l,c,v}]. The current, unfinished candle is excluded. */
+function cpCoinbaseCandles_(product, gran, count) {
+  return cpCached_("cp_cb_" + product + "_" + gran + "_" + count, gran === 3600 ? 300 : 900, async function () {
+    const nowSec = Math.floor(Date.now() / 1000), cutoff = nowSec - (nowSec % gran), jobs = [];
+    for (let k = 0; k < Math.ceil(count / 300); k++) {
+      const end = cutoff - k * 300 * gran, start = end - 300 * gran;
+      jobs.push(cpJson_("https://api.exchange.coinbase.com/products/" + encodeURIComponent(product) +
+        "/candles?granularity=" + gran + "&start=" + start + "&end=" + end, 5000));
+    }
+    const pages = await Promise.all(jobs), byT = {};
+    pages.forEach(function (rows) {
+      if (!Array.isArray(rows)) throw new Error("Coinbase candles unavailable");
+      rows.forEach(function (r) { // [time, low, high, open, close, volume]
+        if (!Array.isArray(r) || r.length < 6) return;
+        const t = Number(r[0]), l = Number(r[1]), h = Number(r[2]), o = Number(r[3]), c = Number(r[4]), v = Number(r[5]);
+        if (!isFinite(t) || t % gran !== 0 || t >= cutoff) return;
+        if (![o, h, l, c].every(function (x) { return x > 0 && isFinite(x); }) || h < l || c > h || c < l) return;
+        byT[t] = { t: t * 1000, o: o, h: h, l: l, c: c, v: v > 0 && isFinite(v) ? v : null };
+      });
+    });
+    const out = Object.keys(byT).map(Number).sort(function (a, b) { return a - b; }).map(function (t) { return byT[t]; });
+    if (!out.length) throw new Error("Coinbase returned no completed candles");
+    return out.slice(-count);
+  });
+}
+/** Coin in the display currency first, then the USD market. Volume is in coin units either way. */
+async function cpCoinbaseProduct_(ticker, cur, gran, count) {
+  const tries = [ticker + "-" + String(cur).toUpperCase()];
+  if (String(cur).toLowerCase() !== "usd") tries.push(ticker + "-USD");
+  let last = null;
+  for (const product of tries) {
+    try { return { product: product, bars: await cpCoinbaseCandles_(product, gran, count) }; }
+    catch (e) { last = e; if (isRateLimitErr_(e)) break; }
+  }
+  throw last || new Error("No Coinbase market");
+}
+/** Replace an hourly pack's volumes with Coinbase volume for the same hours. Never throws. */
+async function cpOverlayVolume_(p, ticker, cur, own) {
+  try {
+    const got = await cpCoinbaseProduct_(ticker, cur, 3600, 300), byT = {};
+    got.bars.forEach(function (b) { byT[b.t] = b.v; });
+    let matched = 0;
+    const vols = (p.ats || []).map(function (at) {
+      const v = byT[Date.parse(at)];
+      if (v != null && v > 0) { matched++; return v; }
+      return null; // an hour Coinbase did not report stays missing
+    });
+    if (matched < Math.min(15, vols.length)) throw new Error("Coinbase volume did not cover the hourly window");
+    p.volumes = vols;
+    p.volumeSource = { source: "Coinbase " + got.product, status: "READY", matched: matched, count: vols.length };
+  } catch (e) {
+    p.volumeSource = { source: own + " (own volume)", status: "FALLBACK", reason: bpFeedReason_(e) };
+  }
+  return p;
+}
+function cpEma_(values, n) {
+  if (values.length < n) return [];
+  const k = 2 / (n + 1), out = [];
+  let e = values.slice(0, n).reduce(function (a, b) { return a + b; }, 0) / n;
+  out.push(e);
+  for (let i = n; i < values.length; i++) { e = values[i] * k + e * (1 - k); out.push(e); }
+  return out;
+}
+/** Close vs a 20-period EMA and that EMA three periods earlier. The app decides what it means. */
+function cpTrend_(bars, source) {
+  if (!bars || bars.length < 24) throw new Error("Too few candles for a trend");
+  const closes = bars.map(function (b) { return b.c; }), e = cpEma_(closes, 20);
+  return { close: closes[closes.length - 1], ema: e[e.length - 1], emaPrev: e[e.length - 4],
+    at: new Date(bars[bars.length - 1].t).toISOString(), n: bars.length, source: source };
+}
+/** Complete UTC 4-hour candles from four consecutive completed hours. */
+function cpFourHour_(bars) {
+  const groups = {}, keys = [];
+  bars.forEach(function (b) { const k = Math.floor(b.t / 14400000); if (!groups[k]) { groups[k] = []; keys.push(k); } groups[k].push(b); });
+  return keys.filter(function (k) { return groups[k].length === 4; })
+    .map(function (k) { const g = groups[k]; return { t: k * 14400000, c: g[3].c }; });
+}
+/** Hourly ATR(14, Wilder) now, and where it ranks among this window's earlier hourly ATRs. */
+function cpVolatility_(got) {
+  const bars = got.bars;
+  if (bars.length < 14 + 168) throw new Error("Need at least a week of hourly candles");
+  const atrs = [];
+  let a = null, trSum = 0;
+  for (let i = 1; i < bars.length; i++) {
+    const b = bars[i], pc = bars[i - 1].c, tr = Math.max(b.h - b.l, Math.abs(b.h - pc), Math.abs(b.l - pc));
+    if (i <= 14) { trSum += tr; if (i === 14) { a = trSum / 14; atrs.push(a); } }
+    else { a = (a * 13 + tr) / 14; atrs.push(a); }
+  }
+  const now = atrs[atrs.length - 1], last = bars[bars.length - 1];
+  const below = atrs.filter(function (x) { return x <= now; }).length;
+  return { atr: now, atrPct: now / last.c * 100, pctl: Math.round(below / atrs.length * 100), hours: atrs.length,
+    currency: got.product.split("-")[1], at: new Date(last.t).toISOString(), source: "Coinbase " + got.product + " hourly" };
+}
+function cpOkxPositioning_(ticker) {
+  const inst = ticker + "-USDT-SWAP", base = "https://www.okx.com/api/v5/";
+  return cpCached_("cp_okx_" + inst, 300, async function () {
+    const all = await Promise.all([
+      cpJson_(base + "public/funding-rate?instId=" + encodeURIComponent(inst), 5000),
+      cpJson_(base + "public/funding-rate-history?instId=" + encodeURIComponent(inst) + "&limit=30", 5000),
+      cpJson_(base + "rubik/stat/contracts/open-interest-volume?ccy=" + encodeURIComponent(ticker) + "&period=1H", 5000),
+    ]);
+    const fr = all[0] && all[0].code === "0" && all[0].data && all[0].data[0];
+    if (!fr || fr.instId !== inst) throw new Error("OKX funding unavailable for " + inst);
+    const funding = Number(fr.fundingRate) * 100;
+    if (!isFinite(funding)) throw new Error("OKX funding invalid");
+    const hist = (all[1] && all[1].code === "0" && all[1].data || []).map(function (x) { return Number(x.realizedRate) * 100; })
+      .filter(function (x) { return isFinite(x); });
+    const oi = (all[2] && all[2].code === "0" && all[2].data || []).map(function (r) { return [Number(r[0]), Number(r[1])]; })
+      .filter(function (r) { return isFinite(r[0]) && r[1] > 0; }).sort(function (a, b) { return a[0] - b[0]; });
+    let oiUsd = null, oiChg24 = null;
+    if (oi.length) {
+      const lastOi = oi[oi.length - 1], dayAgo = oi.filter(function (r) { return r[0] === lastOi[0] - 86400000; })[0];
+      oiUsd = lastOi[1];
+      if (dayAgo) oiChg24 = (lastOi[1] / dayAgo[1] - 1) * 100;
+    }
+    const interval = (Number(fr.nextFundingTime) - Number(fr.fundingTime)) / 3600000;
+    return { funding: funding, fundingAvg: hist.length ? hist.reduce(function (a, b) { return a + b; }, 0) / hist.length : null,
+      fundingN: hist.length, intervalH: interval > 0 && interval <= 24 ? interval : 8, oiUsd: oiUsd, oiChg24: oiChg24,
+      at: new Date(Number(fr.ts) || Date.now()).toISOString(), source: "OKX " + inst };
+  });
+}
+/** Small summary for the climate readings; arrays stay on the server. Never rejects. */
+async function cpClimateCtx_(coinId, vs, ticker) {
+  const id = String(coinId || "solana"), cur = String(vs || "gbp").toLowerCase(), sym = String(ticker || "SOL").toUpperCase();
+  const ctx = { version: 1, retrievedAt: new Date().toISOString(), volatility: null, backdrop: null, positioning: null, errors: [] };
+  try {
+    try { bpKrakenAsset_(id, sym); } catch (e) { ctx.errors.push("Coin identity is not on the verified list; context skipped."); return ctx; }
+    const r = await Promise.allSettled([
+      cpCoinbaseProduct_(sym, cur, 3600, 720),
+      cpCoinbaseProduct_(sym, cur, 86400, 60),
+      sym === "BTC" ? Promise.resolve(null) : cpCoinbaseProduct_("BTC", cur, 86400, 60),
+      cpOkxPositioning_(sym),
+    ]);
+    const why = function (x) { return bpFeedReason_(x.reason); };
+    if (r[0].status === "fulfilled") {
+      try { ctx.volatility = cpVolatility_(r[0].value); } catch (e) { ctx.errors.push("Volatility: " + cpMsg_(e)); }
+    } else ctx.errors.push("Volatility: " + why(r[0]));
+    const bd = { coin: null, h4: null, btc: null };
+    if (r[1].status === "fulfilled") { try { bd.coin = cpTrend_(r[1].value.bars, "Coinbase " + r[1].value.product + " daily"); } catch (e) { ctx.errors.push("Backdrop daily: " + cpMsg_(e)); } }
+    else ctx.errors.push("Backdrop daily: " + why(r[1]));
+    if (r[0].status === "fulfilled") { try { bd.h4 = cpTrend_(cpFourHour_(r[0].value.bars), "Coinbase " + r[0].value.product + " 4-hour"); } catch (e) { ctx.errors.push("Backdrop 4-hour: " + cpMsg_(e)); } }
+    if (r[2].status === "fulfilled" && r[2].value) { try { bd.btc = cpTrend_(r[2].value.bars, "Coinbase " + r[2].value.product + " daily"); } catch (e) { ctx.errors.push("Backdrop BTC: " + cpMsg_(e)); } }
+    else if (r[2].status === "rejected") ctx.errors.push("Backdrop BTC: " + why(r[2]));
+    if (bd.coin || bd.h4 || bd.btc) ctx.backdrop = bd;
+    if (r[3].status === "fulfilled") ctx.positioning = r[3].value;
+    else ctx.errors.push("Positioning: " + why(r[3]));
+  } catch (e) {
+    ctx.errors.push("Context failed: " + bpFeedReason_(e));
+  }
+  return ctx;
+}
 
 function jsonResponse(body, status, headers) {
   return new Response(JSON.stringify(body), {
