@@ -78,6 +78,7 @@ async function peekLive(coinId, vs, ticker) {
   market.hourTrendSupport = null;
   market.hourlyFeed = null;
   market.hourlyOhlc = [];
+  market.swing4h = null;   // SWING4H-1
   let closes = [];
   let hourly = [];
   let hourlyVolumes = [];
@@ -97,6 +98,7 @@ async function peekLive(coinId, vs, ticker) {
     market.hourTrendSupport = hourPack.trendSupport || null;
     market.hourlyFeed = hourPack.feed || null;
     market.hourlyOhlc = (hourPack.ohlc || []).slice(-168);
+    market.swing4h = hourPack.swing4h || null;   // SWING4H-1
   } catch (err) {
     console.warn("peek hourly failed: " + err);
   }
@@ -120,6 +122,7 @@ async function fetchLive(coinId, vs, ticker) {
   market.hourTrendSupport = null;
   market.hourlyFeed = null;
   market.hourlyOhlc = [];
+  market.swing4h = null;   // SWING4H-1
   let closes = [];
   let hourly = [];
   let hourlyVolumes = [];
@@ -145,6 +148,7 @@ async function fetchLive(coinId, vs, ticker) {
     market.hourTrendSupport = hourPack.trendSupport || null;
     market.hourlyFeed = hourPack.feed || null;
     market.hourlyOhlc = (hourPack.ohlc || []).slice(-168);
+    market.swing4h = hourPack.swing4h || null;   // SWING4H-1
   } catch (err) {
     console.warn("hourly failed: " + err);
   }
@@ -179,6 +183,7 @@ function bpFeedReason_(err) {
 async function fetchHourlyPack(coinId, vs, ticker) {
   const id=String(coinId||'solana'),cur=String(vs||'gbp').toLowerCase(),symbol=String(ticker||'SOL').toUpperCase(),attempts=[];
   function attach(p,source,status,note){
+    p.swing4h=p.swing4h&&p.swing4h.length?{version:1,coinId:id,ticker:symbol,currency:cur,source:source,barAt:p.swing4h[p.swing4h.length-1][0],count:p.swing4h.length,bars:p.swing4h}:null;   // SWING4H-1
     p.feed={fx:p.fx||null,volumeSource:p.volumeSource||null,version:1,coinId:id,ticker:symbol,currency:cur,source:source,status:status,barAt:p.ats&&p.ats.length?p.ats[p.ats.length-1]:null,count:(p.closes||[]).length,retrievedAt:new Date().toISOString(),attempts:attempts.slice(),note:note};return p;
   }
   try {
@@ -221,7 +226,7 @@ async function fetchHourlyFromKraken_(coinId,currency,ticker){
       try{cache.put('bp1_kraken_gbpusd_fx',JSON.stringify(fx),600);}catch(ignore){}
     }
     if(!(fx.rate>0&&isFinite(fx.rate))||!isFinite(Date.parse(fx.at))||Date.now()-Date.parse(fx.at)>3*3600000)throw new Error('Stale or invalid FX candle');
-    usd.closes=usd.closes.map(function(v){return v/fx.rate;});usd.atrHourly/=fx.rate;usd.ohlc=(usd.ohlc||[]).map(function(r){return [r[0],r[1]/fx.rate,r[2]/fx.rate,r[3]/fx.rate,r[4]/fx.rate];});usd.fx=fx;usd.pair=asset+'/USD converted to GBP';return usd;
+    usd.closes=usd.closes.map(function(v){return v/fx.rate;});usd.atrHourly/=fx.rate;usd.ohlc=(usd.ohlc||[]).map(function(r){return [r[0],r[1]/fx.rate,r[2]/fx.rate,r[3]/fx.rate,r[4]/fx.rate];});usd.swing4h=(usd.swing4h||[]).map(function(r){return [r[0],Number((r[1]/fx.rate).toPrecision(6)),Number((r[2]/fx.rate).toPrecision(6)),Number((r[3]/fx.rate).toPrecision(6)),Number((r[4]/fx.rate).toPrecision(6))];});usd.fx=fx;usd.pair=asset+'/USD converted to GBP';return usd;
   }
 }
 async function bpKrakenNative_(asset,quote){
@@ -257,10 +262,31 @@ function bpKrakenPack_(rows){
     if(pack.ats.length&&ts<=Date.parse(pack.ats[pack.ats.length-1]))throw new Error('Invalid candle ordering');
     pack.closes.push(c);pack.volumes.push(r[6]!=null&&r[6]!==''&&vol>=0&&isFinite(vol)?vol:null);pack.ats.push(new Date(ts).toISOString());pack.bars.push({o:o,h:h,l:l,c:c});
   });
+  const swing4h=swing4hBars_(pack.ats,pack.bars);   // SWING4H-1
   const tail=validatedHourlyTail_(pack),atr=atrFromBars_(tail.bars);
   if(!(atr>0&&isFinite(atr)))throw new Error('Invalid hourly ATR');
   const support=hourlyAdx_(tail.bars,tail.ats[tail.ats.length-1]);if(support)support.source='Kraken 60m OHLC';
-  return {closes:tail.closes,volumes:tail.volumes,ats:tail.ats,ohlc:tail.bars.map(function(b,i){return [tail.ats[i],b.o,b.h,b.l,b.c];}),atrHourly:atr,trendSupport:support};
+  return {closes:tail.closes,volumes:tail.volumes,ats:tail.ats,ohlc:tail.bars.map(function(b,i){return [tail.ats[i],b.o,b.h,b.l,b.c];}),atrHourly:atr,trendSupport:support,swing4h:swing4h};
+}
+
+/* SWING4H-1 · completed UTC 4-hour bars for the Sizer swing plan, built from the FULL hourly series
+   before the 168-hour trim (so the hourly arrays the app receives are unchanged). A bucket needs at
+   least 3 of its 4 hours; only buckets that ended before the current hour are kept; last 84 = 14 days.
+   Values are rounded to 6 significant figures to keep the synced book small. */
+function swing4hBars_(ats, bars) {
+  const cutoff = Math.floor(Date.now() / 3600000) * 3600000, by = {};
+  const r6 = function(v) { return Number(Number(v).toPrecision(6)); };
+  for (let i = 0; i < (ats || []).length; i++) {
+    const ts = Date.parse(ats[i]), b = bars && bars[i];
+    if (!isFinite(ts) || !b || ![b.h, b.l, b.c].every(function(v) { return v != null && isFinite(Number(v)) && Number(v) > 0; })) continue;
+    const k = Math.floor(ts / 14400000) * 14400000, o = b.o != null && Number(b.o) > 0 ? Number(b.o) : Number(b.c);
+    const g = by[k];
+    if (!g) by[k] = { o: o, h: Number(b.h), l: Number(b.l), c: Number(b.c), n: 1, last: ts };
+    else { if (ts > g.last) { g.c = Number(b.c); g.last = ts; } g.h = Math.max(g.h, Number(b.h)); g.l = Math.min(g.l, Number(b.l)); g.n++; }
+  }
+  return Object.keys(by).map(Number).sort(function(a, b) { return a - b; })
+    .filter(function(k) { return k + 14400000 <= cutoff && by[k].n >= 3; })
+    .slice(-84).map(function(k) { const g = by[k]; return [new Date(k).toISOString(), r6(g.o), r6(g.h), r6(g.l), r6(g.c)]; });
 }
 
 /** Keep a recent contiguous tail; never manufacture missing hours. */
@@ -326,7 +352,7 @@ async function fetchHourlyFromCoinGecko_(id, currency) {
 }
 
 async function fetchHourlyFromYahoo_(ticker, currency) {
-  const chart = await yahooChart_(ticker, currency, "60m", "7d");
+  const chart = await yahooChart_(ticker, currency, "60m", "15d");   // SWING4H-1: 15 days for the 4-hour swings; hourly arrays are still trimmed to 168
   const raw = chart.indicators && chart.indicators.quote && chart.indicators.quote[0];
   if (!raw) throw new Error("Yahoo hourly had no quote.");
   const pack = { closes: [], volumes: [], ats: [], bars: [] };
@@ -344,8 +370,9 @@ async function fetchHourlyFromYahoo_(ticker, currency) {
     pack.ats.push(new Date(ts).toISOString());
     pack.bars.push({o:raw.open&&raw.open[i]!=null?Number(raw.open[i]):null,h:Number(h), l:Number(l), c:Number(c)});
   });
+  const swing4h = swing4hBars_(pack.ats, pack.bars);
   const tail = validatedHourlyTail_(pack);
-  return {closes:tail.closes, volumes:tail.volumes, ats:tail.ats, ohlc:tail.bars.map(function(b,i){return [tail.ats[i],b.o,b.h,b.l,b.c];}),atrHourly:atrFromBars_(tail.bars),trendSupport:hourlyAdx_(tail.bars,tail.ats[tail.ats.length-1])};
+  return {closes:tail.closes, volumes:tail.volumes, ats:tail.ats, ohlc:tail.bars.map(function(b,i){return [tail.ats[i],b.o,b.h,b.l,b.c];}),atrHourly:atrFromBars_(tail.bars),trendSupport:hourlyAdx_(tail.bars,tail.ats[tail.ats.length-1]),swing4h:swing4h};
 }
 
 async function fetchAtr(coinId, vs, ticker) {
