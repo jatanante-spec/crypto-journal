@@ -8493,4 +8493,57 @@ body[data-color-theme="paper"] #main .triage-compact-page .triage-ledger-row .tr
 /* Sizer · note after opening from Scout */
 .cd-handoff{margin:6px 0;padding:8px 10px;border-radius:9px;border:1px solid #2c5a8f;background:rgba(61,125,255,.10);font-size:12px;line-height:1.45;color:var(--text)}
 .cd-handoff-act{cursor:pointer;color:var(--accent,#f5b13d);font-weight:600;margin-left:10px}
+
+/* SCOUT-ROWS-1 · Compact / Medium rows (Full keeps the older card) */
+#main .triage-compact-page .uni-card.uv2{display:block!important;padding:7px 10px 7px 13px!important;margin:4px 0!important;cursor:pointer;grid-template-columns:none!important}
+#main .triage-compact-page .uv2 .uc-l1{display:flex;align-items:center;gap:7px;min-width:0}
+#main .triage-compact-page .uv2 .uc-coin{font-size:15px;font-weight:800;color:var(--text,#eef3fb);letter-spacing:.2px}
+#main .triage-compact-page .uv2 .uc-price{font-size:14px;color:#c9d4e4;white-space:nowrap;font-variant-numeric:tabular-nums}
+#main .triage-compact-page .uv2 .uc-chg{font-size:12px;font-weight:700;color:#a9b8cd;white-space:nowrap}
+#main .triage-compact-page .uv2 .uc-chg.up{color:#3ddc97}#main .triage-compact-page .uv2 .uc-chg.down{color:#ff718e}
+#main .triage-compact-page .uv2 .uc-fill{flex:1 1 auto}
+#main .triage-compact-page .uv2 .verdict{font-size:12px!important;font-weight:800!important;letter-spacing:.6px;padding:3px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap;line-height:1.2}
+#main .triage-compact-page .uv2 .verdict.go{color:#3ddc97;background:rgba(61,220,151,.12)}
+#main .triage-compact-page .uv2 .verdict.wait{color:#e0a83a;background:rgba(224,168,58,.10)}
+#main .triage-compact-page .uv2 .verdict.block{color:#ff718e;background:rgba(255,113,142,.10)}
+#main .triage-compact-page .uv2 .uc-caret{color:#7f91ab;font-size:11px;width:10px;text-align:center}
+#main .triage-compact-page .uv2 .why-link{font-size:12px;color:#6fc8ff;white-space:nowrap}
+#main .triage-compact-page .uv2 .uc-l2{display:flex;align-items:center;gap:8px;margin-top:4px;min-width:0}
+#main .triage-compact-page .uv2 .uc-reason{flex:1 1 auto;min-width:0;font-size:12.5px;color:#d5deeb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#main .triage-compact-page .uv2 .uc-lights{display:flex;gap:6px;flex:0 0 auto}
+#main .triage-compact-page .uv2 .uc-light{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;color:#93a4bd;white-space:nowrap}
+#main .triage-compact-page .uv2 .uc-light i{width:7px;height:7px;border-radius:50%;background:#56657c;display:inline-block}
+#main .triage-compact-page .uv2 .uc-light.us-pass i{background:#3ddc97}
+#main .triage-compact-page .uv2 .uc-light.us-wait i{background:#e0a83a}
+#main .triage-compact-page .uv2 .uc-light.us-block i{background:#ff718e}
+#main .triage-compact-page .uv2 .uc-light.us-block{color:#ff9db1}
+#main .triage-compact-page .uv2 .uc-l3{display:flex;align-items:center;gap:8px;margin-top:3px;min-width:0;font-size:11px;color:#8597b0}
+#main .triage-compact-page .uv2 .uc-sig{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#main .triage-compact-page .uv2 .uc-sig b{font-weight:600;color:#a9b8cd}
+#main .triage-compact-page .uv2 .uc-sig *{color:inherit!important;font-size:inherit!important;font-weight:inherit;background:none!important}
+#main .triage-compact-page .uv2 .uc-sig b{color:#a9b8cd!important;font-weight:600!important}
+#main .triage-compact-page .uv2 .uc-meta{flex:0 0 auto;white-space:nowrap}
+#main .triage-compact-page .uv2 .triage-unified-health{flex:0 0 auto;font-size:10px!important;padding:1px 6px!important;min-height:0!important;line-height:1.4}
+#main .triage-compact-page .uv2 .uc-lock{font-size:11px;margin-top:3px}
+/* Medium: four lights as a slim row of tiles */
+#main .triage-compact-page .uv2-medium .uc-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:6px}
+#main .triage-compact-page .uv2-medium .uc-tiles .uc-light{justify-content:center;font-size:11.5px;padding:4px 2px;border-radius:7px;border:1px solid #263e63;background:rgba(255,255,255,.025)}
+#main .triage-compact-page .uv2-medium .uc-tiles .uc-light.us-pass{color:#9fe8c8}
+#main .triage-compact-page .uv2-medium .uc-tiles .uc-light.us-wait{color:#f0c879;border-color:#5a4724}
+#main .triage-compact-page .uv2-medium .uc-tiles .uc-light.us-block{color:#ff9db1;border-color:#6a2e3c}
+#main .triage-compact-page .uv2-medium .uc-l2{margin-top:5px}
+/* opened row */
+#main .triage-compact-page .uv2 .uni-why{margin:6px -10px 0 -13px;padding:6px 10px 4px 13px;cursor:auto}
+#main .triage-compact-page .uv2 .uni-actions{margin:2px 0 0;display:flex;justify-content:flex-end;cursor:auto}
+#main .triage-compact-page .uv2.uv2-open{filter:none}
+#main .triage-compact-page .uv2 .uc-light{font-size:11.5px}
+#main .triage-compact-page .uv2 .uc-light.us-wait{color:#f0c879}
+/* health chip on the new rows is a quiet note, not an alarm: Scout already judges today's price */
+#main .triage-compact-page .uv2 .triage-unified-health,#main .triage-compact-page .uv2 .triage-unified-health *{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
+#main .triage-compact-page .uv2 .triage-unified-health{color:#8597b0!important;padding:0!important}
+#main .triage-compact-page .uv2 .triage-unified-health.triage-tone-bad,#main .triage-compact-page .uv2 .triage-unified-health.triage-tone-warn{color:#c9a25a!important}
+.scout-alert small{display:block;font-size:11.5px;color:#a9cdb9;margin-top:1px}
+/* one-line top bar */
+.scout-watch-sum{display:block;cursor:pointer;font-size:11.5px;color:#8597b0;padding:2px 2px}
+.scout-watch-sum i{font-style:normal}
 </style>

@@ -3666,7 +3666,7 @@
     } else if (m.composite < 45 && (trendDown || market.change24h < 0)) {
       action = "STAND ASIDE";
       actionClass = "UNFAVOURABLE";
-      reason = "Weak conditions and the tape is down. No scalp from here.";
+      reason = "Weak conditions and the tape is down. No entry from here.";
       sellHint = "Do not revenge-sell the dump. Re-enter only on a fresh setup.";
     } else if (oversold && nearLow && m.composite >= 45) {
       action = "WATCH LONG";
@@ -12789,7 +12789,7 @@
       res.verdict=v.go==='GO'&&planOk?'BUY':(v.go==='NO-GO'||v.go==='BANK')?v.go:'WAIT';
       res.state=res.verdict==='BUY'?'ready':(res.verdict==='NO-GO'||res.verdict==='BANK'||g.account==='block')?'blocked':'near';
       res.atTicket=ticket; res.plan=plan; res.price=Number(m.price);
-      res.why=res.verdict==='BUY'?'All checks pass at today\u2019s price '+priceGbp(Number(m.price),4)
+      res.why=res.verdict==='BUY'?'All checks pass at today\u2019s price '+scoutPx(Number(m.price))
         :v.go==='GO'&&!planOk?(plan&&plan.status==='DATA_MISSING'?'Swing plan data missing \u2014 refresh':'No swing plan at today\u2019s price yet')
         :/^Target is above/.test(v.why||'')?'Target beyond the recent-reference check':String(v.why||(reasons[0]&&reasons[0].title)||'Inspect all checks').split('. ')[0];
       res.title=order.map(function(k){return words[k]+' '+marks[g[k]];}).join(' · ');
@@ -12840,7 +12840,7 @@
         o.active=o.active.filter(function(a){return a.ticker!==pair.ticker;});
         o.active.unshift({ticker:pair.ticker,price:r.price,stop:r.atTicket.stop,target:r.atTicket.target,at:now});
         o.active=o.active.slice(0,6);
-        scoutNotify(pair.ticker+' is BUY at '+priceGbp(r.price,4),'All checks pass at today\u2019s price \u00b7 stop '+priceGbp(r.atTicket.stop,4)+' \u00b7 target '+priceGbp(r.atTicket.target,4)+'. Tap to open it in Sizer.',pair.ticker);
+        scoutNotify(pair.ticker+' is BUY at '+scoutPx(r.price),'All checks pass at today\u2019s price \u00b7 stop '+scoutPx(r.atTicket.stop)+' \u00b7 target '+scoutPx(r.atTicket.target)+'. Tap to open it in Sizer.',pair.ticker);
       }else if(r.verdict!=='BUY'){
         o.active.forEach(function(a){if(a.ticker===pair.ticker&&!a.goneAt)a.goneAt=now;});
       }
@@ -12865,12 +12865,15 @@
   function scoutAlertBarHtml(){
     var o=scoutAlertLoad(),mins=Number(state.settings.scoutWatchMins)||0,perm=scoutAlertPermWord();
     var list=o.active.map(function(a){var t=new Date(a.at),hm=isFinite(t.getTime())?t.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
-      return '<div class="scout-alert'+(a.goneAt?' gone':'')+'"><span><b>'+esc(a.ticker)+'</b> '+(a.goneAt?'was BUY at '+priceGbp(a.price,4)+' ('+hm+') \u00b7 no longer':'turned <b class="go">BUY</b> at '+priceGbp(a.price,4)+' \u00b7 '+hm+' \u00b7 stop '+priceGbp(a.stop,4)+' \u00b7 target '+priceGbp(a.target,4))+'</span>'+
-        '<span class="scout-alert-acts">'+(a.goneAt?'':'<span role="button" tabindex="0" data-action="scout-alert-open" data-ticker="'+esc(a.ticker)+'">Open in Sizer</span>')+'<span role="button" tabindex="0" aria-label="Dismiss" data-action="scout-alert-dismiss" data-ticker="'+esc(a.ticker)+'">\u00d7</span></span></div>';}).join('');
+      return '<div class="scout-alert'+(a.goneAt?' gone':'')+'"><span><b>'+esc(a.ticker)+'</b> '+(a.goneAt?'was BUY at '+scoutPx(a.price)+' ('+hm+') \u00b7 no longer':'<b class="go">BUY</b> '+scoutPx(a.price)+' \u00b7 '+hm+'<small>stop '+scoutPx(a.stop)+' \u00b7 target '+scoutPx(a.target)+'</small>')+'</span>'+
+        '<span class="scout-alert-acts">'+(a.goneAt?'':'<span role="button" tabindex="0" data-action="scout-alert-open" data-ticker="'+esc(a.ticker)+'">Open</span>')+'<span role="button" tabindex="0" aria-label="Dismiss" data-action="scout-alert-dismiss" data-ticker="'+esc(a.ticker)+'">\u00d7</span></span></div>';}).join('');
     var opts=[0,15,30,60].map(function(n){return '<span role="button" tabindex="0" class="scout-watch-opt'+(mins===n?' on':'')+'" data-action="scout-watch" data-mins="'+n+'">'+(n?n+'m':'Off')+'</span>';}).join('');
-    return '<div class="scout-watch" id="scout-watch">'+list+
-      '<div class="scout-watch-row"><span class="scout-watch-lab">Auto-refresh while open</span>'+opts+
-      '<span class="scout-watch-lab">Alerts '+esc(perm)+'</span>'+(perm==='off'?'<span role="button" tabindex="0" class="scout-watch-opt" data-action="scout-alerts-allow">Allow</span>':'')+'</div></div>';
+    var rs=scoutRowStyle(),rowOpts=[['compact','Compact'],['medium','Medium'],['full','Full']].map(function(o){return '<span role="button" tabindex="0" class="scout-watch-opt'+(rs===o[0]?' on':'')+'" data-action="scout-row-style" data-style="'+o[0]+'">'+o[1]+'</span>';}).join('');
+    var summary='<span role="button" tabindex="0" class="scout-watch-sum" data-action="scout-watch-more" aria-expanded="'+scoutWatchOpen+'">Auto '+(mins?mins+'m':'off')+' \u00b7 Alerts '+esc(/blocked/.test(perm)?'blocked':perm)+' \u00b7 Rows '+rs+' <i>'+(scoutWatchOpen?'\u25b4':'\u25be')+'</i></span>';
+    var panel=scoutWatchOpen?'<div class="scout-watch-row"><span class="scout-watch-lab">Auto-refresh while open</span>'+opts+'</div>'+
+      '<div class="scout-watch-row"><span class="scout-watch-lab">Alerts '+esc(perm)+'</span>'+(perm==='off'?'<span role="button" tabindex="0" class="scout-watch-opt" data-action="scout-alerts-allow">Allow</span>':'')+'</div>'+
+      '<div class="scout-watch-row"><span class="scout-watch-lab">Rows</span>'+rowOpts+'</div>':'';
+    return '<div class="scout-watch" id="scout-watch">'+list+summary+panel+'</div>';
   }
   function scoutAlertPaint(){var el=document.getElementById('scout-watch');if(el)el.outerHTML=scoutAlertBarHtml();}
   var scoutWatchLast=Date.now();
@@ -12879,6 +12882,18 @@
     var last=Math.max(scoutWatchLast,triageJob&&Date.parse(triageJob.startedAt)||0);
     if(Date.now()-last<mins*60000||busy||scoutPeekCount()||scoutPeekQueue.length)return;
     scoutWatchLast=Date.now();triageStart('watch');
+  }
+  /* SCOUT-ROWS-1 · row style + short prices */
+  function scoutRowStyle(){var v=state.settings&&state.settings.scoutRowStyle;return v==='medium'||v==='full'?v:'compact';}
+  function scoutPx(v){var n=Number(v),a=Math.abs(n);if(!(a>0))return priceGbp(v,4);if(a>=1000)return gbp(n,0);if(a>=10)return gbp(n,2);
+    var d=a>=1?4:Math.min(10,4-Math.floor(Math.log10(a))),t=n.toFixed(d).replace(/0+$/,'');if(!/\.\d\d/.test(t))t=n.toFixed(2);return '\u00a3'+t;}
+  var scoutWatchOpen=false;
+  /* toast: a message stays 6 s after it last changed, then the row hides (ongoing jobs keep changing it) */
+  var scoutToastSeen='',scoutToastTimer=null;
+  function scoutToastAutoHide(){
+    if(page!=='scout'||!watchlistToast||watchlistToast===scoutToastSeen)return;
+    scoutToastSeen=watchlistToast;clearTimeout(scoutToastTimer);
+    scoutToastTimer=setTimeout(function(){if(watchlistToast!==scoutToastSeen||busy||scoutPeekCount()||scoutPeekQueue.length)return;watchlistToast='';var row=document.getElementById('triage-toast-row');if(row&&!triageRemoved)row.hidden=true;},6000);
   }
   function scoutGateMarkup(r){
     var g=r&&(r.ready||(r.ready=scoutReadiness(r,null)));
@@ -14606,10 +14621,14 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
         save();
         render();
       }
+    } else if (action === "scout-watch-more") {
+      scoutWatchOpen = !scoutWatchOpen; scoutAlertPaint();
+    } else if (action === "scout-row-style") {
+      state.settings.scoutRowStyle = btn.getAttribute("data-style") || "compact"; save(); scoutAlertPaint(); triageUpdate(false);
     } else if (action === "scout-why") {
       var swt = btn.getAttribute("data-ticker") || "";
       scoutWhyTicker = scoutWhyTicker === swt ? "" : swt;
-      render();
+      if (page === "scout" && document.getElementById("triage-rows")) triageUpdate(false); else render();
     } else if (action === "scout-bid-undo") {
       if (scoutHandoffNote && scoutHandoffNote.ticker === state.settings.coinTicker) {
         state.sizer.entry = scoutHandoffNote.prev.entry; state.sizer.stop = scoutHandoffNote.prev.stop; state.sizer.target = scoutHandoffNote.prev.target;
@@ -15332,6 +15351,32 @@ function unifiedScoutRowHtml(r){
       var strip='';
       ['ticket','timing','account','plan'].forEach(function(k){var st=g.groups[k]||'none';strip+='<button class="'+gCls[st]+'"><span class="us-label">'+gWords[k]+'</span><span class="us-status">\u25cf '+gMarks[st]+'</span></button>';});
       var whyOpen=scoutWhyTicker===c.ticker,whyList=whyOpen?'<div class="uni-why">'+((g.rows||[]).length?(g.rows||[]).map(function(x){return '<p><b>'+esc(x.group+' \u00b7 '+x.title)+'</b> '+esc(x.why)+'</p>';}).join(''):'<p>'+esc(g.why||'No listed blocker.')+'</p>')+'<p class="uni-why-note">Judged at today\u2019s price'+(g.atTicket?' \u00b7 Bid '+priceGbp(g.atTicket.entry,4)+' \u00b7 stop '+priceGbp(g.atTicket.stop,4)+' \u00b7 target '+priceGbp(g.atTicket.target,4):'')+'. Opening it in Sizer copies this ticket.</p></div>':'';
+      var rowStyle=scoutRowStyle();
+      if(rowStyle!=='full'){
+        /* SCOUT-ROWS-1 · same facts, fewer lines. Tap anywhere on the row to open Why + buttons. */
+        var shortW={ticket:'Ticket',timing:'Timing',account:'Account',plan:'Plan'},px=r.price>0&&r.book.market.lastFetchedAt?scoutPx(r.price):'Not fetched';
+        var chgCls=r.change>0?'up':r.change<0?'down':'';
+        var tiles=['ticket','timing','account','plan'].map(function(k){var st=g.groups[k]||'none';return '<span class="uc-light '+gCls[st]+'" title="'+gWords[k]+': '+gMarks[st]+'"><i></i>'+shortW[k]+'</span>';}).join('');
+        var sigLine='<div class="uc-l3"><span class="uc-sig"><b>'+esc(trend)+'</b> \u00b7 '+watch+'</span><span class="uc-meta">'+location+' \u00b7 '+esc(triageFreshShort(String(r.fresh&&r.fresh.label||'not checked')))+'</span>'+healthMarkup+'</div>';
+        var openPart=whyOpen?whyList+'<div class="uni-actions"><div class="triage-ledger-actions">'+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+name:'Inspect '+name)+'">'+(locked?'Research':'Inspect')+'</button></div></div>':'';
+        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span><span class="uc-fill"></span>';
+        var cls='triage-unified-row triage-combined-row uni-card uv2 uv2-'+rowStyle+' verdict-'+vc+(whyOpen?' uv2-open':'')+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'');
+        var open='<article class="'+cls+'" data-ticker="'+ticker+'" data-action="scout-why" aria-expanded="'+whyOpen+'">';
+        var lockNote=locked?'<div class="uc-lock">'+reason+'</div>':'';
+        if(rowStyle==='compact'){
+          var notPass=['ticket','timing','account','plan'].filter(function(k){return (g.groups[k]||'none')!=='ok';});
+          tiles=notPass.length?notPass.map(function(k){var st=g.groups[k]||'none';return '<span class="uc-light '+gCls[st]+'" title="'+gWords[k]+': '+gMarks[st]+'"><i></i>'+shortW[k]+'</span>';}).join(''):'<span class="uc-light us-pass" title="Ticket, Timing, Account and Plan all pass"><i></i>All 4 pass</span>';
+          return open+
+            '<div class="uc-l1">'+(triageEdit?removeAction:'')+head+'<span class="verdict '+vc+'">'+vw+'</span><span class="uc-caret">'+(whyOpen?'\u25b4':'\u25be')+'</span></div>'+
+            '<div class="uc-l2"><span class="uc-reason">'+esc(g.why||'Not evaluated')+'</span><span class="uc-lights">'+tiles+'</span></div>'+
+            sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
+        }
+        return open+
+          '<div class="uc-l1"><span class="verdict '+vc+'">'+vw+'</span>'+(triageEdit?removeAction:'')+head+'<span class="why-link">'+(whyOpen?'Close':'Why?')+'</span></div>'+
+          '<div class="uc-tiles">'+tiles+'</div>'+
+          '<div class="uc-l2"><span class="uc-reason">'+esc(g.why||'Not evaluated')+'</span></div>'+
+          sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
+      }
       return '<article class="triage-unified-row triage-combined-row uni-card verdict-'+vc+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'">'+
         '<div class="uni-decision"><span class="verdict '+vc+'">'+vw+'</span><span class="reason">'+esc(g.why||'Not evaluated')+'</span><span role="button" tabindex="0" class="why-link" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'">'+(whyOpen?'Close':'Why?')+'</span></div>'+
         '<div class="uni-strip">'+strip+'</div>'+whyList+
@@ -15564,6 +15609,7 @@ function unifiedScoutRowHtml(r){
     if(toastEl){toastEl.textContent=watchlistToast||'';}
     var toastRow=document.getElementById('triage-toast-row');
     if(toastRow)toastRow.hidden=!watchlistToast&&!triageRemoved;
+    scoutToastAutoHide();
     var undoBtn=document.getElementById('triage-undo-remove');
     if(undoBtn)undoBtn.hidden=!triageRemoved;
     var hubCounts=document.getElementById('triage-hub-counts');
