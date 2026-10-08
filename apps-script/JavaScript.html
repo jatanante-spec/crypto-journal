@@ -1016,6 +1016,7 @@
     }
     book.market.hourlyOhlc = live && live.market && Array.isArray(live.market.hourlyOhlc) ? live.market.hourlyOhlc.slice(-168) : [];
     book.market.hourTrendSupport = live && live.market ? live.market.hourTrendSupport || null : null;
+    book.market.swing4h = live && live.market && live.market.swing4h ? live.market.swing4h : null;   // SWING-1
     var closes = live && live.closes ? live.closes : [];
     if (closes.length) {
       var norm = normalizeCloses(closes);
@@ -3278,7 +3279,6 @@
     if (tape.hourRsi != null && !tape.hourCool) return false;
     if (tape.tideDown) return false;
     if (tape.action === "STAND ASIDE" || tape.action === "DON'T BUY") return false;
-    if (!(tape.composite >= 70)) return false;
     return true;
   }
 
@@ -3341,7 +3341,6 @@
       { name: "Ticket", pass: !sizerOut.invalid, note: sizerOut.invalid ? "broken" : "ok" },
       { name: "R:R", pass: rr != null && rr >= minRr, note: rr == null ? "—" : num(rr, 2) },
       { name: "Tide", pass: !tape.tideDown, note: tape.tide || "—" },
-      { name: "Score", pass: tape.composite >= 70, note: String(tape.composite) },
       { name: "RSI", pass: !tape.overbought, note: tape.rsi == null ? "—" : num(tape.rsi, 0) },
       { name: "Hour", pass: tape.hourRsi == null || tape.hourCool, note: tape.hourRsi == null ? "—" : num(tape.hourRsi, 0) },
       { name: "Spot", pass: dip, note: tape.locLabel || "—" },
@@ -3352,7 +3351,8 @@
       { name: "Day", pass: !session.halt, note: session.halt ? "stop" : session.haltProfit ? "bank" : "ok" }
     ];
     var setupOk = checks[0].pass && checks[1].pass;
-    var tapeOk = checks[2].pass && checks[3].pass && checks[4].pass && checks[5].pass && checks[6].pass && !weakTape;
+    /* SWING-1 · Score is context only now: Tide, RSI, Hour, Spot and the tape veto remain. */
+    var tapeOk = checks[2].pass && checks[3].pass && checks[4].pass && checks[5].pass && !weakTape;
     function wrap(res) {
       res.preview = preview;
       res.stillOpen = !!inWhy;
@@ -5453,16 +5453,95 @@
     if(!candidates.length)return no('Neither hourly mid-leg nor hourly high clears the minimum reward/risk within the existing recent-high check. Keep a valid stop; wait or skip.');
     p.target=candidates[0];p.rr=(p.target-p.entry)/gap;p.targetBasis=p.target===mid?'Hourly mid-leg':'Confirmed hourly high';p.ok=true;p.label='Stop and target for your entry';p.reason='Your entered Bid stays fixed. Review both proposed prices; a proposal does not approve buying.';return p;
   }
+  /* SWING-1 · Sizer plan from 4-hour swings over the last 14 days (replaces the BP1 hourly-pivot
+     plan as the Plan gate). Same object shape as BP1, so Review / Apply / the Plan gate work as
+     before. Stop: just under the nearest confirmed 4-hour swing low below your entry, or one
+     4-hour ATR below entry if that is further away. Target: the nearest confirmed 4-hour swing
+     peak above your entry that gives the minimum reward/risk and stays inside the 16-day check. */
+  function swingFeedProblem(sw,coinId,vs){
+    if(!sw||sw.version!==1||!Array.isArray(sw.bars))return 'No 4-hour swing data yet. Fetch to load it (needs the updated market-data function).';
+    if(coinId&&sw.coinId!==coinId)return '4-hour swing data belongs to another coin. Fetch this coin.';
+    if(String(sw.currency||'')!==String(vs||'gbp').toLowerCase())return '4-hour swing data is in another currency. Fetch again.';
+    if(sw.bars.length<20)return 'Not enough 4-hour history for swings yet ('+sw.bars.length+' bars).';
+    var last=Date.parse(sw.bars[sw.bars.length-1][0]);
+    if(!isFinite(last)||Date.now()-(last+4*3600000)>8*3600000)return '4-hour swing data is stale. Fetch again.';
+    return '';
+  }
+  function swingPivots(cl){
+    var lows=[],highs=[];
+    for(var i=2;i<cl.length-2;i++){
+      if(cl[i]<cl[i-1]&&cl[i]<cl[i-2]&&cl[i]<=cl[i+1]&&cl[i]<=cl[i+2])lows.push({i:i,px:cl[i],confirmed:i+2});
+      if(cl[i]>cl[i-1]&&cl[i]>cl[i-2]&&cl[i]>=cl[i+1]&&cl[i]>=cl[i+2])highs.push({i:i,px:cl[i],confirmed:i+2});
+    }
+    return {lows:lows,highs:highs};
+  }
+  function swingAt(iso){var d=new Date(iso);return isFinite(d.getTime())?d.toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):String(iso||'');}
+  function deriveSwingPlan(sw,entry,minRr,recentHigh,price){
+    var p={version:'SW1-4h',ok:false,status:'DATA_MISSING',entry:null,stop:null,target:null,rr:null,label:'Plan unavailable',
+      reason:'4-hour swing data is required.',source:'Confirmed 4-hour swings (closes), last 14 days',low:null,high:null,candidates:[],targetBasis:null};
+    function no(why,st){p.reason=why;p.status=st||'NO_SETUP';p.ok=false;return p;}
+    var bars=(sw&&Array.isArray(sw.bars)?sw.bars:[]).map(function(r){return {at:r[0],o:Number(r[1]),h:Number(r[2]),l:Number(r[3]),c:Number(r[4])};})
+      .filter(function(b){return b.h>0&&b.l>0&&b.c>0&&isFinite(b.h+b.l+b.c);});
+    p.hourAt=sw&&sw.barAt||null;
+    minRr=Number(minRr);recentHigh=Number(recentHigh);
+    var e=Number(entry);
+    if(!(e>0&&isFinite(e)))return no('Enter your intended Bid in Your ticket first.','ENTRY_NEEDED');
+    p.entry=e;
+    if(bars.length<20)return no('Not enough 4-hour history for swings yet.','DATA_MISSING');
+    if(!(minRr>0)||!(recentHigh>0))return no('Minimum reward/risk and the 16-day reference are required.','DATA_MISSING');
+    var cl=bars.map(function(b){return b.c;}),pv=swingPivots(cl),tr=[];
+    for(var i=1;i<bars.length;i++)tr.push(Math.max(bars[i].h-bars[i].l,Math.abs(bars[i].h-bars[i-1].c),Math.abs(bars[i].l-bars[i-1].c)));
+    var a4=avg(tr.slice(-14));p.atr4h=a4;
+    if(!(a4>0))return no('4-hour volatility (ATR) is unavailable.','DATA_MISSING');
+    var below=pv.lows.filter(function(x){return x.px<e;});
+    if(!below.length)return no('No confirmed 4-hour swing low below your entry in the last 14 days, so there is no structural stop.');
+    var lo=below[below.length-1];
+    p.low={price:lo.px,at:bars[lo.i].at,confirmedAt:bars[lo.confirmed].at};
+    var pad=Math.max(e*0.001,(e-lo.px)*0.08),swingStop=lo.px-pad,rawStop=Math.min(swingStop,e-a4);
+    p.stop=Math.min(rawStop,roundPrice(rawStop,6));
+    p.stopBasis=rawStop<swingStop-1e-12?'atr':'swing';
+    if(!(p.stop>0&&p.stop<e))return no('Structure and 4-hour ATR cannot give a positive stop below your entry.');
+    if(Number(price)>0&&Number(price)<=p.stop)return no('The current price is already at or below the swing stop ('+priceGbp(p.stop,4)+').');
+    var gap=e-p.stop,cap=recentHigh*1.005,seen={};
+    var highs=pv.highs.filter(function(x){if(!(x.px>e)||seen[x.px])return false;seen[x.px]=1;return true;}).sort(function(a,b){return a.px-b.px;});
+    p.candidates=highs.map(function(x){var v=Math.min(x.px,roundPrice(x.px,6)),rr=(v-e)/gap;
+      return {label:'4-hour swing peak',price:v,rr:rr,minR:minRr,cap:cap,at:bars[x.i].at,confirmedAt:bars[x.confirmed].at,
+        reason:v>cap?'Above recent-reference cap':rr+1e-12<minRr?'Reward/risk below minimum':'Meets candidate checks'};});
+    if(!highs.length)return no('No confirmed 4-hour swing peak above your entry in the last 14 days, so there is no structural target. Price is near the top of its recent swings.');
+    var pick=p.candidates.filter(function(c){return c.reason==='Meets candidate checks';})[0];
+    if(!pick){
+      var best=p.candidates.filter(function(c){return c.price<=cap;}).sort(function(a,b){return b.rr-a.rr;})[0];
+      return no(best?'The best 4-hour swing peak inside the 16-day check ('+priceGbp(best.price,4)+') gives only '+num(best.rr,2)+'R with a stop at '+priceGbp(p.stop,4)+'; '+num(minRr,2)+'R is needed.'
+        :'Every 4-hour swing peak above your entry is above the 16-day check ('+priceGbp(cap,4)+').');
+    }
+    p.target=pick.price;p.rr=(p.target-e)/gap;
+    p.high={price:pick.price,at:pick.at,confirmedAt:pick.confirmedAt};
+    p.targetBasis='4-hour swing peak';p.ok=true;p.status='READY';p.label='Swing stop and target for your entry';
+    p.reason='Your Bid stays fixed. Stop and target come from 4-hour swings over the last 14 days; review both before applying. A proposal does not approve buying.';
+    return p;
+  }
+  /* SWING-1 / D · the highest entry (at or below yours, up to 15% lower) at which a swing plan would
+     exist, so a waiting Plan can say exactly what it is waiting for. Cached per series and entry. */
+  var SWING_WORK_CACHE={key:'',val:null};
+  function swingWorkingEntry(sw,entry,minRr,recentHigh,price){
+    entry=Number(entry);if(!(entry>0)||!sw||!sw.bars)return null;
+    var key=[sw.coinId,sw.barAt,entry,minRr,recentHigh,price].join('|');
+    if(SWING_WORK_CACHE.key===key)return SWING_WORK_CACHE.val;
+    var val=null;
+    for(var k=1;k<=300;k++){var e=entry*(1-k*0.0005),q=deriveSwingPlan(sw,e,minRr,recentHigh,price);if(q.ok){val={entry:e,plan:q,pct:k*0.05};break;}}
+    SWING_WORK_CACHE={key:key,val:val};return val;
+  }
+
   function connectedDipPlan(tape, entryOverride){
     var planEntry=entryOverride==null?state.sizer.entry:Number(entryOverride);
-    var f=marketFreshness(),c=hourlyMarketContext(),p=deriveBidPlan(f.kind==='sample'||f.stale?{ready:false}:c,tape,currentAtrHourly(),currentAtr(),Number(state.settings.minRr)||1.5,recentHighPx(),planEntry),feed=state.market.hourlyFeed;
+    var f=marketFreshness(),sw=state.market.swing4h,minRr=Number(state.settings.minRr)||1.5,
+        prob=swingFeedProblem(sw,state.settings.coinId,state.settings.vsCurrency),
+        p=deriveSwingPlan(prob?null:sw,planEntry,minRr,recentHighPx(),Number(tape&&tape.price));
     p.fetchAt=state.market.lastFetchedAt||null;
-    p.status=p.ok?'READY':p.status;
+    if(prob&&p.status!=='ENTRY_NEEDED'){p.ok=false;p.status='DATA_MISSING';p.reason=prob;}
     if(f.kind==='sample'||f.stale){p.reason='Quote is sample or stale. Fetch before reviewing a proposal.';p.ok=false;p.status='DATA_MISSING';}
     if(!(planEntry>0&&isFinite(planEntry))){p.ok=false;p.status='ENTRY_NEEDED';p.reason='Enter your intended Bid in Your ticket first.';}
-    // New feed metadata binds candle-derived ATR to the same coin, currency and last hour.
-    if(feed&&feed.version===1&&(feed.status!=='READY'||feed.coinId!==state.settings.coinId||feed.currency!==String(state.settings.vsCurrency||'gbp').toLowerCase()||feed.barAt!==p.hourAt)){p.ok=false;p.status='DATA_MISSING';p.reason='Validated candle data is missing or does not match this coin, currency and hourly series. Fetch with the BP1 backend.';}
-    p.signature=JSON.stringify([String(state.settings.coinTicker),state.settings.coinId,state.settings.vsCurrency,p.fetchAt,p.hourAt,p.low,p.high,p.atrHourly,p.atrDaily,planEntry,p.stop,p.target,p.ok,Number(state.settings.minRr)||1.5,Number(tape.price),Number(tape.low),Number(tape.high),feed||null]);
+    p.signature=JSON.stringify([String(state.settings.coinTicker),state.settings.coinId,state.settings.vsCurrency,p.fetchAt,p.hourAt,p.low,p.high,p.atr4h,planEntry,p.stop,p.target,p.ok,minRr,Number(tape.price),Number(tape.low),Number(tape.high),sw?sw.barAt:null]);
     return p;
   }
 
@@ -5480,26 +5559,26 @@
   function p1Training(id,title,simple,detail,action){
     return '<details class="p1-training" data-p1-detail="'+esc(id)+'"><summary>Training · '+esc(title)+'</summary><p><b>Simply:</b> '+esc(simple)+'</p><p><b>Detailed:</b> '+esc(detail)+'</p><p><b>What to do:</b> '+esc(action)+'</p></details>';
   }
-  function p1PlanTraining(){return p1Training('plan','Your entry stays fixed','Type your intended Bid in Your ticket. Review the proposed stop and target before applying them.','BP1 keeps your entry exactly as entered. It uses the latest confirmed hourly low below entry and high above entry. Stop = lower of the low minus a structural buffer and entry minus hourly ATR (capped by half daily ATR when available). Targets are hourly mid-leg, then confirmed high, only if rounded reward/risk and the existing recent-reference check pass. No older pivot or percentage ATR proxy is substituted. These planning heuristics are not validated profitability rules.','Apply changes only stop and target together, never entry or an open trade. A complete plan is required before the app can show BUY, and the market, risk and data checks must also pass. Current-quote cheaper-half, Tide, RSI, composite and account gates remain unchanged. Do not tighten a stop just to create a BUY.');}
+  function p1PlanTraining(){return p1Training('plan','Swing plan · your entry stays fixed','Type your intended Bid in Your ticket. The plan puts the stop under the last 4-hour swing low and the target at the next 4-hour swing peak. Review both before applying.','Uses 4-hour bars from the last 14 days. A swing low/peak is a 4-hour close lower/higher than the two bars either side, so it is confirmed 8 hours later. Stop = the latest swing low below your entry minus a small pad (8% of the gap, at least 0.1%), or one 4-hour ATR below entry if that is further. Target = the nearest swing peak above entry giving at least the minimum reward/risk and inside the 16-day check. Wider than the old hourly plan, so the position is smaller for the same £ risk. These are planning rules, not proven profitable rules.','Apply changes stop and target together, never entry or an open trade. A complete plan is required before BUY can show; Tide, RSI, cheaper-half, tape and account checks still apply. The composite Score is shown for context only.');}
 
   function p1PlanHtml(tape){
     var p=connectedDipPlan(tape),c=hourlyMarketContext(),reviewed=p.ok&&p1Reviews[String(state.settings.coinTicker)]===p.signature,locked=busy||!!alreadyInWhy(),d=state.sizer;
     var matches=p.ok&&['entry','stop','target'].every(function(k){return Math.abs(Number(d[k])-p[k])<=Math.max(Math.abs(p[k]),1e-12)*1e-12;});
     function row(name,k,explanation){return '<div class="dip-plan-line p1-plan-line"><span class="dip-plan-lab">'+esc(name)+'</span><span class="dip-plan-val"><b>'+esc(p[k]>0?priceGbp(p[k],4):'Unavailable')+'</b><i>'+esc(explanation)+'</i></span><span class="p1-linked">'+(p.ok?'Linked':'Withheld')+'</span></div>';}
-    var evidence=p.low&&p.high?'<p>'+esc('Hourly low '+priceGbp(p.low.price,4)+' · at '+p.low.at+' · confirmed '+p.low.confirmedAt)+'</p><p>'+esc('Hourly high '+priceGbp(p.high.price,4)+' · at '+p.high.at+' · confirmed '+p.high.confirmedAt)+'</p>':'<p>Confirmed hourly reference pair unavailable. No invented pivot timestamps.</p>';
-    return teach('dipplan','<section class="dip-plan p1-plan" data-p1-version="BP1"><div class="dip-plan-head"><span>Your Bid · proposed stop + target</span><b class="'+(p.ok?'p1-wait':'p1-bad')+'">'+(p.ok?(reviewed?'Reviewed · ready for final checks':'Complete proposal available'):'Plan unavailable')+'</b></div><p class="p1-reason">'+esc(p.reason)+'</p>'+row('Your entry','entry','Fixed · not changed by Apply')+row('Stop','stop','Same hourly low + structure buffer / ATR floor')+row('Target','target',p.targetBasis?(p.targetBasis+' · '+num(p.rr,2)+'R'):'Needs reward within the same hourly structure')+'<p class="p1-note">'+esc(matches?'Current draft matches this complete plan. Final BUY still requires every entry check.':'Your current draft is retained. Apply the complete proposal before BUY can appear; no individual Set buttons can assemble a partial proposal.')+'</p><div class="p1-actions"><button type="button" class="btn secondary" data-action="p1-review" data-signature="'+esc(p.signature)+'"'+(!p.ok||locked?' disabled':'')+'>'+(reviewed?'Review again':'Review stop + target')+'</button><button type="button" class="btn" data-action="p1-apply" data-signature="'+esc(p.signature)+'"'+(!reviewed||locked?' disabled':'')+'>Apply stop + target</button></div>'+(locked?'<p class="p1-note">Application locked while fetching or managing an open trade.</p>':'')+'<details class="p1-evidence" data-p1-detail="plan-evidence"><summary>Source, calculations and legacy comparison</summary>'+evidence+'<p>'+esc('Fetch batch '+(p.fetchAt||'unavailable')+' · latest hourly observation '+(p.hourAt||'unavailable')+'. ATR metadata version '+String(state.market.atrDataVersion||'unavailable')+'. See Candle data below for BP1 source and validation.')+'</p><p>'+esc('Hourly ATR '+(p.atrHourly>0?priceGbp(p.atrHourly,5):'unavailable')+' · daily ATR '+(p.atrDaily>0?priceGbp(p.atrDaily,5):'unavailable')+' · zone pad '+(p.zonePad>0?priceGbp(p.zonePad,5):'unavailable')+' · structure pad '+(p.structurePad>0?priceGbp(p.structurePad,5):'unavailable'))+'</p><p>'+esc('Legacy prominence-ranked hourly low '+(tape.swingLow>0?priceGbp(tape.swingLow,4):'unavailable')+' / high '+(tape.swingHigh>0?priceGbp(tape.swingHigh,4):'unavailable')+'. Comparison only: not the source for this proposal.')+'</p><p>Daily timestamps are not retained; BP1 hourly provenance is shown under Candle data. A fresh batch is not independent proof of every provider component. No close-only ATR proxy is used here.</p></details>'+p1PlanTraining()+'</section>');
+    var evidence=p.low&&p.high?'<p>'+esc('4-hour swing low '+priceGbp(p.low.price,4)+' · bar of '+swingAt(p.low.at)+' · confirmed '+swingAt(p.low.confirmedAt))+'</p><p>'+esc('4-hour swing peak '+priceGbp(p.high.price,4)+' · bar of '+swingAt(p.high.at)+' · confirmed '+swingAt(p.high.confirmedAt))+'</p>'+(p.atr4h>0?'<p>'+esc('4-hour ATR '+priceGbp(p.atr4h,4))+'</p>':''):'<p>Confirmed 4-hour swing pair unavailable.</p>';
+    return teach('dipplan','<section class="dip-plan p1-plan" data-p1-version="SW1"><div class="dip-plan-head"><span>Your Bid · proposed stop + target</span><b class="'+(p.ok?'p1-wait':'p1-bad')+'">'+(p.ok?(reviewed?'Reviewed · ready for final checks':'Complete proposal available'):'Plan unavailable')+'</b></div><p class="p1-reason">'+esc(p.reason)+'</p>'+row('Your entry','entry','Fixed · not changed by Apply')+row('Stop','stop',p.stopBasis==='atr'?'One 4-hour ATR below entry (further than the swing low)':'Just under the 4-hour swing low')+row('Target','target',p.targetBasis?(p.targetBasis+' · '+num(p.rr,2)+'R'):'Needs a 4-hour swing peak with enough reward')+'<p class="p1-note">'+esc(matches?'Current draft matches this complete plan. Final BUY still requires every entry check.':'Your current draft is retained. Apply the complete proposal before BUY can appear; no individual Set buttons can assemble a partial proposal.')+'</p><div class="p1-actions"><button type="button" class="btn secondary" data-action="p1-review" data-signature="'+esc(p.signature)+'"'+(!p.ok||locked?' disabled':'')+'>'+(reviewed?'Review again':'Review stop + target')+'</button><button type="button" class="btn" data-action="p1-apply" data-signature="'+esc(p.signature)+'"'+(!reviewed||locked?' disabled':'')+'>Apply stop + target</button></div>'+(locked?'<p class="p1-note">Application locked while fetching or managing an open trade.</p>':'')+'<details class="p1-evidence" data-p1-detail="plan-evidence"><summary>Source and calculations</summary>'+evidence+'<p>'+esc('Stop: swing low minus a pad of 8% of the gap to your entry (at least 0.1%), or one 4-hour ATR below entry if further'+(p.stopBasis?' · used: '+(p.stopBasis==='atr'?'ATR floor':'swing low'):'')+'. Target: nearest 4-hour swing peak with at least '+num(Number(state.settings.minRr)||1.5,2)+'R, inside the 16-day check ('+priceGbp(recentHighPx()*1.005,4)+').')+'</p><p>'+esc('Latest 4-hour bar '+(p.hourAt?swingAt(p.hourAt):'unavailable')+' · fetch '+(p.fetchAt||'unavailable')+'. Swings use 4-hour closes, confirmed two bars (8 hours) later.')+'</p></details>'+p1PlanTraining()+'</section>');
   }
   function p1GateReasons(tape,out,session,verdict,plan,opts){
     var rows=[],checks=verdict.checks||[],preview=previewFlatOn(); var optHigh=opts&&opts.recentHigh!=null?opts.recentHigh:recentHighPx(); var optFetch=opts&&opts.fetchWhy!==undefined?opts.fetchWhy:fetchBlockWhy();
     var planGate=cdPlanGate({plan:plan});
-    if(verdict.go==='GO'&&!planGate.ok)add('Plan','No complete BUY setup',planGate.reason);
+    if(!planGate.ok&&!(plan&&plan.status==='ENTRY_NEEDED'&&!(Number(state.sizer.entry)>0)&&verdict.go!=='GO'))add('Plan',plan&&plan.ok?'Swing plan ready · not applied':'No complete swing plan',planGate.reason);
     function add(group,title,why){rows.push({group:group,title:title,why:why});}
     if(alreadyInWhy())add('Account','Open trade · Log locked',preview?'Preview as flat is climate only. It does not unlock Log.':'An existing open/waiting ticket blocks a new entry; this is not an invitation to add.');
     if(session.halt)add('Account','Day stop',session.reason||'Daily loss/streak limit is active.');
     if(session.haltProfit)add('Account','Day bank',session.reason||'Daily profit limit is active.');
     var room=roomWhy(out,session);if(room)add('Account','Risk room',room);
-    var labels={Ticket:['Ticket','Invalid entry / stop / target',out.invalidReason||'Review ticket geometry.'],'R:R':['Ticket','Reward/risk below minimum','Current '+(out.rewardRisk==null?'unavailable':num(out.rewardRisk,2)+'R')+'; minimum '+num(Number(state.settings.minRr)||1.5,2)+'R. Do not move the stop just to pass this test.'],Fetch:['Data','Quote sample / stale',fetchBlockWhy()],Reach:['Ticket','Target beyond recent reference','Typed target exceeds the existing recent-high check (reference '+priceGbp(optHigh,4)+', 0.5% tolerance). The reference uses up to 16 daily closes plus the current 24h high—not all intraday highs from 16 days.'],Tide:['Timing','Daily Tide down','SMA7 vs SMA14 daily trend still waits; an improving hour does not override this gate.'],Score:['Timing','Composite below 70','Current score '+num(tape.composite,1)+'. This existing hard gate remains unchanged; it is not a probability.'],RSI:['Timing','Daily RSI hot','Daily RSI '+num(tape.rsi,1)+' is at least 70.'],Hour:['Timing','Hourly RSI not cool','Hourly RSI '+num(tape.hourRsi,1)+' must be below 60 under the existing rule.'],Spot:['Timing','Current quote in the upper half','Current provider range position '+num(tape.locPct,1)+'%. The existing gate checks live location, not the price of a proposed resting limit.']};
-    ['Fetch','Ticket','R:R','Reach','Tide','Score','RSI','Hour','Spot'].forEach(function(k){var test=checks.filter(function(x){return x.name===k;})[0];if(test&&!test.pass){var l=labels[k];add(l[0],l[1],l[2]);}});
+    var labels={Ticket:['Ticket','Invalid entry / stop / target',out.invalidReason||'Review ticket geometry.'],'R:R':['Ticket','Reward/risk below minimum','Current '+(out.rewardRisk==null?'unavailable':num(out.rewardRisk,2)+'R')+'; minimum '+num(Number(state.settings.minRr)||1.5,2)+'R. Do not move the stop just to pass this test.'],Fetch:['Data','Quote sample / stale',fetchBlockWhy()],Reach:['Ticket','Target beyond recent reference','Typed target exceeds the existing recent-high check (reference '+priceGbp(optHigh,4)+', 0.5% tolerance). The reference uses up to 16 daily closes plus the current 24h high—not all intraday highs from 16 days.'],Tide:['Timing','Daily Tide down',(function(){var tr=computeTrend(state.closes||[]);return tr.sma7!=null&&tr.sma14!=null&&tape.trend==='DOWN'?'7-day average '+priceGbp(tr.sma7,4)+' is under the 14-day average '+priceGbp(tr.sma14,4)+' ('+num((tr.sma14-tr.sma7)/tr.sma14*100,2)+'% apart). Waits until it crosses back above; an improving hour does not override this.':'Hourly trend fallback points down; waits until it turns.';})()],RSI:['Timing','Daily RSI hot','Daily RSI '+num(tape.rsi,1)+' is at least 70.'],Hour:['Timing','Hourly RSI not cool','Hourly RSI '+num(tape.hourRsi,1)+' must be below 60 ('+num(tape.hourRsi-60,1)+' points away).'],Spot:['Timing','Current quote in the upper half','Range position '+num(tape.locPct,1)+'%; needs the quote under the 24h midpoint '+priceGbp(tape.mid,4)+'. This checks the live quote, not your resting limit.']};
+    ['Fetch','Ticket','R:R','Reach','Tide','RSI','Hour','Spot'].forEach(function(k){var test=checks.filter(function(x){return x.name===k;})[0];if(test&&!test.pass){var l=labels[k];add(l[0],l[1],l[2]);}});
     if(tape.action==='STAND ASIDE'||tape.action==="DON'T BUY")add('Timing','Tape action blocks entry',tape.reason||tape.action);
     if(optFetch)rows.forEach(function(r){if(r.group==='Timing')r.group='Cached timing · refresh to reassess';});
     return rows;
@@ -6239,7 +6318,8 @@
     }
     var pd=cdPlanGate(f);
     if(master==='BUY')return 'Complete setup · position '+gbp(f.out.positionGbp);
-    if(f.v.go==='GO'&&!pd.ok)return pd.reason;
+    /* D · short headline; the exact numbers are in the waiting list just below. */
+    if(f.v.go==='GO'&&!pd.ok)return f.plan&&f.plan.ok?'Swing plan ready \u2014 apply it to the ticket':f.plan&&f.plan.status==='ENTRY_NEEDED'?'Enter your Bid first':f.plan&&f.plan.status==='DATA_MISSING'?'Swing plan data missing \u2014 fetch':'No swing plan at this Bid yet';
     return /^Target is above/.test(f.v.why)?'Target beyond the recent-reference check':String(f.v.why||'Inspect all checks').split('. ')[0];
   }
   function cdDecisionSubline(f,master){
@@ -6303,24 +6383,44 @@
         (range==null?'unavailable':num(volFitOf(range),0)+'/100 because the 24h range is '+num(range,1)+'%')+
         '. Only a maximum trend with a maximum day reaches it.';
     }
+    /* D · concrete "waiting for" lines for the remaining checks. */
+    var minRrD=Number(state.settings.minRr)||1.5;
+    function tideNeed(){
+      var tr=computeTrend(state.closes||[]);
+      if(t.trend==='DOWN'&&tr.sma7!=null&&tr.sma14!=null)return 'Needs the 7-day average of daily closes ('+priceGbp(tr.sma7,4)+') back above the 14-day average ('+priceGbp(tr.sma14,4)+') \u2014 '+num((tr.sma14-tr.sma7)/tr.sma14*100,2)+'% apart. This moves over days, not hours.';
+      return 'Needs the hourly trend fallback to stop pointing down (daily averages are level).';
+    }
+    function rsiNeed(){return t.rsi==null?'':'Needs daily RSI under 70 \u2014 now '+num(t.rsi,1)+', '+num(t.rsi-70,1)+' points away.';}
+    function rrNeed(){var o=f.out,d=state.sizer;if(o.invalid||!(d.entry>d.stop))return '';var need=d.entry+minRrD*(d.entry-d.stop);return 'Needs a target of at least '+priceGbp(need,4)+' for '+num(minRrD,2)+'R with this stop (now '+(num(o.rewardRisk,2)===num(minRrD,2)?num(o.rewardRisk,4)+'R, just under after rounding':num(o.rewardRisk,2)+'R')+').';}
+    function reachNeed(){var cap=recentHighPx()*1.005;return cap>0?'Needs the target at or under '+priceGbp(cap,4)+' (16-day reference + 0.5%); now '+priceGbp(state.sizer.target,4)+'.':'';}
+    function planNeed(){
+      var p=f.plan,g=cdPlanGate(f);
+      if(p.ok)return g.matches?'':'A swing plan is ready \u2014 open Swing plan below, Review, then Apply stop + target.';
+      if(p.status==='ENTRY_NEEDED')return 'Needs your intended Bid in Your ticket.';
+      if(p.status==='DATA_MISSING')return p.reason;
+      if(/no confirmed 4-hour swing low below/i.test(p.reason||''))return 'Your Bid is under every 4-hour swing low of the last 14 days, so there is no stop level yet. Waiting for a new swing low to form (it is confirmed 8 hours after the turn) '+(function(){var lows=swingPivots((state.market.swing4h.bars||[]).map(function(r){return Number(r[4]);})).lows;return lows.length?'or a Bid above '+priceGbp(Math.min.apply(null,lows.map(function(x){return x.px;})),4)+' (the lowest swing low).':'';})();
+      var w=swingWorkingEntry(state.market.swing4h,p.entry,minRrD,recentHighPx(),t.price);
+      if(w)return p.reason+' Works from an entry of '+priceGbp(w.entry,4)+' or lower ('+num(w.pct,2)+'% under your Bid): stop '+priceGbp(w.plan.stop,4)+', target '+priceGbp(w.plan.target,4)+' ('+num(w.plan.rr,2)+'R).';
+      return p.reason+' No entry up to 15% lower works either.';
+    }
     var hourIsWait=quoteKnown&&c.ready&&t.hourRsi!=null&&check('Hour')===false,
         spotIsWait=quoteKnown&&t.high>t.low&&t.low>0&&check('Spot')===false,
-        scoreIsWait=quoteKnown&&isFinite(t.composite)&&check('Score')===false;
+        scoreIsWait=false;
     function add(k,name,value,rule,detail,simple,known,timing,need,cap){var pass=check(k),status=known===false||pass===null?'unknown':pass?'pass':timing?'wait':'block';a.push(cdCue(k,name,'entry',status,value,rule,detail,simple,need,cap));}
-    add('Fetch','Quote freshness',f.fresh.label,'Sample or stale quote blocks entry.',fetchBlockWhy()||'Quote is within the existing client freshness threshold. History components may still be unavailable.','Check that the instruments have current readings.',true,false);
-    add('Ticket','Ticket geometry',f.out.invalid?'Invalid prices':'Stop < entry < target','Positive entry/stop/target with stop below entry and target above it.',f.out.invalidReason||'A valid ordering of numbers does not establish a structurally sound trade.','Put the numbers in the right order before assessing the plan.',true,false);
-    add('R:R','Reward / risk',f.out.rewardRisk==null?'Unavailable':num(f.out.rewardRisk,2)+'R / min '+num(Number(state.settings.minRr)||1.5,2)+'R','Use the configured minimum reward/risk.', 'Reward/risk = (target − entry) / (entry − stop), before costs. Do not tighten a stop merely to pass.','Possible reward must justify the planned price risk.',!f.out.invalid&&f.out.rewardRisk!=null,false);
-    add('Reach','Target reach',quoteKnown?'Reference '+priceGbp(recentHighPx(),4):'Cached · fetch first','Existing recent-high check, including 0.5% tolerance.','Reference is the maximum of up to 16 daily closes and current provider day high, not every intraday high over 16 days. It is not a forecast or a price ceiling.','A target can be outside this screening range without being impossible.',quoteKnown&&recentHighPx()>0,false);
+    add('Fetch','Quote freshness',f.fresh.label,'Sample or stale quote blocks entry.',fetchBlockWhy()||'Quote is within the existing client freshness threshold. History components may still be unavailable.','Check that the instruments have current readings.',true,false,check('Fetch')===false?'Needs a fresh Fetch.':'');
+    add('Ticket','Ticket geometry',f.out.invalid?'Invalid prices':'Stop < entry < target','Positive entry/stop/target with stop below entry and target above it.',f.out.invalidReason||'A valid ordering of numbers does not establish a structurally sound trade.','Put the numbers in the right order before assessing the plan.',true,false,f.out.invalid?(f.out.invalidReason||'Needs stop < entry < target.'):'');
+    add('R:R','Reward / risk',f.out.rewardRisk==null?'Unavailable':num(f.out.rewardRisk,2)+'R / min '+num(Number(state.settings.minRr)||1.5,2)+'R','Use the configured minimum reward/risk.', 'Reward/risk = (target − entry) / (entry − stop), before costs. Do not tighten a stop merely to pass.','Possible reward must justify the planned price risk.',!f.out.invalid&&f.out.rewardRisk!=null,false,check('R:R')===false?rrNeed():'');
+    add('Reach','Target reach',quoteKnown?'Reference '+priceGbp(recentHighPx(),4):'Cached · fetch first','Existing recent-high check, including 0.5% tolerance.','Reference is the maximum of up to 16 daily closes and current provider day high, not every intraday high over 16 days. It is not a forecast or a price ceiling.','A target can be outside this screening range without being impossible.',quoteKnown&&recentHighPx()>0,false,check('Reach')===false?reachNeed():'');
     var tideSource=t.trend==='UP'||t.trend==='DOWN'?'daily':'hourly fallback';
-    add('Tide','Tide filter',quoteKnown?(t.tide+' · '+tideSource):'Cached · fetch first','Existing Tide-down filter waits. Daily direction is used when UP/DOWN; otherwise the existing hourly fallback is used.','The calculation is unchanged. Improving hourly structure does not override a DOWN Tide result.','A short recovery and a weak broader trend can coexist.',quoteKnown&&(t.trend==='UP'||t.trend==='DOWN'||c.ready),true);
+    add('Tide','Tide filter',quoteKnown?(t.tide+' · '+tideSource):'Cached · fetch first','Existing Tide-down filter waits. Daily direction is used when UP/DOWN; otherwise the existing hourly fallback is used.','The calculation is unchanged. Improving hourly structure does not override a DOWN Tide result.','A short recovery and a weak broader trend can coexist.',quoteKnown&&(t.trend==='UP'||t.trend==='DOWN'||c.ready),true,check('Tide')===false?tideNeed():'');
     add('Hour','Hourly RSI',quoteKnown&&c.ready&&t.hourRsi!=null?num(t.hourRsi,1)+' / below '+GATE.hourRsi:'Unknown / unverified','Below '+GATE.hourRsi+' when the hourly RSI input is available.','Missing hourly RSI is NON-BLOCKING in the existing engine. This tile can also be unknown when a cached RSI exists but hourly context validation fails. The actual engine result is not overridden by this display.','A missing reading is not a passed reading.',quoteKnown&&c.ready&&t.hourRsi!=null,true,hourIsWait?hourNeed():'','');
     add('Spot','Range position',quoteKnown&&t.high>t.low?num(t.locPct,1)+'% / below '+GATE.spot+'%':'Unknown / cached','Current quote must be below the provider day midpoint.','The gate evaluates the current quote, not the price of a cheaper proposed resting bid. Exactly '+GATE.spot+'% waits.','Where the price is now is different from where you hope to buy.',quoteKnown&&t.high>t.low&&t.low>0,true,spotIsWait?spotNeed():'','');
-    add('Score','Composite',quoteKnown?num(t.composite,1)+' / min '+GATE.score:'Cached · fetch first','The existing composite gate requires at least '+GATE.score+'.','This remains an existing timing check. The score is not a probability or a way to outvote another gate.','A high score is one check, not the whole checklist.',quoteKnown&&isFinite(t.composite),true,scoreIsWait?scoreNeed():'',scoreIsWait?scoreCap():'');
-    a.push(cdCue('In','Open-trade lock','entry',f.inWhy?'block':'pass',f.inWhy?'Open / waiting ticket':'No open ticket','No additional entry while a ticket blocks Log.',f.inWhy||'Journal is flat for the existing lock check. Exchange orders are not queried. Preview-as-flat never removes the real lock.','Do not start another ticket just because the market looks favourable.'));
+    a.push(cdCue('Score','Composite score','context',quoteKnown&&isFinite(t.composite)?'context':'unknown',quoteKnown&&isFinite(t.composite)?num(t.composite,1)+' · context only':'Cached · fetch first','No longer a buy gate (swing plan, Oct 2026). Shown for context.','The score mixes trend, momentum and range fit. In the 119-day study it did not separate good hours from bad ones, so it no longer blocks BUY.','Context, not a gate.'));
+    a.push(cdCue('In','Open-trade lock','entry',f.inWhy?'block':'pass',f.inWhy?'Open / waiting ticket':'No open ticket','No additional entry while a ticket blocks Log.',f.inWhy||'Journal is flat for the existing lock check. Exchange orders are not queried. Preview-as-flat never removes the real lock.','Do not start another ticket just because the market looks favourable.',f.inWhy?'Waiting for your open ticket to close.':''));
     var account=f.session.halt||f.session.haltProfit||!!f.room;
-    a.push(cdCue('Day','Day / risk room','entry',account?'block':'pass',f.session.haltProfit?'BANK':account?'Account limit active':'Within available risk room','Session and available-risk limits still apply.',[f.session.halt||f.session.haltProfit?f.session.reason:'',f.room].filter(Boolean).join(' ')||'Day limits and room check allow this ticket; that alone is not GO.','Keep the risk within the account allowance.'));
-    add('RSI','Daily RSI',quoteKnown&&t.rsi!=null?num(t.rsi,1)+' / below 70':'Unknown / cached','The existing daily-hot filter waits at RSI 70 or above.','This reading is calculated from the cached daily series, separately from hourly RSI. Independent daily component timestamps are not stored.','The daily and hourly rhythms are different instruments.',quoteKnown&&(state.closes||[]).length>=15&&t.rsi!=null,true);
-    a.push(cdCue('Tape','Tape veto','entry',!quoteKnown?'unknown':t.action==='STAND ASIDE'||t.action==="DON'T BUY"?'wait':'pass',quoteKnown?(t.action==='STAND ASIDE'||t.action==="DON'T BUY"?t.action:t.action+' · no veto'):'Cached · fetch first','Existing STAND ASIDE / DON’T BUY tape veto remains active.',t.reason,'A separate stop sign still matters, even with other green lights.'));
+    a.push(cdCue('Day','Day / risk room','entry',account?'block':'pass',f.session.haltProfit?'BANK':account?'Account limit active':'Within available risk room','Session and available-risk limits still apply.',[f.session.halt||f.session.haltProfit?f.session.reason:'',f.room].filter(Boolean).join(' ')||'Day limits and room check allow this ticket; that alone is not GO.','Keep the risk within the account allowance.',account?([f.session.halt||f.session.haltProfit?f.session.reason:'',f.room].filter(Boolean).join(' ')||'Waiting for account limits to reset.'):''));
+    add('RSI','Daily RSI',quoteKnown&&t.rsi!=null?num(t.rsi,1)+' / below 70':'Unknown / cached','The existing daily-hot filter waits at RSI 70 or above.','This reading is calculated from the cached daily series, separately from hourly RSI. Independent daily component timestamps are not stored.','The daily and hourly rhythms are different instruments.',quoteKnown&&(state.closes||[]).length>=15&&t.rsi!=null,true,check('RSI')===false?rsiNeed():'');
+    a.push(cdCue('Tape','Tape veto','entry',!quoteKnown?'unknown':t.action==='STAND ASIDE'||t.action==="DON'T BUY"?'wait':'pass',quoteKnown?(t.action==='STAND ASIDE'||t.action==="DON'T BUY"?t.action:t.action+' · no veto'):'Cached · fetch first','Existing STAND ASIDE / DON’T BUY tape veto remains active.',t.reason,'A separate stop sign still matters, even with other green lights.',quoteKnown&&(t.action==='STAND ASIDE'||t.action==="DON'T BUY")?'Waiting for the tape veto to lift: '+(t.reason||t.action):''));
     function context(id,name,value,known,rule,detail){a.push(cdCue(id,name,'context',known?'context':'unknown',known?value:'Unavailable / unverified',rule,detail,'Context explains conditions. It never unlocks buying by itself.'));}
     context('Recovery','Hourly recovery',f.observation.trend+' · '+f.observation.watch,c.ready,'T1 completed-hour observations, not entry approval.',f.observation.reason);
     context('EMA','Hourly EMA20',c.ready?priceGbp(c.ema[c.ema.length-1],5):'',c.ready,'Hourly exponential average, separate from daily averages.','Last plotted hourly observation can differ from the current quote. Pivots need later bars for confirmation.');
@@ -6332,10 +6432,10 @@
     context('Volume','Hourly volume',t.volEvidenceLabel||t.volLabel||'',c.ready&&!!t.volReady,'Missing volume is not zero volume. The display baseline is the median of the previous 20 completed hourly bars; it is advisory only.',t.volEvidenceSay||t.volSay||'Only validated hourly volume evidence is presented; provider 24h totals are not candle volume.');
     context('Divergence','RSI divergence',t.divSay||'No bullish divergence detected',(t.divFrame==='hour'?c.ready:t.divFrame==='day'?quoteKnown&&(state.closes||[]).length>=22:c.ready&&(state.closes||[]).length>=22),'Price/momentum divergence is supporting context.',(t.divSay||'No bullish divergence detected by the existing calculation.')+' This is not a standalone buy trigger.');
     context('Continuation','Continuation watch',contLabel(f.continuation.code),c.ready&&currentAtrHourly()>0,'C1 observation-only; no continuation GO.',contLabel(f.continuation.code)+'. '+(f.continuation.trigger?'Reference '+priceGbp(f.continuation.trigger,5)+'. ':'')+'Even HOLD_OBSERVED does not copy a ticket or unlock Log.');
-    var atrOk=c.ready&&quoteKnown&&currentAtrHourly()>0;
-    a.push(cdCue('ATR','Hourly OHLC ATR','plan',atrOk?'pass':'unknown',atrOk?priceGbp(currentAtrHourly(),5):'Validated ATR missing','Required for BP1 planning, not a separate global entry gate.','No close-only or percentage proxy replaces hourly OHLC ATR. BP1 Candle data reports the hourly source and last completed candle when available.','The planner needs a usable volatility ruler.'));
+    var swD=state.market.swing4h,swProbD=swingFeedProblem(swD,state.settings.coinId,state.settings.vsCurrency);
+    a.push(cdCue('ATR','4-hour swing data','plan',!swProbD&&quoteKnown?'pass':'unknown',!swProbD?swD.count+' bars · last '+swingAt(swD.barAt):'Missing / stale','Required for the swing plan, not a separate entry gate.',swProbD||('Completed 4-hour bars from '+swD.source+'. 4-hour ATR '+(f.plan.atr4h>0?priceGbp(f.plan.atr4h,5):'unavailable')+'.'),'The planner needs recent swings to place the stop and target.',swProbD||''));
     var planGate=cdPlanGate(f),planStatus=f.plan.ok?(planGate.matches?'pass':'wait'):(f.plan.status==='DATA_MISSING'?'unknown':'wait');
-    a.push(cdCue('Plan','Bid-based proposal','plan',planStatus,f.plan.ok?(planGate.matches?'Complete plan · ticket linked':'Proposal ready · draft differs'):'No complete setup', 'A complete BP1 plan matching Entry, Stop and Target is required before the final BUY recommendation.', f.plan.reason+(planGate.matches?'':' '+planGate.reason), 'A green ticket is not enough; the saved prices must match a complete plan.'));
+    a.push(cdCue('Plan','Swing plan','plan',planStatus,f.plan.ok?(planGate.matches?'Complete plan · ticket linked':'Proposal ready · draft differs'):'No complete setup', 'A complete 4-hour swing plan matching Entry, Stop and Target is required before the final BUY recommendation.', f.plan.reason+(planGate.matches?'':' '+planGate.reason), 'A green ticket is not enough; the saved prices must match a complete plan.',planStatus==='pass'?'':planNeed()));
     a.push(cdCue('Source','Provider evidence','plan',quoteKnown?'context':'unknown',quoteKnown?'Inspect source / window':'Sample / stale','Source, range window and available timestamps.', 'Quote source: '+(/coingecko/i.test(state.market.source||'')?'CoinGecko':/yahoo/i.test(state.market.source||'')?'Yahoo':'not identified')+'. Client fetch time '+(state.market.lastFetchedAt||'unavailable')+'. Hourly/ATR provider component times and daily timestamps are not all retained.','Two providers can record different ranges.'));
     return a;
   }
@@ -6345,7 +6445,7 @@
   /* Blocking groups first: the eye lands on the left column, so that is where the ones
      that need attention go. The groups themselves and their order within a status do not
      change, and tapping any tile still opens the same checks. */
-  function cdStrip(f){var cues=cdCues(f),groups=[['Ticket',['Ticket','R:R','Reach']],['Timing',['Tide','Hour','Spot','Score','RSI','Tape']],['Account',['In','Day']],['Plan / data',['Fetch','ATR','Plan','Source']]];var tiles=groups.map(function(g){var rows=cues.filter(function(c){return g[1].indexOf(c.id)>=0;}),status=cdStatus(rows),first=rows.filter(function(c){return c.status===status;})[0]||rows[0];return {status:status,html:'<button type="button" class="cd-'+status+'" data-action="cd-deck" data-cue="'+first.id+'"><span>● '+cdStatusWord(status)+'</span><b>'+g[0]+'</b></button>'};});tiles.sort(function(a,b){return cdSev(a.status)-cdSev(b.status);});return '<div class="cd-strip" aria-label="Cue groups">'+tiles.map(function(t){return t.html;}).join('')+'</div>'+(lrSeen('hint')?'':'<p class="cd-small">Tap a group to inspect the checks. A proposed plan is not buying approval.</p>');}
+  function cdStrip(f){var cues=cdCues(f),groups=[['Ticket',['Ticket','R:R','Reach']],['Timing',['Tide','Hour','Spot','RSI','Tape']],['Account',['In','Day']],['Plan / data',['Fetch','ATR','Plan','Source']]];var tiles=groups.map(function(g){var rows=cues.filter(function(c){return g[1].indexOf(c.id)>=0;}),status=cdStatus(rows),first=rows.filter(function(c){return c.status===status;})[0]||rows[0];return {status:status,html:'<button type="button" class="cd-'+status+'" data-action="cd-deck" data-cue="'+first.id+'"><span>● '+cdStatusWord(status)+'</span><b>'+g[0]+'</b></button>'};});tiles.sort(function(a,b){return cdSev(a.status)-cdSev(b.status);});return '<div class="cd-strip" aria-label="Cue groups">'+tiles.map(function(t){return t.html;}).join('')+'</div>'+(lrSeen('hint')?'':'<p class="cd-small">Tap a group to inspect the checks. A proposed plan is not buying approval.</p>');}
   function cdDecision(f){var master=cdMaster(f),tone=master==='BUY'?'pass':(master==='SELL'||master==='NO-GO')?'block':'wait',reason=cdDecisionReason(f,master),sub=cdDecisionSubline(f,master),need=cdDecisionNeed(f,master);return '<section class="cd-decision"><b class="cd-verdict cd-'+tone+'">'+esc(master)+'</b><div><strong>'+esc(reason)+'</strong><small>'+esc(sub)+'</small>'+(need?'<div class="cd-need-line">'+need+'</div>':'')+'</div><button type="button" class="text-link" data-action="cd-why">Why? / Gates</button></section>'+cdStrip(f);}
   /* How far a gate is from clearing, as a fraction of the distance it has to cover, so the
      nearest one can be named first: that is the one that can realistically change first. */
@@ -6362,14 +6462,13 @@
     /* Only when the engine is waiting on conditions. A NO-GO or a SELL is a different
        sentence — the ticket itself is the problem — and a cool-down distance line next to
        it would point at the wrong thing. */
-    if(master!=='WAIT')return '';
+    if(master!=='WAIT'&&master!=='NO-GO')return '';
     try{
-      var wait=cdCues(f).filter(function(c){return c.status==='wait'&&c.need;});
+      /* D · every check that is waiting (or blocking) and what it needs, nearest first. */
+      var wait=cdCues(f).map(function(c,i){c._i=i;return c;}).filter(function(c){return (c.status==='wait'||c.status==='block'||(c.status==='unknown'&&c.id==='Plan'))&&c.need;});
       if(!wait.length)return '';
-      wait.sort(function(a,b){return cdNeedGap(f,a)-cdNeedGap(f,b);});
-      var first=wait[0],rest=wait.length-1;
-      return cdToneSign('warn')+'<span><b>'+esc(first.name)+'</b> · '+esc(first.need)+
-        (rest?' <span class="cd-need-more">+'+rest+' more waiting</span>':'')+'</span>';
+      wait.sort(function(a,b){return (a.status==='block'?0:1)-(b.status==='block'?0:1)||cdNeedGap(f,a)-cdNeedGap(f,b)||a._i-b._i;});
+      return cdToneSign(master==='NO-GO'?'bad':'warn')+'<span class="cd-need-list">'+wait.map(function(c){return '<span class="cd-need-row"><b>'+esc(c.name)+'</b> · '+esc(c.need)+'</span>';}).join('')+'</span>';
     }catch(e){return '';}
   }
   /* CD-HEADER-FOLD-1 · the quote block and its Fetch button used to sit on a third row of
@@ -6901,9 +7000,9 @@
   }
 
   function cdTimeframes(f){var t=f.t;return '<div class="cd-timeframes"><div><small>Hourly · completed evidence</small><b>'+esc(f.c.ready?f.observation.trend+' · '+f.observation.watch:'Unknown · hourly evidence needed')+'</b></div><div><small>Daily / Tide</small><b>'+esc(f.fresh.kind==='sample'?'Unknown · Fetch first':f.fresh.stale?'Cached · Fetch first':'Tide '+t.tide+' · '+(!t.hasMa20?'SMA20 unavailable':t.aboveMa20?'above SMA20':'below / at SMA20'))+'</b></div></div>';}
-  function cdPlanHtml(f){var p=f.plan,specific='';if(!p.ok&&p.status==='NO_SETUP'&&p.candidates&&p.candidates.length){var hasRr=p.candidates.some(function(c){return c.reason==='Reward/risk below minimum';});var hasCap=p.candidates.some(function(c){return c.reason==='Above recent-reference cap';});if(hasRr&&hasCap)specific='Target R/R and cap blocked \u2014 no valid target';else if(hasRr)specific='Target R/R below minimum \u2014 structure is tight';else if(hasCap)specific='Target exceeds recent-high cap';else specific='No valid target from current structure';}var label=p.ok?'Proposal ready \u2014 review':p.status==='ENTRY_NEEDED'?'Enter your Bid first':p.status==='DATA_MISSING'?'Cannot calculate \u2014 data missing':specific||'No suitable setup around this entry';return '<section class="cd-card cd-plan" data-bp-plan><h3>Plan around my entry · BP1</h3><p class="'+(p.ok?'cd-pass':'cd-wait')+'"><b>'+esc(label)+'</b></p>'+(p.ok?p1PlanHtml(f.t):'<p class="cd-plan-reason">'+esc(p.reason)+'</p>'+pcRejected(p)+'<p class="cd-small">No new stop or target calculated. Your saved prices are unchanged.</p>'+p1PlanTraining())+bpFeedHtml()+'<p class="cd-small">Pattern context: '+esc(pcLabel(f.pc.code))+' · not entry approval.</p><button type="button" data-action="pc-open" data-ticker="'+esc(f.coin)+'">Inspect pattern context</button></section>';}
+  function cdPlanHtml(f){var p=f.plan,specific='';if(!p.ok&&p.status==='NO_SETUP'&&p.candidates&&p.candidates.length){var hasRr=p.candidates.some(function(c){return c.reason==='Reward/risk below minimum';});var hasCap=p.candidates.some(function(c){return c.reason==='Above recent-reference cap';});if(hasRr&&hasCap)specific='Target R/R and cap blocked \u2014 no valid target';else if(hasRr)specific='Target R/R below minimum \u2014 structure is tight';else if(hasCap)specific='Target exceeds recent-high cap';else specific='No valid target from current structure';}var label=p.ok?'Proposal ready \u2014 review':p.status==='ENTRY_NEEDED'?'Enter your Bid first':p.status==='DATA_MISSING'?'Cannot calculate \u2014 data missing':specific||'No suitable setup around this entry';return '<section class="cd-card cd-plan" data-bp-plan><h3>Swing plan · 4-hour swings</h3><p class="'+(p.ok?'cd-pass':'cd-wait')+'"><b>'+esc(label)+'</b></p>'+(p.ok?p1PlanHtml(f.t):'<p class="cd-plan-reason">'+esc(p.reason)+'</p>'+pcRejected(p)+'<p class="cd-small">No new stop or target calculated. Your saved prices are unchanged.</p>'+p1PlanTraining())+bpFeedHtml()+'<p class="cd-small">Pattern context: '+esc(pcLabel(f.pc.code))+' · not entry approval.</p><button type="button" data-action="pc-open" data-ticker="'+esc(f.coin)+'">Inspect pattern context</button></section>';}
 
-  function bpFeedHtml(){var f=state.market.hourlyFeed;return '<details class="cd-fold" data-cd-fold="candle-feed"><summary>Candle data · '+esc(f&&f.status==='READY'?f.source:'inspect availability')+'</summary><div>'+(f?'<p>'+esc('Status: '+f.status+' · '+f.source+' · '+String(f.currency||'unknown').toUpperCase())+'</p><p>'+esc('Last completed candle: '+(f.barAt||'unavailable')+' · '+(f.count||0)+' hourly observations')+'</p><p>'+esc(f.note||'')+'</p>'+(Array.isArray(f.attempts)?f.attempts:[]).map(function(a){return '<p>'+esc(a.source+': '+a.status+(a.reason?' — '+a.reason:''))+'</p>';}).join(''):'<p>No BP1 candle report yet. Install the BP1 backend and Fetch. Older saved hourly ATR may still be present, but its separate provider metadata was not retained.</p>')+'<p class="cd-small">Quote/range and candle providers can differ. No Revolut order-book or fill data is available. A chart refresh is not proof that candle-based planning is ready.</p></div></details>';}
+  function bpFeedHtml(){var f=state.market.hourlyFeed,sw=state.market.swing4h,swp=swingFeedProblem(sw,state.settings.coinId,state.settings.vsCurrency);return '<details class="cd-fold" data-cd-fold="candle-feed"><summary>Candle data · '+esc(f&&f.status==='READY'?f.source:'inspect availability')+'</summary><div>'+'<p>'+esc(swp?'4-hour swings: '+swp:'4-hour swings: '+sw.count+' bars (14 days) · last bar '+swingAt(sw.barAt)+' · '+sw.source)+'</p>'+(f?'<p>'+esc('Status: '+f.status+' · '+f.source+' · '+String(f.currency||'unknown').toUpperCase())+'</p><p>'+esc('Last completed candle: '+(f.barAt||'unavailable')+' · '+(f.count||0)+' hourly observations')+'</p><p>'+esc(f.note||'')+'</p>'+(Array.isArray(f.attempts)?f.attempts:[]).map(function(a){return '<p>'+esc(a.source+': '+a.status+(a.reason?' — '+a.reason:''))+'</p>';}).join(''):'<p>No BP1 candle report yet. Install the BP1 backend and Fetch. Older saved hourly ATR may still be present, but its separate provider metadata was not retained.</p>')+'<p class="cd-small">Quote/range and candle providers can differ. No Revolut order-book or fill data is available. A chart refresh is not proof that candle-based planning is ready.</p></div></details>';}
   function cdDataHtml(f,inner){if(inner)return '<div>'+p1FeedHtml(f.t)+bpFeedHtml()+'<button type="button" data-action="pc-open" data-ticker="'+esc(f.coin)+'">Pattern history & learning</button><div class="cd-actions"><button type="button" data-action="trend-history">Signal history</button><button type="button" data-action="trend-export">Inspect / export '+esc(f.coin)+'</button></div><details class="cd-fold" data-cd-fold="watch"><summary>Detailed T1 / C1 observations</summary><div>'+trendPanelHtml(f.t,f.v)+'</div></details></div>';return '<details class="cd-fold" data-cd-fold="data"><summary>Data, observations & diagnostics<small>Provider · Signal history · Inspect / export</small></summary><div>'+p1FeedHtml(f.t)+bpFeedHtml()+'<button type="button" data-action="pc-open" data-ticker="'+esc(f.coin)+'">Pattern history & learning</button><div class="cd-actions"><button type="button" data-action="trend-history">Signal history</button><button type="button" data-action="trend-export">Inspect / export '+esc(f.coin)+'</button></div><details class="cd-fold" data-cd-fold="watch"><summary>Detailed T1 / C1 observations</summary><div>'+trendPanelHtml(f.t,f.v)+'</div></details></div></details>';}
   function cdLearnHtml(){return pcCatalog()+'<h3>Your ticket is the starting point</h3><p>Entry is your intended Bid. BP1 proposes only stop and target. Review, then Apply both prices together. Nothing is sent to Revolut.</p>'+p1PlanTraining()+p1Training('cd-lights','Read the instruments','One blocking check still matters even when other checks pass.','Green means that named check passes; blue is context, grey is missing or unverified. A complete proposal is required for BUY, but it is not enough by itself. Missing hourly RSI remains non-blocking under the original engine.','Use Why? for blockers. Candle data explains whether the feed is ready.')+p1Training('cd-scale','Readable chart','Fit market prevents a far-away draft from flattening the chart.','Excluded ticket lines are listed. Include levels restores them without changing prices. Grey cone is illustrative, not a forecast.','Inspect the confirmed high/low dots and compare your draft with market evidence.');}
 
@@ -10981,10 +11080,35 @@
   /* The Log action, pinned. It is the one thing on this tab that changes anything, so it
      stays in reach however far the page is scrolled, and it carries the reason when it is
      locked so the button is never a mystery. */
+  /* RECORD-BUY-1 · "I already bought — record it". Never blocked by the lights: it records a real
+     purchase (stage = holding) with a snapshot of what the lights said at that moment. */
+  var recordBuyOpen=false,recordBuyDraft={},recordBuyErr='';
+  document.addEventListener('input',function(e){var el=e.target;if(el&&el.id&&/^rb-/.test(el.id))recordBuyDraft[el.id]=el.value;},true);
+  function cdGroupStatuses(f){var cues=cdCues(f),groups=[['Ticket',['Ticket','R:R','Reach']],['Timing',['Tide','Hour','Spot','RSI','Tape']],['Account',['In','Day']],['Plan',['Fetch','ATR','Plan']]];
+    return groups.map(function(g){var rows=cues.filter(function(c){return g[1].indexOf(c.id)>=0;});return {name:g[0],status:cdStatus(rows),waiting:rows.filter(function(c){return c.status==='wait'||c.status==='block';}).map(function(c){return c.id;})};});}
+  function recordBuyHtml(f){
+    if(!recordBuyOpen||f.inWhy)return '';
+    var d=state.sizer,p=f.plan,q=Number(f.t.price)||0,price=Number(d.entry)>0?Number(d.entry):q,
+        stop=p.ok?p.stop:(Number(d.stop)>0?Number(d.stop):''),target=p.ok?p.target:(Number(d.target)>0?Number(d.target):''),
+        amt=f.out&&f.out.positionGbp>0?Math.round(f.out.positionGbp*100)/100:'';
+    function fv(v){return v===''||v==null?'':String(Math.round(Number(v)*1e8)/1e8);}
+    function dv(id,v){return recordBuyDraft[id]!=null?recordBuyDraft[id]:fv(v);}
+    return '<section class="cd-card cd-record-buy" id="record-buy"><h3>I already bought \u2014 record it</h3>'+
+      '<p class="cd-small">Saves a holding trade in the Journal for '+esc(state.settings.coinTicker)+'. Not blocked by the lights; it stores what they said now. Nothing is sent to an exchange.</p>'+
+      '<div class="rb-grid"><label>Price paid<input id="rb-price" type="number" inputmode="decimal" step="any" value="'+esc(dv('rb-price',price))+'"></label>'+
+      '<label>Amount £<input id="rb-amount" type="number" inputmode="decimal" step="any" value="'+esc(dv('rb-amount',amt))+'"></label>'+
+      '<label>Stop (required)<input id="rb-stop" type="number" inputmode="decimal" step="any" value="'+esc(dv('rb-stop',stop))+'"></label>'+
+      '<label>Target (optional)<input id="rb-target" type="number" inputmode="decimal" step="any" value="'+esc(dv('rb-target',target))+'"></label></div>'+
+      '<label class="rb-note">Note<input id="rb-note" type="text" maxlength="200" value="'+esc(recordBuyDraft['rb-note']||'')+'" placeholder="e.g. bought on Revolut at the dip"></label>'+
+      '<p class="cd-small">'+esc(p.ok?'Stop and target prefilled from the swing plan for your Bid.':'Stop and target prefilled from your ticket. Check them against what you actually set.')+'</p>'+
+      (recordBuyErr?'<p class="toast-error" role="alert">'+esc(recordBuyErr)+'</p>':'')+'<div class="rb-actions"><button type="button" class="btn primary" data-action="bought-save">Save to Journal</button><button type="button" class="btn secondary" data-action="bought-cancel">Cancel</button></div></section>';
+  }
   function cdActionBar(f){
     if(f.inWhy)return '';
-    var blocked=!!f.blockWhy,why=blocked?cdDecisionReason(f,cdMaster(f))+' · Log locked':'All checks pass · position '+gbp(f.out.positionGbp);
+    var blocked=!!f.blockWhy,mst=cdMaster(f),waitG=blocked?cdGroupStatuses(f).filter(function(g){return g.status==='wait'||g.status==='block';}).map(function(g){return g.name;}):[];
+    var why=blocked?(waitG.length?mst+' · '+waitG.join(' · ')+' · Log locked':cdDecisionReason(f,mst)+' · Log locked'):'All checks pass · position '+gbp(f.out.positionGbp);
     return '<div class="cd-action-bar"><span class="cd-action-why">'+esc(why)+'</span>'+
+      '<button type="button" class="btn secondary rb-open" data-action="bought-open"'+(recordBuyOpen?' aria-expanded="true"':'')+'>I bought · record</button>'+
       '<button type="button" class="btn'+(blocked?'':' primary')+'" data-action="log-sizer"'+(blocked?' disabled':'')+'>'+
       (blocked?"Don't buy":'Log BUY plan')+'</button></div>';
   }
@@ -11000,13 +11124,13 @@
     return '<div class="sizer-screen cd-workspace">'+sectionNavHtml('sizer')+cdHeader(f)+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')
       +(managing?'<section class="cd-card cd-manage"><h3>Manage existing ticket</h3>'+manageCueHtml(manageAdvice(primaryOpenTrade()))+sizerManagePanel()+'</section><details class="cd-fold" data-cd-fold="new-ticket"><summary>New ticket · Log locked</summary><div>'+ticket+cdPlanHtml(f)+'</div></details>':ticket)
       +'<div class="cd-more">'
-        +(managing?'':cdMoreRow('sizer-plan','Plan around my entry · BP1',planMeta,cdPlanHtml(f)))
+        +(managing?'':cdMoreRow('sizer-plan','Swing plan · 4-hour swings',planMeta,cdPlanHtml(f)))
         +cdMoreRow('sizer-plans','Saved plans',plansMeta,renderPlansPanel(f,true))
         +cdMoreRow('sizer-context','Market context & observation',ctxMeta,pcSummary(f)+cdChartHtml(f)+crMiniHtml(f)+cdTimeframes(f)+'<button type="button" class="text-link" data-page="market">Open full Market view →</button>')
         +cdMoreRow('sizer-tools','Position, risk, fees & ticket tools',toolsMeta,cdTicketTools(tape,out)+'<button type="button" class="btn secondary" data-page="settings">Fees &amp; account settings</button>')
         +cdMoreRow('sizer-data','Data, observations & diagnostics',dataMeta,cdDataHtml(f,true))
         +'<div class="cd-more-foot"><button type="button" class="btn secondary" data-action="cd-learn">Learn this screen</button><button type="button" class="text-link" data-page="manual">Open the manual</button></div>'
-      +'</div>'+cdActionBar(f)+'</div>';
+      +'</div>'+recordBuyHtml(f)+cdActionBar(f)+'</div>';
   }
 
   function renderJournal() {
@@ -12640,13 +12764,11 @@
          metadata, and it is compared against THIS coin's id, never the active one.
          A book with no metadata is judged on its hourly series alone, which is
          what the open-coin path already does. */
-      var feed=m.hourlyFeed,coinId=(row.pair&&(row.pair.id||row.pair.coinId))||null;
-      var plan=deriveBidPlan(bookFreshness(book).stale?{ready:false}:triageContext(book),tape,bookAtr(m,'atrHourly'),
-                             bookAtr(m,'atr14'),Number(state.settings.minRr)||1.5,high,Number(ticket.entry));
-      if(feed&&feed.version===1&&(feed.status!=='READY'||(coinId&&feed.coinId!==coinId)||feed.barAt!==plan.hourAt)){
-        plan.ok=false; plan.status='DATA_MISSING';
-        plan.reason='Validated candle data is missing or does not match this coin and hourly series.';
-      }
+      /* SWING-1 · the same 4-hour swing plan the Sizer uses, bound to THIS coin and currency. */
+      var swb=m.swing4h,coinId=(row.pair&&(row.pair.id||row.pair.coinId))||null,
+          swProb=bookFreshness(book).stale?'Quote is stale. Fetch this coin.':swingFeedProblem(swb,coinId,(row.pair&&row.pair.vs)||'gbp');
+      var plan=deriveSwingPlan(swProb?null:swb,Number(ticket.entry),Number(state.settings.minRr)||1.5,high,Number(m.price));
+      if(swProb&&plan.status!=='ENTRY_NEEDED'){ plan.ok=false; plan.status='DATA_MISSING'; plan.reason=swProb; }
       if(!(Number(ticket.entry)>0)){ plan.ok=false; plan.status='ENTRY_NEEDED'; plan.reason='Enter your intended Bid in Your ticket first.'; }
       var planJudged=true;
       var reasons=p1GateReasons(tape,out,sess,v,plan,{recentHigh:high,fetchWhy:fetchWhy});
@@ -14389,6 +14511,52 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
         save();
         render();
       }
+    } else if (action === "bought-open") {
+      recordBuyOpen = !recordBuyOpen;
+      recordBuyDraft = {};
+      recordBuyErr = "";
+      render();
+      if (recordBuyOpen) setTimeout(function () { var el = document.getElementById("record-buy"); if (el && el.scrollIntoView) el.scrollIntoView({ block: "center" }); }, 30);
+    } else if (action === "bought-cancel") {
+      recordBuyOpen = false;
+      recordBuyDraft = {};
+      render();
+    } else if (action === "bought-save") {
+      /* RECORD-BUY-1 */
+      var rbv = function (id) { var el = document.getElementById(id); return el ? String(el.value || "").trim() : ""; };
+      var rbPrice = Number(rbv("rb-price")), rbAmt = Number(rbv("rb-amount")), rbStop = Number(rbv("rb-stop")), rbTargetRaw = rbv("rb-target"), rbTarget = Number(rbTargetRaw) || 0, rbNote = rbv("rb-note");
+      var rbErr = alreadyInWhy() ? "You already have an open ticket for this coin. Close or edit it in the Journal." :
+        !(rbPrice > 0) ? "Enter the price you paid." :
+        !(rbAmt > 0) ? "Enter the amount in £." :
+        !(rbStop > 0 && rbStop < rbPrice) ? "Enter a stop below the price you paid." :
+        (rbTargetRaw && !(rbTarget > rbPrice)) ? "Target must be above the price you paid (or leave it empty)." : "";
+      if (rbErr) { recordBuyErr = rbErr; render(); return; }
+      recordBuyErr = "";
+      var rbF = cdFrame(), rbMaster = cdMaster(rbF), rbGroups = cdGroupStatuses(rbF);
+      var rbLights = rbGroups.map(function (g) { return g.name + " " + cdStatusWord(g.status) + (g.waiting.length ? " (" + g.waiting.join(", ") + ")" : ""); }).join(" · ");
+      state.trades.unshift({
+        id: "t-" + Date.now(),
+        date: todayISO(),
+        openedAt: new Date().toISOString(),
+        coin: state.settings.coinTicker, side: "Buy",
+        entry: rbPrice, stop: rbStop, target: rbTarget,
+        sizeGbp: Math.round(rbAmt * 100) / 100, units: rbAmt / rbPrice,
+        exit: null, feeKind: "Taker", followedStop: "Yes",
+        notes: "Recorded after buying · Sizer said " + rbMaster + " · " + rbLights + (rbNote ? " · " + rbNote : ""),
+        gateStamp: gateStampNow(rbF.v, rbF.out, rbF.t),
+        recordedAfterBuy: { version: 1, at: new Date().toISOString(), master: rbMaster,
+          groups: rbGroups.map(function (g) { return [g.name, g.status, g.waiting.join(",")]; }),
+          plan: rbF.plan && rbF.plan.ok ? { stop: rbF.plan.stop, target: rbF.plan.target, rr: rbF.plan.rr, bid: rbF.plan.entry } : null,
+          quote: Number(rbF.t.price) || null },
+        setup: state.sizer.setup || "", limitKind: "", stage: "sell"
+      });
+      recordBuyOpen = false;
+      recordBuyDraft = {};
+      errorMsg = "";
+      save();
+      page = "journal";
+      filterCoin = "";
+      render();
     } else if (action === "log-sizer") {
       var m = computeMarket(state.market);
       var out = computeSizer(state.settings, state.sizer, m.dailyRangePct, currentAtr(), currentAtrHourly());
@@ -14554,6 +14722,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
         }
         state.market.hourlyOhlc = live && live.market && Array.isArray(live.market.hourlyOhlc) ? live.market.hourlyOhlc.slice(-168) : [];
         state.market.hourTrendSupport = live && live.market ? live.market.hourTrendSupport || null : null;
+        state.market.swing4h = live && live.market && live.market.swing4h ? live.market.swing4h : null;   // SWING-1
         var closes = live && live.closes ? live.closes : (live && live.length ? live : []);
         if (closes.length) {
           var norm = normalizeCloses(closes);

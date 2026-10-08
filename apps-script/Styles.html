@@ -8447,4 +8447,18 @@ body[data-color-theme="paper"] #main .triage-compact-page .triage-ledger-row .tr
   .cch-rr-gl{display:none!important}.cch-rr-tm{font-size:12px}.cch-bdg{font-size:10px;padding:2px 6px}
   .cch-rr-more{padding-left:16px;padding-right:10px}.cch-rd{margin:10px 0 0}
 }
+
+/* SWING-1 · D: every waiting check listed under the verdict */
+.cd-need-list{display:flex;flex-direction:column;gap:5px;min-width:0}
+.cd-need-row{display:block;line-height:1.4}
+/* RECORD-BUY-1 · I already bought — record it */
+.cd-record-buy{border-color:var(--accent,#f5b13d)!important}
+.cd-record-buy h3{margin:0 0 6px}
+.cd-record-buy .rb-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0}
+.cd-record-buy label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.cd-record-buy input{width:100%;box-sizing:border-box;min-height:36px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--panel2,rgba(255,255,255,.04));color:var(--text);font-size:14px}
+.cd-record-buy .rb-note{margin-bottom:6px}
+.cd-record-buy .rb-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.cd-action-bar .btn.rb-open{min-width:0!important}
+@media(max-width:760px){.cd-action-bar .cd-action-why{font-size:11px}}
 </style>
