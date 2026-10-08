@@ -12873,7 +12873,8 @@
     var panel=scoutWatchOpen?'<div class="scout-watch-row"><span class="scout-watch-lab">Auto-refresh while open</span>'+opts+'</div>'+
       '<div class="scout-watch-row"><span class="scout-watch-lab">Alerts '+esc(perm)+'</span>'+(perm==='off'?'<span role="button" tabindex="0" class="scout-watch-opt" data-action="scout-alerts-allow">Allow</span>':'')+'</div>'+
       '<div class="scout-watch-row"><span class="scout-watch-lab">Rows</span>'+rowOpts+'</div>':'';
-    return '<div class="scout-watch" id="scout-watch">'+list+summary+panel+'</div>';
+    /* SCOUT-ALERTBOX-1 · every BUY alert sits together in one box */
+    return '<div class="scout-watch" id="scout-watch">'+(list?'<div class="scout-alert-box">'+list+'</div>':'')+summary+panel+'</div>';
   }
   function scoutAlertPaint(){var el=document.getElementById('scout-watch');if(el)el.outerHTML=scoutAlertBarHtml();}
   var scoutWatchLast=Date.now();
@@ -15910,11 +15911,29 @@ function unifiedScoutRowHtml(r){
     window.visualViewport.addEventListener('scroll',focusFitViewport,{passive:true});
   }
   focusFitViewport();
+  /* SCOUT-FIT-3 · the cap was only re-measured on a full render or a resize, but the lines
+     above the list change height without a render: the update message hides after a few
+     seconds, alerts arrive or are dismissed, alert settings open and close. The list then
+     kept its old height and left a gap under the box (or pushed it past the screen).
+     Watching the Scout page's own size catches every one of those. Re-measuring only
+     changes the list's height, so it settles after one extra pass. */
+  var scoutFitObs=null, scoutFitRaf=0;
+  function scoutFitWatch(){
+    if(typeof ResizeObserver!=='function') return;
+    if(!scoutFitObs) scoutFitObs=new ResizeObserver(function(){
+      if(scoutFitRaf) return;
+      scoutFitRaf=requestAnimationFrame(function(){ scoutFitRaf=0; scoutFitRows(); });
+    });
+    scoutFitObs.disconnect();
+    var pg=document.querySelector('#main .triage-page');
+    if(pg) scoutFitObs.observe(pg);
+  }
   var __scoutFitRender=render;
   render=function(){
     try{ triageFocusKeepState(); triagePageKeepState(); }catch(e){}
     var out=__scoutFitRender.apply(this,arguments);
     try{ scoutFitRows(); }catch(e){}
+    try{ scoutFitWatch(); }catch(e){}
     try{ focusFitViewport(); }catch(e){}
     try{ triageFocusRestore(); triagePageRestore(); }catch(e){}
     return out;

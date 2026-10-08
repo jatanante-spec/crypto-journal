@@ -8546,4 +8546,12 @@ body[data-color-theme="paper"] #main .triage-compact-page .triage-ledger-row .tr
 /* one-line top bar */
 .scout-watch-sum{display:block;cursor:pointer;font-size:11.5px;color:#8597b0;padding:2px 2px}
 .scout-watch-sum i{font-style:normal}
+
+/* SCOUT-ALERTBOX-1 · BUY alerts = one box; the alerts inside share it (no separate borders) */
+.scout-alert-box{border:1px solid #2f8f66;background:rgba(38,160,104,.16);border-radius:9px;overflow:hidden}
+.scout-alert-box .scout-alert{border:0!important;background:transparent!important;border-radius:0!important}
+.scout-alert-box .scout-alert.gone{color:#93a4bd}
+/* SCOUT-FIT-3 · on a phone the layout is one column and the coin sheet's host is empty
+   (the sheet is hidden or floats), but the grid still put a 12px row gap under the box */
+@media(max-width:900px){#main .triage-layout{row-gap:0}}
 </style>
