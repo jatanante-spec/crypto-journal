@@ -737,6 +737,7 @@
         delete scoutPeekStarted[want];delete scoutPeekRetryCounts[want];
         if(!verified.ok){book.market.scoutPeekStatus='failed';book.market.scoutPeekStatusAt=new Date().toISOString();}
         triageJobOutcome(want,verified.ok,verified.reason);
+        if(verified.ok)scoutAlertCheck(want);   // SCOUT-ALERT-1
         var cl = scoutClimateFromBook(book);
         var left = scoutPeekCount() + scoutPeekQueue.length;
         watchlistToast = want + " · " + (verified.ok ? "updated and verified" : "update not verified") +
@@ -5570,14 +5571,14 @@
   }
   function p1GateReasons(tape,out,session,verdict,plan,opts){
     var rows=[],checks=verdict.checks||[],preview=previewFlatOn(); var optHigh=opts&&opts.recentHigh!=null?opts.recentHigh:recentHighPx(); var optFetch=opts&&opts.fetchWhy!==undefined?opts.fetchWhy:fetchBlockWhy();
-    var planGate=cdPlanGate({plan:plan});
+    var planGate=cdPlanGate({plan:plan,ticket:opts&&opts.ticket});
     if(!planGate.ok&&!(plan&&plan.status==='ENTRY_NEEDED'&&!(Number(state.sizer.entry)>0)&&verdict.go!=='GO'))add('Plan',plan&&plan.ok?'Swing plan ready · not applied':'No complete swing plan',planGate.reason);
     function add(group,title,why){rows.push({group:group,title:title,why:why});}
     if(alreadyInWhy())add('Account','Open trade · Log locked',preview?'Preview as flat is climate only. It does not unlock Log.':'An existing open/waiting ticket blocks a new entry; this is not an invitation to add.');
     if(session.halt)add('Account','Day stop',session.reason||'Daily loss/streak limit is active.');
     if(session.haltProfit)add('Account','Day bank',session.reason||'Daily profit limit is active.');
     var room=roomWhy(out,session);if(room)add('Account','Risk room',room);
-    var labels={Ticket:['Ticket','Invalid entry / stop / target',out.invalidReason||'Review ticket geometry.'],'R:R':['Ticket','Reward/risk below minimum','Current '+(out.rewardRisk==null?'unavailable':num(out.rewardRisk,2)+'R')+'; minimum '+num(Number(state.settings.minRr)||1.5,2)+'R. Do not move the stop just to pass this test.'],Fetch:['Data','Quote sample / stale',fetchBlockWhy()],Reach:['Ticket','Target beyond recent reference','Typed target exceeds the existing recent-high check (reference '+priceGbp(optHigh,4)+', 0.5% tolerance). The reference uses up to 16 daily closes plus the current 24h high—not all intraday highs from 16 days.'],Tide:['Timing','Daily Tide down',(function(){var tr=computeTrend(state.closes||[]);return tr.sma7!=null&&tr.sma14!=null&&tape.trend==='DOWN'?'7-day average '+priceGbp(tr.sma7,4)+' is under the 14-day average '+priceGbp(tr.sma14,4)+' ('+num((tr.sma14-tr.sma7)/tr.sma14*100,2)+'% apart). Waits until it crosses back above; an improving hour does not override this.':'Hourly trend fallback points down; waits until it turns.';})()],RSI:['Timing','Daily RSI hot','Daily RSI '+num(tape.rsi,1)+' is at least 70.'],Hour:['Timing','Hourly RSI not cool','Hourly RSI '+num(tape.hourRsi,1)+' must be below 60 ('+num(tape.hourRsi-60,1)+' points away).'],Spot:['Timing','Current quote in the upper half','Range position '+num(tape.locPct,1)+'%; needs the quote under the 24h midpoint '+priceGbp(tape.mid,4)+'. This checks the live quote, not your resting limit.']};
+    var labels={Ticket:['Ticket','Invalid entry / stop / target',out.invalidReason||'Review ticket geometry.'],'R:R':['Ticket','Reward/risk below minimum','Current '+(out.rewardRisk==null?'unavailable':num(out.rewardRisk,2)+'R')+'; minimum '+num(Number(state.settings.minRr)||1.5,2)+'R. Do not move the stop just to pass this test.'],Fetch:['Data','Quote sample / stale',optFetch||fetchBlockWhy()],Reach:['Ticket','Target beyond recent reference','Typed target exceeds the existing recent-high check (reference '+priceGbp(optHigh,4)+', 0.5% tolerance). The reference uses up to 16 daily closes plus the current 24h high—not all intraday highs from 16 days.'],Tide:['Timing','Daily Tide down',(function(){var tr=computeTrend((opts&&opts.closes)||state.closes||[]);return tr.sma7!=null&&tr.sma14!=null&&tape.trend==='DOWN'?'7-day average '+priceGbp(tr.sma7,4)+' is under the 14-day average '+priceGbp(tr.sma14,4)+' ('+num((tr.sma14-tr.sma7)/tr.sma14*100,2)+'% apart). Waits until it crosses back above; an improving hour does not override this.':'Hourly trend fallback points down; waits until it turns.';})()],RSI:['Timing','Daily RSI hot','Daily RSI '+num(tape.rsi,1)+' is at least 70.'],Hour:['Timing','Hourly RSI not cool','Hourly RSI '+num(tape.hourRsi,1)+' must be below 60 ('+num(tape.hourRsi-60,1)+' points away).'],Spot:['Timing','Current quote in the upper half','Range position '+num(tape.locPct,1)+'%; needs the quote under the 24h midpoint '+priceGbp(tape.mid,4)+'. This checks the live quote, not your resting limit.']};
     ['Fetch','Ticket','R:R','Reach','Tide','RSI','Hour','Spot'].forEach(function(k){var test=checks.filter(function(x){return x.name===k;})[0];if(test&&!test.pass){var l=labels[k];add(l[0],l[1],l[2]);}});
     if(tape.action==='STAND ASIDE'||tape.action==="DON'T BUY")add('Timing','Tape action blocks entry',tape.reason||tape.action);
     if(optFetch)rows.forEach(function(r){if(r.group==='Timing')r.group='Cached timing · refresh to reassess';});
@@ -11121,7 +11122,7 @@
     var ctxMeta=f.c.ready?(f.observation.trend+' · Tide '+tape.tide):'Hourly evidence unavailable';
     var toolsMeta=gbp(state.settings.capitalGbp)+' · '+num(state.settings.riskPct,2)+'% risk'+(out.invalid?' · review prices':' · '+num(out.stopDistancePct,2)+'% stop');
     var dataMeta=String((f.fresh&&f.fresh.label)||'Provider');
-    return '<div class="sizer-screen cd-workspace">'+sectionNavHtml('sizer')+cdHeader(f)+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')
+    return '<div class="sizer-screen cd-workspace">'+sectionNavHtml('sizer')+cdHeader(f)+scoutHandoffHtml()+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')
       +(managing?'<section class="cd-card cd-manage"><h3>Manage existing ticket</h3>'+manageCueHtml(manageAdvice(primaryOpenTrade()))+sizerManagePanel()+'</section><details class="cd-fold" data-cd-fold="new-ticket"><summary>New ticket · Log locked</summary><div>'+ticket+cdPlanHtml(f)+'</div></details>':ticket)
       +'<div class="cd-more">'
         +(managing?'':cdMoreRow('sizer-plan','Swing plan · 4-hour swings',planMeta,cdPlanHtml(f)))
@@ -12734,7 +12735,7 @@
       var k=READY_GROUP_KEY[r.group]||'timing';
       if(k==='data')return;                       // handled as "no reading", never as a red gate
       if(k==='plan'&&!planJudged)return;          // grey, not guessed
-      if(g[k]==='ok')g[k]=(k==='account')?'block':'wait';
+      if(g[k]==='ok')g[k]=(k==='account'||k==='ticket')?'block':'wait';   // SCOUT-HONEST-1: Sizer shows Ticket problems as BLOCK
     });
     return g;
   }
@@ -12742,7 +12743,7 @@
     var book=(row&&row.book)||{},m=book.market||{},ticket=book.sizer||{};
     var closes=book.closes||[];
     var key=[row&&row.pair&&row.pair.ticker,m.lastFetchedAt,m.price,m.high24h,m.low24h,m.change24h,m.atr14,m.atrHourly,
-             ticket.entry,ticket.stop,ticket.target,closes.length,(book.hourly||[]).length,
+             ticket.entry,ticket.stop,ticket.target,closes.length,(book.hourly||[]).length,m.swing4h&&m.swing4h.barAt,
              session&&session.halt?'halt':'',session&&session.haltProfit?'bank':'',
              state.settings.minRr,state.settings.capitalGbp,state.settings.riskPct,state.settings.slipAllowPct,
              alreadyInWhy()?'in':'flat',previewFlatOn()?'p':''].join('|');
@@ -12764,14 +12765,18 @@
          metadata, and it is compared against THIS coin's id, never the active one.
          A book with no metadata is judged on its hourly series alone, which is
          what the open-coin path already does. */
-      /* SWING-1 · the same 4-hour swing plan the Sizer uses, bound to THIS coin and currency. */
+      /* SCOUT-HONEST-1 · judged at TODAY'S price, not an old saved Bid: Bid = quote, stop/target from the
+         swing plan when it exists, otherwise your saved stop/target moved with the price (same % gaps).
+         Opening the coin from Scout copies exactly this ticket into Sizer, so both screens agree. */
       var swb=m.swing4h,coinId=(row.pair&&(row.pair.id||row.pair.coinId))||null,
           swProb=bookFreshness(book).stale?'Quote is stale. Fetch this coin.':swingFeedProblem(swb,coinId,(row.pair&&row.pair.vs)||'gbp');
-      var plan=deriveSwingPlan(swProb?null:swb,Number(ticket.entry),Number(state.settings.minRr)||1.5,high,Number(m.price));
-      if(swProb&&plan.status!=='ENTRY_NEEDED'){ plan.ok=false; plan.status='DATA_MISSING'; plan.reason=swProb; }
-      if(!(Number(ticket.entry)>0)){ plan.ok=false; plan.status='ENTRY_NEEDED'; plan.reason='Enter your intended Bid in Your ticket first.'; }
+      var atP=scoutAtPriceTicket(m,ticket,swProb?null:swb,high);
+      var plan=atP.plan; ticket=atP.ticket;
+      if(swProb){ plan.ok=false; plan.status='DATA_MISSING'; plan.reason=swProb; }
+      out=computeSizer(state.settings,ticket,tape.dailyRangePct,bookAtr(m,'atr14'),bookAtr(m,'atrHourly'));
+      v=computeGoNoGo(tape,out,sess,state.settings,ticket,{recentHigh:high,fetchWhy:fetchWhy});
       var planJudged=true;
-      var reasons=p1GateReasons(tape,out,sess,v,plan,{recentHigh:high,fetchWhy:fetchWhy});
+      var reasons=p1GateReasons(tape,out,sess,v,plan,{recentHigh:high,fetchWhy:fetchWhy,ticket:ticket,closes:closes});
       var g=scoutGateGroups(reasons,planJudged);
       var judged=['ticket','timing','account'].concat(planJudged?['plan']:[]);
       var pass=judged.filter(function(k){return g[k]==='ok';}).length;
@@ -12779,11 +12784,101 @@
       var words={ticket:'Ticket',timing:'Timing',account:'Account',plan:'Plan'};
       var marks={ok:'PASS',wait:'WAIT',block:'BLOCK',none:'on open'};
       res.groups=g; res.pass=pass; res.judged=judged.length; res.planJudged=planJudged; res.rows=reasons;
-      res.state=pass===judged.length&&judged.length?'ready':(g.account==='block'?'blocked':'near');
-      res.why=(reasons[0]&&(reasons[0].title+' · '+reasons[0].why))||(res.state==='ready'?'All judged gates pass.':'');
+      /* Same verdict rule as the Sizer (cdMaster): BUY only when the engine says GO and the plan is complete. */
+      var planOk=!!(plan&&plan.ok);
+      res.verdict=v.go==='GO'&&planOk?'BUY':(v.go==='NO-GO'||v.go==='BANK')?v.go:'WAIT';
+      res.state=res.verdict==='BUY'?'ready':(res.verdict==='NO-GO'||res.verdict==='BANK'||g.account==='block')?'blocked':'near';
+      res.atTicket=ticket; res.plan=plan; res.price=Number(m.price);
+      res.why=res.verdict==='BUY'?'All checks pass at today\u2019s price '+priceGbp(Number(m.price),4)
+        :v.go==='GO'&&!planOk?(plan&&plan.status==='DATA_MISSING'?'Swing plan data missing \u2014 refresh':'No swing plan at today\u2019s price yet')
+        :/^Target is above/.test(v.why||'')?'Target beyond the recent-reference check':String(v.why||(reasons[0]&&reasons[0].title)||'Inspect all checks').split('. ')[0];
       res.title=order.map(function(k){return words[k]+' '+marks[g[k]];}).join(' · ');
       return done();
     }catch(err){ res.why='Could not be judged for this coin.'; return done(); }
+  }
+  /* SCOUT-HONEST-1 · the ticket Scout judges for a coin: Bid = today's quote; stop/target from the swing
+     plan at that Bid, or the saved stop/target moved with the price (same % gaps) when there is no plan. */
+  function scoutAtPriceTicket(m,saved,sw,high){
+    var px=Number(m&&m.price),minRr=Number(state.settings.minRr)||1.5,r6=function(v){return Number(Number(v).toPrecision(6));};
+    var plan=deriveSwingPlan(sw,px,minRr,high,px),t;
+    if(plan.ok)t={entry:px,stop:plan.stop,target:plan.target};
+    else{
+      var e=Number(saved&&saved.entry),st=Number(saved&&saved.stop),tg=Number(saved&&saved.target);
+      t=e>0&&st>0&&tg>0&&st<e&&tg>e?{entry:px,stop:r6(st*px/e),target:r6(tg*px/e)}:{entry:px,stop:r6(px*0.98),target:r6(px*1.04)};
+    }
+    return {ticket:Object.assign({},saved||{},t),plan:plan};
+  }
+  /* Open a coin in Sizer carrying Scout's ticket (unless locked, or a trade is open). Undo restores it. */
+  var scoutHandoffNote=null;
+  function scoutOpenInSizer(ticker){
+    applyPair(ticker);
+    try{
+      var pair=pairByTicker(ticker),r=scoutReadiness({pair:pair,book:triageBook(pair.ticker)},null),tk=r&&r.atTicket;
+      if(tk&&!alreadyInWhy()&&!scoutLockFor(pair.ticker)&&['entry','stop','target'].some(function(k){return !cdSamePlanNumber(state.sizer[k],tk[k]);})){
+        var prev={entry:state.sizer.entry,stop:state.sizer.stop,target:state.sizer.target};
+        state.sizer.entry=tk.entry;state.sizer.stop=tk.stop;state.sizer.target=tk.target;
+        stashActiveBook();save();
+        scoutHandoffNote={ticker:pair.ticker,prev:prev,text:'From Scout: Bid set to today\u2019s price '+priceGbp(tk.entry,4)+(r.plan&&r.plan.ok?' with the swing plan stop '+priceGbp(tk.stop,4)+' and target '+priceGbp(tk.target,4):'; your stop and target moved with it (same % gaps)')+'. Previous Bid '+(Number(prev.entry)>0?priceGbp(Number(prev.entry),4):'none')+'.'};
+      }else scoutHandoffNote=null;
+    }catch(e){scoutHandoffNote=null;}
+  }
+  function scoutHandoffHtml(){
+    var n=scoutHandoffNote;if(!n||n.ticker!==state.settings.coinTicker)return '';
+    return '<div class="cd-handoff" role="status">'+esc(n.text)+' <span role="button" tabindex="0" class="cd-handoff-act" data-action="scout-bid-undo">Undo</span><span role="button" tabindex="0" class="cd-handoff-act" data-action="scout-note-close">OK</span></div>';
+  }
+  /* SCOUT-ALERT-1 · tell me when a coin turns BUY (checked after every verified Scout refresh). */
+  var SCOUT_ALERT_KEY=KEY+'-scout-alerts-v1',scoutBaseTitle=document.title,scoutWhyTicker='';
+  function scoutAlertLoad(){try{var o=JSON.parse(localStorage.getItem(SCOUT_ALERT_KEY)||'null');if(o&&o.last&&Array.isArray(o.active))return o;}catch(e){}return {last:{},active:[]};}
+  function scoutAlertSave(o){try{localStorage.setItem(SCOUT_ALERT_KEY,JSON.stringify(o));}catch(e){}}
+  function scoutAlertCheck(ticker){
+    try{
+      var pair=pairByTicker(ticker),book=triageBook(pair.ticker),r=scoutReadiness({pair:pair,book:book},null);
+      if(!r||!r.verdict)return;
+      var o=scoutAlertLoad(),prev=o.last[pair.ticker],now=new Date().toISOString();
+      o.last[pair.ticker]=r.verdict;
+      if(r.verdict==='BUY'&&prev!=='BUY'){
+        o.active=o.active.filter(function(a){return a.ticker!==pair.ticker;});
+        o.active.unshift({ticker:pair.ticker,price:r.price,stop:r.atTicket.stop,target:r.atTicket.target,at:now});
+        o.active=o.active.slice(0,6);
+        scoutNotify(pair.ticker+' is BUY at '+priceGbp(r.price,4),'All checks pass at today\u2019s price \u00b7 stop '+priceGbp(r.atTicket.stop,4)+' \u00b7 target '+priceGbp(r.atTicket.target,4)+'. Tap to open it in Sizer.',pair.ticker);
+      }else if(r.verdict!=='BUY'){
+        o.active.forEach(function(a){if(a.ticker===pair.ticker&&!a.goneAt)a.goneAt=now;});
+      }
+      scoutAlertSave(o);scoutAlertPaint();
+    }catch(e){}
+  }
+  function scoutNotify(title,body,ticker){
+    try{if(navigator.vibrate)navigator.vibrate([180,90,180]);}catch(e){}
+    try{document.title='\u25cf '+ticker+' BUY \u00b7 '+scoutBaseTitle;}catch(e){}
+    try{
+      if(!('Notification' in window)||Notification.permission!=='granted')return;
+      var opts={body:body,tag:'scout-'+ticker,data:{ticker:ticker},renotify:true};
+      if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration){
+        navigator.serviceWorker.getRegistration().then(function(reg){if(reg&&reg.showNotification)reg.showNotification(title,opts);else{try{new Notification(title,opts);}catch(e){}}}).catch(function(){});
+      }else new Notification(title,opts);
+    }catch(e){}
+  }
+  function scoutAlertPermWord(){
+    if(!('Notification' in window))return 'not supported here';
+    return Notification.permission==='granted'?'on':Notification.permission==='denied'?'blocked in browser settings':'off';
+  }
+  function scoutAlertBarHtml(){
+    var o=scoutAlertLoad(),mins=Number(state.settings.scoutWatchMins)||0,perm=scoutAlertPermWord();
+    var list=o.active.map(function(a){var t=new Date(a.at),hm=isFinite(t.getTime())?t.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
+      return '<div class="scout-alert'+(a.goneAt?' gone':'')+'"><span><b>'+esc(a.ticker)+'</b> '+(a.goneAt?'was BUY at '+priceGbp(a.price,4)+' ('+hm+') \u00b7 no longer':'turned <b class="go">BUY</b> at '+priceGbp(a.price,4)+' \u00b7 '+hm+' \u00b7 stop '+priceGbp(a.stop,4)+' \u00b7 target '+priceGbp(a.target,4))+'</span>'+
+        '<span class="scout-alert-acts">'+(a.goneAt?'':'<span role="button" tabindex="0" data-action="scout-alert-open" data-ticker="'+esc(a.ticker)+'">Open in Sizer</span>')+'<span role="button" tabindex="0" aria-label="Dismiss" data-action="scout-alert-dismiss" data-ticker="'+esc(a.ticker)+'">\u00d7</span></span></div>';}).join('');
+    var opts=[0,15,30,60].map(function(n){return '<span role="button" tabindex="0" class="scout-watch-opt'+(mins===n?' on':'')+'" data-action="scout-watch" data-mins="'+n+'">'+(n?n+'m':'Off')+'</span>';}).join('');
+    return '<div class="scout-watch" id="scout-watch">'+list+
+      '<div class="scout-watch-row"><span class="scout-watch-lab">Auto-refresh while open</span>'+opts+
+      '<span class="scout-watch-lab">Alerts '+esc(perm)+'</span>'+(perm==='off'?'<span role="button" tabindex="0" class="scout-watch-opt" data-action="scout-alerts-allow">Allow</span>':'')+'</div></div>';
+  }
+  function scoutAlertPaint(){var el=document.getElementById('scout-watch');if(el)el.outerHTML=scoutAlertBarHtml();}
+  var scoutWatchLast=Date.now();
+  function scoutWatchTick(){
+    var mins=Number(state.settings&&state.settings.scoutWatchMins)||0;if(!mins)return;
+    var last=Math.max(scoutWatchLast,triageJob&&Date.parse(triageJob.startedAt)||0);
+    if(Date.now()-last<mins*60000||busy||scoutPeekCount()||scoutPeekQueue.length)return;
+    scoutWatchLast=Date.now();triageStart('watch');
   }
   function scoutGateMarkup(r){
     var g=r&&(r.ready||(r.ready=scoutReadiness(r,null)));
@@ -12902,7 +12997,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
     return age>=triageStaleMs()*4?'warn':'ok';
   }
   function triageFocusRowHtml(r){
-    var c=r.pair,scanPending=r.scanStatus&&r.scanStatus!=='done',scanFailed=r.scanStatus==='failed',lock=scoutLockFor(c.ticker),locked=!!lock,trend=scanFailed?'Outdated':scanPending?'Refreshing…':r.context.ready?(r.observation.trend||'Observed'):'Unknown',change=!scanPending&&!scanFailed&&r.change!=null?(r.change>=0?'+':'')+num(r.change,1)+'%':'—',star=state.settings.watchlist.indexOf(c.ticker)>=0,health=locked?'Locked':scanFailed?'Refresh failed':scanPending?'Pending':r.mismatch?'Check draft':r.context.ready?'Ready':'Needs data',healthClass=locked?'attention':r.context.ready&&!r.mismatch?'ready':r.mismatch?'attention':'unknown',ticker=esc(c.ticker),name=esc(c.name||c.ticker),price=esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched'),watch=scoutCueMarkup(unifiedScoutCompactWatch(r)),signalClass=scoutSignalClass(r,trend),location=esc(r.pos&&r.pos.word||'not checked');
+    var c=r.pair,scanPending=r.scanStatus&&r.scanStatus!=='done',scanFailed=r.scanStatus==='failed',lock=scoutLockFor(c.ticker),locked=!!lock,trend=scanFailed?'Outdated':scanPending?'Refreshing…':r.context.ready?(r.observation.trend||'Observed'):'Unknown',change=!scanPending&&!scanFailed&&r.change!=null?(r.change>=0?'+':'')+num(r.change,1)+'%':'—',star=state.settings.watchlist.indexOf(c.ticker)>=0,health=locked?'Locked':scanFailed?'Refresh failed':scanPending?'Pending':r.mismatch?'Old Bid':r.context.ready?'Data OK':'Needs data',healthClass=locked?'attention':r.context.ready&&!r.mismatch?'ready':r.mismatch?'attention':'unknown',ticker=esc(c.ticker),name=esc(c.name||c.ticker),price=esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched'),watch=scoutCueMarkup(unifiedScoutCompactWatch(r)),signalClass=scoutSignalClass(r,trend),location=esc(r.pos&&r.pos.word||'not checked');
     var starAction='<button type="button" class="triage-unified-star '+(star?'on':'')+'" data-action="triage-star" data-ticker="'+ticker+'" aria-pressed="'+star+'" aria-label="'+(star?'Remove '+ticker+' from shortlist':'Add '+ticker+' to shortlist')+'">'+(star?'★':'☆')+'</button>';
     var lockAction='<button type="button" class="triage-unified-lock '+(locked?'on':'')+'" data-action="triage-lock" data-reason="HODL / existing exposure" data-ticker="'+ticker+'" aria-label="'+(locked?'Keep '+ticker+' locked':'Lock '+ticker+' in Scout')+'" title="'+(locked?esc(lock.reason):'Manual Scout lock')+'">'+(locked?'🔒':'Lock')+'</button>';
     var reviewAction='<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+ticker:'Inspect '+ticker)+'">'+(locked?'Research':'Inspect')+'</button>';
@@ -13567,10 +13662,10 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
 
   function triageStart(mode,ticker){
     if(!canCloud()||busy||scoutPeekCount()||scoutPeekQueue.length)return;
-    var list=mode==='all'?libraryPairs().map(function(p){return p.ticker;}):mode==='one'?[ticker]:mode==='retry'&&triageJob?Object.keys(triageJob.items).filter(function(t){return triageJob.items[t]==='failed';}):triageMatches(triageCache).map(function(r){return r.pair.ticker;});
+    var list=mode==='all'||mode==='watch'?libraryPairs().map(function(p){return p.ticker;}):mode==='one'?[ticker]:mode==='retry'&&triageJob?Object.keys(triageJob.items).filter(function(t){return triageJob.items[t]==='failed';}):triageMatches(triageCache).map(function(r){return r.pair.ticker;});
     list=list.filter(function(t,i){return list.indexOf(t)===i&&state.settings.coinLibrary.indexOf(t)>=0;});
     if(!list.length)return;
-    if(list.length>10&&!window.confirm('Refresh '+list.length+' saved coins? Each coin can make several provider requests. The queue continues automatically with verified retries if the provider slows down. Continue?'))return;
+    if(list.length>10&&mode!=='watch'&&!window.confirm('Refresh '+list.length+' saved coins? Each coin can make several provider requests. The queue continues automatically with verified retries if the provider slows down. Continue?'))return;
     triageBatch=list.slice();triageJob={startedAt:new Date().toISOString(),items:{},retries:{}};scoutPeekRetryCounts={};triagePaused=false;triagePauseUntil=0;clearTimeout(triagePauseTimer);
     list.forEach(function(t){triageJob.items[t]='queued';ensureCoinBook(t);scoutPeekQueue.push(t);});
     watchlistToast='Refreshing selected snapshot: '+list.length+' coins. Filters do not change this queued list.';drainScoutPeekQueue();triageUpdate(false);
@@ -13801,7 +13896,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
     else if(a==='triage-star'){toggleWatchlistTicker(t);triageUpdate(false);var star=document.querySelector('#triage-inspector [data-action="triage-star"]');if(star)star.focus({preventScroll:true});}
     else if(a==='triage-lock'){writeScoutLock(t,true,b.getAttribute('data-reason')||'Manual Scout lock');watchlistToast=t+' locked in Scout · Sizer handoff guarded. Research remains available.';save();triageSelected=t;triageUpdate(false);}
     else if(a==='triage-unlock'){if(!window.confirm('Unlock '+t+' for the Sizer handoff? This changes Scout protection only; it does not alter Journal history.'))return;writeScoutLock(t,false,'Unlocked in Scout');watchlistToast=t+' unlocked for deliberate Sizer review.';save();triageSelected=t;triageUpdate(false);}
-    else if(a==='triage-open'){var targetPage=b.getAttribute('data-page-target')||'sizer',targetTicker=b.getAttribute('data-ticker')||t;if(targetTicker&&targetPage==='sizer'&&scoutLockFor(targetTicker)){watchlistToast=targetTicker+' is manually locked in Scout. Review the lock or unlock it deliberately before Sizer.';triageSelected=targetTicker;triageInspect(targetTicker);return;}if(triageFocusMode)triageFocusClose();if(targetTicker){applyPair(targetTicker);}page=targetPage;triageClose();render();}
+    else if(a==='triage-open'){var targetPage=b.getAttribute('data-page-target')||'sizer',targetTicker=b.getAttribute('data-ticker')||t;if(targetTicker&&targetPage==='sizer'&&scoutLockFor(targetTicker)){watchlistToast=targetTicker+' is manually locked in Scout. Review the lock or unlock it deliberately before Sizer.';triageSelected=targetTicker;triageInspect(targetTicker);return;}if(triageFocusMode)triageFocusClose();if(targetTicker){if(targetPage==='sizer')scoutOpenInSizer(targetTicker);else applyPair(targetTicker);}page=targetPage;triageClose();render();}
     else if(a==='triage-refresh')triageStart('filtered');
     else if(a==='triage-all')triageStart('all');
     else if(a==='triage-retry')triageStart('retry');
@@ -14511,6 +14606,34 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
         save();
         render();
       }
+    } else if (action === "scout-why") {
+      var swt = btn.getAttribute("data-ticker") || "";
+      scoutWhyTicker = scoutWhyTicker === swt ? "" : swt;
+      render();
+    } else if (action === "scout-bid-undo") {
+      if (scoutHandoffNote && scoutHandoffNote.ticker === state.settings.coinTicker) {
+        state.sizer.entry = scoutHandoffNote.prev.entry; state.sizer.stop = scoutHandoffNote.prev.stop; state.sizer.target = scoutHandoffNote.prev.target;
+        stashActiveBook(); save();
+      }
+      scoutHandoffNote = null;
+      render();
+    } else if (action === "scout-note-close") {
+      scoutHandoffNote = null;
+      render();
+    } else if (action === "scout-alert-open") {
+      var sat = btn.getAttribute("data-ticker");
+      if (sat) { if (scoutLockFor(sat)) { applyPair(sat); } else { scoutOpenInSizer(sat); } page = "sizer"; render(); }
+    } else if (action === "scout-alert-dismiss") {
+      var sao = scoutAlertLoad(), sad = btn.getAttribute("data-ticker");
+      sao.active = sao.active.filter(function (a) { return a.ticker !== sad; });
+      scoutAlertSave(sao); try { document.title = scoutBaseTitle; } catch (e) {}
+      scoutAlertPaint();
+    } else if (action === "scout-watch") {
+      state.settings.scoutWatchMins = Number(btn.getAttribute("data-mins")) || 0;
+      scoutWatchLast = Date.now();
+      save(); scoutAlertPaint();
+    } else if (action === "scout-alerts-allow") {
+      try { if ("Notification" in window) Notification.requestPermission().then(function () { scoutAlertPaint(); }); } catch (e) {}
     } else if (action === "bought-open") {
       recordBuyOpen = !recordBuyOpen;
       recordBuyDraft = {};
@@ -14787,6 +14910,23 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
     requestPullIfStale();
     maybeRefreshLive();
   });
+  /* SCOUT-ALERT-1 · auto-refresh timer, service worker for phone notifications, and opening a coin
+     from a tapped notification. All optional: without them Scout behaves exactly as before. */
+  setInterval(function () { try { scoutWatchTick(); } catch (e) {} }, 60000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) { try { document.title = scoutBaseTitle; } catch (e) {} } });
+  try {
+    if ("serviceWorker" in navigator && window.isSecureContext && !/script\.google/.test(location.host)) {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+      navigator.serviceWorker.addEventListener("message", function (e) {
+        var d = e.data || {};
+        if (d.type === "scout-open" && d.ticker) { if (scoutLockFor(d.ticker)) applyPair(d.ticker); else scoutOpenInSizer(d.ticker); page = "sizer"; render(); }
+      });
+    }
+    var openParam = new URLSearchParams(location.search).get("open");
+    if (openParam && pairByTicker(openParam).ticker === String(openParam).toUpperCase()) {
+      setTimeout(function () { if (scoutLockFor(openParam.toUpperCase())) applyPair(openParam.toUpperCase()); else scoutOpenInSizer(openParam.toUpperCase()); page = "sizer"; render(); try { history.replaceState(null, "", location.pathname); } catch (e) {} }, 1500);
+    }
+  } catch (e) {}
   refreshTimer = setInterval(function () {
     if (document.hidden) return;
     maybeRefreshLive();
@@ -15169,7 +15309,7 @@ function triageUnfoldHtml(r, o){
   '</section>';
 }
 function unifiedScoutRowHtml(r){
-    var c=r.pair,scanPending=r.scanStatus&&r.scanStatus!=='done',scanFailed=r.scanStatus==='failed',lock=scoutLockFor(c.ticker),locked=!!lock,trend=scanFailed?'Outdated':scanPending?'Refreshing…':r.context.ready?(r.observation.trend||'Observed'):'Unknown',change=!scanPending&&!scanFailed&&r.change!=null?(r.change>=0?'+':'')+num(r.change,1)+'%':'—',star=state.settings.watchlist.indexOf(c.ticker)>=0,health=locked?'Locked':scanFailed?'Refresh failed':scanPending?'Pending':r.mismatch?'Check draft':r.context.ready?'Ready':'Needs data',healthClass=locked?'attention':r.context.ready&&!r.mismatch?'ready':r.mismatch?'attention':'unknown',ticker=esc(c.ticker),name=esc(c.name||c.ticker),price=esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched'),watchText=unifiedScoutCompactWatch(r),watch=scoutCueMarkup(watchText),signalClass=scoutSignalClass(r,trend),location=esc(r.pos&&r.pos.word||'not checked'),reason=locked?'<small class="triage-lock-note">🔒 '+esc(lock.reason)+'</small>':'',openClass=locked?'locked':'',openLabel=locked?'🔒 Locked':'Open';
+    var c=r.pair,scanPending=r.scanStatus&&r.scanStatus!=='done',scanFailed=r.scanStatus==='failed',lock=scoutLockFor(c.ticker),locked=!!lock,trend=scanFailed?'Outdated':scanPending?'Refreshing…':r.context.ready?(r.observation.trend||'Observed'):'Unknown',change=!scanPending&&!scanFailed&&r.change!=null?(r.change>=0?'+':'')+num(r.change,1)+'%':'—',star=state.settings.watchlist.indexOf(c.ticker)>=0,health=locked?'Locked':scanFailed?'Refresh failed':scanPending?'Pending':r.mismatch?'Old Bid':r.context.ready?'Data OK':'Needs data',healthClass=locked?'attention':r.context.ready&&!r.mismatch?'ready':r.mismatch?'attention':'unknown',ticker=esc(c.ticker),name=esc(c.name||c.ticker),price=esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched'),watchText=unifiedScoutCompactWatch(r),watch=scoutCueMarkup(watchText),signalClass=scoutSignalClass(r,trend),location=esc(r.pos&&r.pos.word||'not checked'),reason=locked?'<small class="triage-lock-note">🔒 '+esc(lock.reason)+'</small>':'',openClass=locked?'locked':'',openLabel=locked?'🔒 Locked':'Open';
     var coin='<span class="triage-unified-coin"><b>'+ticker+'</b><small>'+price+'</small>'+reason+'</span>';
     var combinedCoin='<span class="triage-unified-coin"><b>'+ticker+'</b><small>'+price+'</small></span>';
     var trendTone=scanFailed?'warn':scanPending?'none':(r.context&&r.context.ready)?'ok':'none',evidence='<span class="triage-unified-watch"><b class="triage-tone triage-tone-'+trendTone+'" title="'+esc(triageToneWord(trendTone))+'">'+triageToneSign(trendTone)+esc(trend)+'</b><small>'+watch+'</small></span>';
@@ -15183,19 +15323,21 @@ function unifiedScoutRowHtml(r){
     var reviewActions=removeAction+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+ticker:'Inspect '+ticker)+'">'+(locked?'Research':'Inspect')+'</button>';
     if(scoutTriageLayoutValue()==='glance'){
       var g=r.ready||(r.ready=scoutReadiness(r,null));
-      var vw=g.state==='ready'?'GO':g.state==='blocked'?'BLOCK':'WAIT';
-      var vc=g.state==='ready'?'go':g.state==='blocked'?'block':'wait';
+      /* SCOUT-HONEST-1 · the Sizer's own words and colours; the verdict drives the row colour. */
+      var vw=g.verdict||(g.state==='ready'?'BUY':g.state==='blocked'?'NO-GO':'WAIT');
+      var vc=vw==='BUY'?'go':(vw==='NO-GO'||vw==='BANK')?'block':'wait';
       var gWords={ticket:'Ticket',timing:'Timing',account:'Account',plan:'Plan'};
       var gMarks={ok:'Pass',wait:'Wait',block:'Block',none:'\u2014'};
       var gCls={ok:'us-pass',wait:'us-wait',block:'us-block',none:'us-unknown'};
       var strip='';
       ['ticket','timing','account','plan'].forEach(function(k){var st=g.groups[k]||'none';strip+='<button class="'+gCls[st]+'"><span class="us-label">'+gWords[k]+'</span><span class="us-status">\u25cf '+gMarks[st]+'</span></button>';});
-      return '<article class="triage-unified-row triage-combined-row uni-card '+signalClass+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'">'+
-        '<div class="uni-decision"><span class="verdict '+vc+'">'+vw+'</span><span class="reason">'+esc(g.why||'Not evaluated')+'</span><button class="why-link" data-action="cd-why" data-ticker="'+ticker+'">Why?</button></div>'+
-        '<div class="uni-strip">'+strip+'</div>'+
+      var whyOpen=scoutWhyTicker===c.ticker,whyList=whyOpen?'<div class="uni-why">'+((g.rows||[]).length?(g.rows||[]).map(function(x){return '<p><b>'+esc(x.group+' \u00b7 '+x.title)+'</b> '+esc(x.why)+'</p>';}).join(''):'<p>'+esc(g.why||'No listed blocker.')+'</p>')+'<p class="uni-why-note">Judged at today\u2019s price'+(g.atTicket?' \u00b7 Bid '+priceGbp(g.atTicket.entry,4)+' \u00b7 stop '+priceGbp(g.atTicket.stop,4)+' \u00b7 target '+priceGbp(g.atTicket.target,4):'')+'. Opening it in Sizer copies this ticket.</p></div>':'';
+      return '<article class="triage-unified-row triage-combined-row uni-card verdict-'+vc+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'">'+
+        '<div class="uni-decision"><span class="verdict '+vc+'">'+vw+'</span><span class="reason">'+esc(g.why||'Not evaluated')+'</span><span role="button" tabindex="0" class="why-link" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'">'+(whyOpen?'Close':'Why?')+'</span></div>'+
+        '<div class="uni-strip">'+strip+'</div>'+whyList+
         '<div class="uni-body">'+
           '<div class="uni-identity"><div class="coin-row"><b>'+ticker+'</b><small>'+price+'</small></div>'+(locked?reason:'')+'</div>'+
-          '<div class="uni-signal"><b>'+esc(trend)+'</b><small>'+watch+'</small></div>'+
+          '<div class="uni-signal uni-signal-quiet"><b>'+esc(trend)+'</b><small>'+watch+'</small></div>'+
           '<div class="uni-health-col">'+healthMarkup+'</div>'+
           '<div class="uni-meta"><strong class="'+(r.change>0?'up':r.change<0?'down':'')+'">'+esc(change)+'</strong><small>'+location+' \u00b7 '+esc(r.fresh&&r.fresh.label||'not checked')+'</small></div>'+
         '</div>'+
@@ -15395,7 +15537,7 @@ function unifiedScoutRowHtml(r){
       '</div>';
       return '<section class="triage-page triage-compact-page'+(triageFocusHeaderMode==='auto'?' foldable':'')+'">'+
         '<div id="triage-scrim" hidden data-action="triage-close"></div>'+
-        whisperBar+
+        whisperBar+scoutAlertBarHtml()+
         '<div class="triage-toast-row" id="triage-toast-row"'+((watchlistToast||triageRemoved)?'':' hidden')+'>'+
           '<p id="triage-toast" class="triage-toast" role="status" aria-live="polite">'+esc(watchlistToast||'')+'</p>'+
           '<button id="triage-undo-remove" type="button" data-action="triage-undo"'+(triageRemoved?'':' hidden')+'>Undo</button>'+

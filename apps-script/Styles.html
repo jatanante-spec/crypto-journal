@@ -8461,4 +8461,36 @@ body[data-color-theme="paper"] #main .triage-compact-page .triage-ledger-row .tr
 .cd-record-buy .rb-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .cd-action-bar .btn.rb-open{min-width:0!important}
 @media(max-width:760px){.cd-action-bar .cd-action-why{font-size:11px}}
+
+/* SCOUT-HONEST-1 · Scout rows: the verdict is the loudest thing, the trend line is context */
+#main .triage-compact-page .uni-card.verdict-go{background:linear-gradient(90deg,rgba(38,160,104,.30),rgba(17,31,53,.97) 40%)!important;box-shadow:inset 4px 0 #3ddc97!important}
+#main .triage-compact-page .uni-card.verdict-wait{background:linear-gradient(90deg,rgba(155,113,32,.16),rgba(17,31,53,.97) 34%)!important;box-shadow:inset 4px 0 #e0a83a!important}
+#main .triage-compact-page .uni-card.verdict-block{background:linear-gradient(90deg,rgba(145,54,76,.20),rgba(30,27,45,.97) 34%)!important;box-shadow:inset 4px 0 #ff718e!important}
+#main .triage-compact-page .uni-card .uni-signal-quiet b{color:#a9b8cd!important;font-weight:600!important}
+#main .triage-compact-page .uni-card .uni-signal-quiet small{color:#8597b0!important}
+#main .triage-compact-page .uni-card .uni-signal-quiet small *{color:inherit!important;font-size:inherit!important;font-weight:500!important;background:none!important}
+#main .triage-compact-page .uni-card .uni-signal-quiet small{font-size:12px!important;font-weight:500!important}
+#main .triage-compact-page .uni-card .uni-health-col .triage-tone-ok{background:transparent!important;color:#93a4bd!important;border-color:#2c405f!important}
+#main .triage-compact-page .uni-body{grid-template-columns:minmax(84px,auto) minmax(0,1fr) auto!important}
+#main .triage-compact-page .uni-identity .coin-row{flex-direction:column!important;align-items:flex-start!important;gap:0!important}
+#main .triage-compact-page .uni-identity .coin-row b{overflow:visible!important;flex:0 0 auto!important;white-space:nowrap}
+#main .triage-compact-page .uni-identity .coin-row small{white-space:nowrap}
+#main .triage-compact-page .uni-decision .why-link{cursor:pointer;white-space:nowrap}
+#main .triage-compact-page .uni-why{padding:6px 10px 8px;border-top:1px solid rgba(255,255,255,.06);font-size:12px;line-height:1.45}
+#main .triage-compact-page .uni-why p{margin:3px 0}
+#main .triage-compact-page .uni-why .uni-why-note{color:#8597b0;font-size:11px}
+/* SCOUT-ALERT-1 · alert + auto-refresh bar */
+.scout-watch{margin:6px 0;display:flex;flex-direction:column;gap:5px}
+.scout-alert{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 10px;border-radius:9px;border:1px solid #2f8f66;background:rgba(38,160,104,.16);font-size:13px}
+.scout-alert.gone{border-color:#2c405f;background:rgba(255,255,255,.03);color:#93a4bd}
+.scout-alert b.go{color:#3ddc97}
+.scout-alert-acts{display:flex;gap:10px;flex:0 0 auto}
+.scout-alert-acts [role=button]{cursor:pointer;color:var(--accent,#f5b13d);font-weight:600}
+.scout-watch-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:11px;color:#8597b0}
+.scout-watch-opt{cursor:pointer;padding:3px 8px;border-radius:999px;border:1px solid #2c405f;color:#c2cee0}
+.scout-watch-opt.on{border-color:var(--accent,#f5b13d);color:var(--accent,#f5b13d)}
+.scout-watch-row .scout-watch-lab:nth-of-type(2){margin-left:10px}
+/* Sizer · note after opening from Scout */
+.cd-handoff{margin:6px 0;padding:8px 10px;border-radius:9px;border:1px solid #2c5a8f;background:rgba(61,125,255,.10);font-size:12px;line-height:1.45;color:var(--text)}
+.cd-handoff-act{cursor:pointer;color:var(--accent,#f5b13d);font-weight:600;margin-left:10px}
 </style>
