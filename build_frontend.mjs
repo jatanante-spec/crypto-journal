@@ -36,4 +36,18 @@ if (output.includes(stylesMarker) || output.includes(javascriptMarker)) {
 const outDir = path.join(root, 'dist');
 await mkdir(outDir, { recursive: true });
 await writeFile(path.join(outDir, 'index.html'), output, 'utf8');
+/* SCOUT-ALERT-1 · tiny service worker so the Scout BUY alert can show as a phone/desktop notification
+   (Android Chrome only shows notifications through a service worker). No caching: it never serves the app. */
+const sw = `self.addEventListener('install', function () { self.skipWaiting(); });
+self.addEventListener('activate', function (e) { e.waitUntil(self.clients.claim()); });
+self.addEventListener('notificationclick', function (e) {
+  e.notification.close();
+  var t = (e.notification.data && e.notification.data.ticker) || '';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
+    for (var i = 0; i < list.length; i++) { if ('focus' in list[i]) { list[i].postMessage({ type: 'scout-open', ticker: t }); return list[i].focus(); } }
+    return self.clients.openWindow('./?open=' + encodeURIComponent(t));
+  }));
+});
+`;
+await writeFile(path.join(outDir, 'sw.js'), sw, 'utf8');
 console.log(`Static build written to ${path.join(outDir, 'index.html')} (${output.length} bytes)`);
