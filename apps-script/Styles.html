@@ -8554,4 +8554,79 @@ body[data-color-theme="paper"] #main .triage-compact-page .triage-ledger-row .tr
 /* SCOUT-FIT-3 · on a phone the layout is one column and the coin sheet's host is empty
    (the sheet is hidden or floats), but the grid still put a 12px row gap under the box */
 @media(max-width:900px){#main .triage-layout{row-gap:0}}
+
+/* NOSTOP-ABCD-1 · no-stop plan, BUY log, odds line, plan alerts */
+.ns-style,.ns-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0}
+.ns-style{margin:4px 0 10px}
+.ns-style-lab{font-size:12px;color:var(--muted);margin-right:2px}
+.ns-seg,.ns-chip{display:inline-block;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font-size:12.5px;cursor:pointer;user-select:none;line-height:1.2}
+.ns-seg.on,.ns-chip.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.ns-card h3,.ns-active h3{margin:0 0 6px}
+.ns-card .cluster{margin-top:6px}
+.ns-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:8px 0 2px}
+.ns-range{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--muted)}
+.ns-range b{color:var(--text)}
+.ns-range input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
+.ns-ladder{width:100%;table-layout:fixed;border-collapse:collapse;margin:10px 0 4px;font-size:12.5px}
+.ns-ladder td{padding:4px 2px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top;overflow-wrap:anywhere;white-space:normal!important}
+.ns-ladder td:first-child{width:34%}
+.ns-ladder td:nth-child(2){width:28%}
+.ns-ladder td:last-child{text-align:right}
+.ns-ladder tr.ns-sell td:first-child{width:auto}
+.ns-ladder tr.ns-sell td{color:#9fe0c0;font-size:12px;border-bottom-color:rgba(255,255,255,.1)}
+.ns-expect{margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}
+.ns-exp-h{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:4px}
+.ns-expect p,.ns-active p{margin:4px 0;font-size:13px;line-height:1.45}
+.ns-kv{display:grid;grid-template-columns:auto auto;gap:3px 10px;font-size:12.5px;margin:6px 0}
+.ns-kv span{color:var(--muted)}
+.ns-kv b{text-align:right}
+.ns-ok,.ns-warn{border-radius:8px;padding:7px 9px;font-size:12.5px;margin:6px 0;line-height:1.4}
+.ns-ok{background:var(--green-bg);color:#bdf0d6;border:1px solid #2f8f66}
+.ns-warn{background:var(--yellow-bg);color:#f3e3a6;border:1px solid #7a6a2a}
+.ns-src{font-size:11px!important;color:var(--muted)}
+.ns-mut{color:var(--muted);font-size:12px}
+p.ns-mut{margin:6px 0}
+.ns-pos{color:var(--green)}
+.ns-neg{color:var(--red)}
+.ns-hot{color:var(--yellow)}
+.ns-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.ns-btn{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:8px 14px;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;font-size:13.5px;cursor:pointer;user-select:none;flex:1 1 auto;text-align:center}
+.ns-btn.ghost{background:var(--panel-2);color:var(--text);border:1px solid var(--line)}
+.ns-mini{display:inline-block;padding:2px 9px;border-radius:999px;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer}
+.ns-form{margin-top:10px;padding:9px;border:1px solid var(--accent);border-radius:10px}
+.ns-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:6px 0}
+.ns-grid label,.ns-form label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.ns-form input{width:100%;box-sizing:border-box;min-height:36px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--input);color:var(--text);font-size:14px}
+.ns-active{border-color:#3d7dff!important}
+.ns-big{font-size:14px!important}
+.ns-lvs{margin:6px 0;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.ns-lv{display:grid;grid-template-columns:1.3fr .7fr 1.3fr;gap:6px;align-items:center;padding:6px 8px;font-size:12.5px;border-top:1px solid rgba(255,255,255,.06)}
+.ns-lv:first-child{border-top:0}
+.ns-lv span:last-child{text-align:right}
+.ns-lv.done{color:#9fe0c0}
+.ns-others{font-size:12px;color:var(--muted);margin:-4px 0 10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ns-oddsline{font-size:11.5px;color:#a9c7f0;margin:2px 0 1px;line-height:1.35}
+.ns-oddsline b{color:#d6e6ff}
+.ns-planline{font-size:11.5px;color:#c9b8ff;margin:2px 0 1px;line-height:1.35}
+.scout-alert .ns-oddsline{margin-top:2px}
+.ns-plain{font-size:12.5px;line-height:1.45;margin:0 0 6px}
+.scout-alert.ns-plan-alert small{color:#c4d3ea}
+.ns-tag{font-size:10px;letter-spacing:.06em;color:#fff;background:#5b4bd6;border-radius:4px;padding:1px 5px;margin-right:2px}
+.ns-logbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:10px 0}
+.ns-logbox>summary{cursor:pointer;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;list-style:none}
+.ns-logbox>summary::-webkit-details-marker{display:none}
+.ns-chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.ns-log-e{border-top:1px solid var(--line);padding:7px 0}
+.ns-log-e>summary{cursor:pointer;list-style:none}
+.ns-log-e>summary::-webkit-details-marker{display:none}
+.ns-l1{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;font-size:13.5px}
+.ns-l2{font-size:12px;color:#cdd6ea;margin-top:2px}
+.ns-lights{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.ns-lights .uc-light{font-size:11px;display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:999px;background:var(--panel-2)}
+.ns-lights .uc-light i{width:7px;height:7px;border-radius:50%;display:inline-block;background:#6b7a99}
+.ns-lights .us-pass i{background:var(--green)}.ns-lights .us-wait i{background:var(--yellow)}.ns-lights .us-block i{background:var(--red)}
+.ns-pill{margin-left:auto;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--yellow-bg);color:var(--yellow)}
+.ns-pill.buy{background:var(--green-bg);color:var(--green)}
+.ns-more{font-size:12px;color:#cdd6ea;margin-top:6px;line-height:1.45;padding:6px 8px;background:var(--panel-2);border-radius:8px}
+@media (max-width:420px){.ns-grid2{grid-template-columns:1fr}.ns-lv{grid-template-columns:1.2fr .7fr 1.4fr}}
 </style>
