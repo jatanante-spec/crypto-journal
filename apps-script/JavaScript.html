@@ -738,6 +738,7 @@
         if(!verified.ok){book.market.scoutPeekStatus='failed';book.market.scoutPeekStatusAt=new Date().toISOString();}
         triageJobOutcome(want,verified.ok,verified.reason);
         if(verified.ok)scoutAlertCheck(want);   // SCOUT-ALERT-1
+        if(verified.ok){tdCheck(want);scoutAlertPaint();}   // TIDE-WATCH-1
         if(verified.ok)nsAfterPeek();   // NOSTOP-ABCD-1 B+D
         var cl = scoutClimateFromBook(book);
         var left = scoutPeekCount() + scoutPeekQueue.length;
@@ -12876,7 +12877,7 @@
     var list=o.active.map(function(a){var t=new Date(a.at),hm=isFinite(t.getTime())?t.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
       return '<div class="scout-alert'+(a.goneAt?' gone':'')+'"><span><b>'+esc(a.ticker)+'</b> '+(a.goneAt?'was BUY at '+scoutPx(a.price)+' ('+hm+') \u00b7 no longer':'<b class="go">BUY</b> '+scoutPx(a.price)+' \u00b7 '+hm+'<small>stop '+scoutPx(a.stop)+' \u00b7 target '+scoutPx(a.target)+'</small>'+nsOddsLine(a.ticker))+'</span>'+
         '<span class="scout-alert-acts">'+(a.goneAt?'':'<span role="button" tabindex="0" data-action="scout-alert-open" data-ticker="'+esc(a.ticker)+'">Open</span>')+'<span role="button" tabindex="0" aria-label="Dismiss" data-action="scout-alert-dismiss" data-ticker="'+esc(a.ticker)+'">\u00d7</span></span></div>';}).join('');
-    list=nsAlertItemsHtml()+list;   // NOSTOP-ABCD-1 D
+    list=nsAlertItemsHtml()+tdAlertItemsHtml()+list;   // NOSTOP-ABCD-1 D · TIDE-WATCH-1
     var opts=[0,15,30,60].map(function(n){return '<span role="button" tabindex="0" class="scout-watch-opt'+(mins===n?' on':'')+'" data-action="scout-watch" data-mins="'+n+'">'+(n?n+'m':'Off')+'</span>';}).join('');
     var rs=scoutRowStyle(),rowOpts=[['compact','Compact'],['medium','Medium'],['full','Full']].map(function(o){return '<span role="button" tabindex="0" class="scout-watch-opt'+(rs===o[0]?' on':'')+'" data-action="scout-row-style" data-style="'+o[0]+'">'+o[1]+'</span>';}).join('');
     var summary='<span role="button" tabindex="0" class="scout-watch-sum" data-action="scout-watch-more" aria-expanded="'+scoutWatchOpen+'">Auto '+(mins?mins+'m':'off')+' \u00b7 Alerts '+esc(/blocked/.test(perm)?'blocked':perm)+' \u00b7 Rows '+rs+' <i>'+(scoutWatchOpen?'\u25b4':'\u25be')+'</i></span>';
@@ -13219,6 +13220,96 @@
     return true;
   }
   /* /NOSTOP-ABCD-1 */
+  /* TIDE-WATCH-1 · Idea 2: a Tide line on each Scout row (when the daily Tide turns if today's price holds).
+     Idea 3: a "Tide turned UP" alert after 3+ days down. Information only: no gate, verdict, stat or label changes.
+     Same Tide as the app: 7-day vs 14-day average of the daily closes, the last close being today's live price. */
+  var TD_ODDS={3:[87,86,71,81],5:[78,74,62,68],8:[66,62,48,52]};   /* turns 1 Apr-24 Sep 2026, 37 coins: near high, upper half, lower half, wait for lower half; hit +T% within 14 days, no stop, no fees */
+  function tdSide(c){var n=c.length;if(n<14)return 0;var s7=0,s14=0;for(var i=n-14;i<n;i++){s14+=c[i];if(i>=n-7)s7+=c[i];}return s7/7>s14/14?1:-1;}
+  function tdSum(a,k){var s=0;for(var i=a.length-k;i<a.length;i++)s+=a[i];return s;}
+  function tdRead(ticker){
+    try{
+      var book=triageBook(ticker),m=book.market||{},raw=(book.closes||[]).map(Number).filter(function(v){return v>0&&isFinite(v);});
+      if(raw.length<24)return null;
+      var p=raw[raw.length-1],done=raw.slice(0,-1),cur=raw.slice();   /* the app's own closes, last = today's live point, so this line always agrees with the Tide gate */
+      var tr=computeTrend(cur);if(tr.sma7==null||tr.sma14==null)return null;
+      var now=tr.trend==='UP'?1:-1,run=0;
+      for(var k=1;k<=done.length-14;k++){if(tdSide(done.slice(0,done.length-k+1))===now)run++;else break;}   /* run = completed daily closes in a row on the same side, so 0 = turned today */
+      var flipDay=0,seq=done.slice();seq.push(p);
+      for(var d=1;d<=8;d++){seq.push(p);if((tdSide(seq)>0?1:-1)!==now){flipDay=d;break;}}
+      var needToday=tdSum(done,13)-2*tdSum(done,6),needTomorrow=(tdSum(done,12)-2*tdSum(done,5))/2;   /* price above which the Tide is up today / at tomorrow's live point (price held through the next close) */
+      var tape=computeTape(m,cur),pos=isFinite(Number(tape.locPct))?Number(tape.locPct):null;
+      return {now:now,run:run,flipDay:flipDay,p:p,sma7:tr.sma7,sma14:tr.sma14,gap:(tr.sma7-tr.sma14)/tr.sma14*100,needToday:needToday,needTomorrow:needTomorrow,pos:pos};
+    }catch(e){return null;}
+  }
+  function tdDayWord(d){if(d===1)return 'tomorrow';var t=new Date(Date.now()+d*864e5);return t.toLocaleDateString('en-GB',{weekday:'short'});}
+  function tdPctTo(p,x){return (x>=p?'+':'\u2212')+Math.abs((x/p-1)*100).toFixed(1)+'%';}
+  function tdTideLine(ticker){
+    var t=tdRead(ticker);if(!t)return '';
+    var up=t.now>0,bits=[(up?'Tide up':'Tide down')+(t.run===0?'':t.run>=10?' 10+ days':' '+t.run+' day'+(t.run===1?'':'s'))];
+    if(t.run===0)bits.push(up?'turned up today':'turned down today');
+    if(t.flipDay)bits.push((up?'turns down ':'turns up ')+tdDayWord(t.flipDay)+' if the price holds');
+    else bits.push((up?'stays up':'stays down')+' 8+ days at this price');
+    if(!up&&t.flipDay!==1&&t.needTomorrow>0&&t.needTomorrow/t.p<1.10)bits.push('up tomorrow above '+scoutPx(t.needTomorrow)+' ('+tdPctTo(t.p,t.needTomorrow)+')');
+    var title='Daily Tide: 7-day average '+priceGbp(t.sma7,4)+' vs 14-day '+priceGbp(t.sma14,4)+' ('+(t.gap>=0?'+':'\u2212')+Math.abs(t.gap).toFixed(2)+'%). '+
+      (up?'Stays up today while the price is above '+priceGbp(t.needToday,4)+'.':'Turns up today above '+priceGbp(t.needToday,4)+' ('+tdPctTo(t.p,t.needToday)+').')+
+      ' "If the price holds" means it stays at '+priceGbp(t.p,4)+' through each daily close (midnight UTC). Information only: the checks and the verdict are unchanged.';
+    return '<div class="td-line '+(up?'td-up':'td-down')+'" title="'+esc(title)+'">'+esc(bits.join(' \u00b7 '))+'</div>';
+  }
+  var TD_KEY=KEY+'-tide-alerts-v1';
+  function tdLoad(){try{var o=JSON.parse(localStorage.getItem(TD_KEY)||'null');if(o&&o.seen&&Array.isArray(o.active))return o;}catch(e){}return {seen:{},active:[]};}
+  function tdSave(o){try{localStorage.setItem(TD_KEY,JSON.stringify(o));}catch(e){}}
+  function tdOddsText(pos){
+    var T=nsCfg().T,k=T<=4?3:T<=6?5:8,o=TD_ODDS[k];
+    if(pos==null)return 'Past turns: '+o[1]+' of 100 (upper half) reached +'+k+'% within 14 days.';
+    return pos>=75?'Past turns near the high: '+o[0]+' of 100 reached +'+k+'% within 14 days (waiting for the lower half: '+o[3]+').'
+      :pos>=50?'Past turns in the upper half: '+o[1]+' of 100 reached +'+k+'% within 14 days (waiting for the lower half: '+o[3]+').'
+      :'Past turns in the lower half: '+o[2]+' of 100 reached +'+k+'% within 14 days.';
+  }
+  function tdCheck(ticker){
+    try{
+      var t=tdRead(ticker);if(!t)return;
+      var o=tdLoad(),day=new Date().toISOString().slice(0,10),id=ticker+'|'+day,nowIso=new Date().toISOString(),cut=Date.now()-3*864e5;
+      Object.keys(o.seen).forEach(function(k){if(Date.parse(k.split('|')[1])<cut-7*864e5)delete o.seen[k];});
+      o.active=o.active.filter(function(a){return Date.parse(a.at)>cut;});
+      var mine=o.active.filter(function(a){return a.id===id;})[0];
+      if(t.now>0&&t.run===0){
+        var pre=0,done=(triageBook(ticker).closes||[]).map(Number).filter(function(v){return v>0;}).slice(0,-1);
+        for(var k=1;k<=done.length-14;k++){if(tdSide(done.slice(0,done.length-k+1))<0)pre++;else break;}
+        if(pre>=3&&!o.seen[id]){
+          o.seen[id]=1;
+          var r=scoutReadiness({pair:pairByTicker(ticker),book:triageBook(ticker)},null)||{},vw=r.verdict||'WAIT';
+          var app=vw==='BUY'?'The app says BUY.':'The app says '+vw+': '+String(r.why||'see Why').replace(/\.$/,'')+'.';
+          var a={id:id,ticker:ticker,price:t.p,pos:t.pos,down:pre,at:nowIso,flipDay:t.flipDay,body:tdOddsText(t.pos)+' '+app};
+          o.active=o.active.filter(function(x){return x.ticker!==ticker;});o.active.unshift(a);o.active=o.active.slice(0,6);
+          tdNotify(ticker+' Tide turned UP after '+pre+' days down',scoutPx(t.p)+(t.pos!=null?' \u00b7 '+Math.round(t.pos)+'% of today\u2019s range':'')+'. '+a.body+' Tap to open it.',ticker);
+        }else if(mine&&mine.goneAt){mine.goneAt=null;}
+      }else if(mine&&!mine.goneAt){mine.goneAt=nowIso;}
+      tdSave(o);
+    }catch(e){}
+  }
+  function tdNotify(title,body,ticker){
+    try{if(navigator.vibrate)navigator.vibrate([120,60,120]);}catch(e){}
+    try{
+      if(!('Notification' in window)||Notification.permission!=='granted')return;
+      var opts={body:body,tag:'tide-'+ticker,data:{ticker:ticker},renotify:true};
+      if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration){
+        navigator.serviceWorker.getRegistration().then(function(reg){if(reg&&reg.showNotification)reg.showNotification(title,opts);else{try{new Notification(title,opts);}catch(e){}}}).catch(function(){});
+      }else new Notification(title,opts);
+    }catch(e){}
+  }
+  function tdAlertItemsHtml(){
+    return tdLoad().active.map(function(a){
+      var t=new Date(a.at),hm=isFinite(t.getTime())?t.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'',today=String(a.at).slice(0,10)===new Date().toISOString().slice(0,10);
+      var when=(today?'':t.toLocaleDateString('en-GB',{weekday:'short'})+' ')+hm;
+      return '<div class="scout-alert td-alert'+(a.goneAt?' gone':'')+'"><span><b class="td-tag">TIDE</b> <b>'+esc(a.ticker)+'</b> '+(a.goneAt?'Tide turned up at '+scoutPx(a.price)+' ('+when+') \u00b7 back down since':'Tide turned UP after '+a.down+' days down \u00b7 '+scoutPx(a.price)+(a.pos!=null?' \u00b7 '+Math.round(a.pos)+'% of range':'')+' \u00b7 '+when+'<small>'+esc(a.body)+'</small>')+'</span>'+
+        '<span class="scout-alert-acts">'+(a.goneAt?'':'<span role="button" tabindex="0" data-action="scout-alert-open" data-ticker="'+esc(a.ticker)+'">Open</span>')+'<span role="button" tabindex="0" aria-label="Dismiss" data-action="td-dismiss" data-id="'+esc(a.id)+'">\u00d7</span></span></div>';
+    }).join('');
+  }
+  function tdAction(action,btn){
+    if(action==='td-dismiss'){var o=tdLoad(),id=btn.getAttribute('data-id');o.active=o.active.filter(function(a){return a.id!==id;});tdSave(o);scoutAlertPaint();return true;}
+    return false;
+  }
+  /* /TIDE-WATCH-1 */
   var scoutWatchLast=Date.now();
   function scoutWatchTick(){
     var mins=Number(state.settings&&state.settings.scoutWatchMins)||0;if(!mins)return;
@@ -14996,6 +15087,8 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
       save(); scoutAlertPaint();
     } else if (action === "scout-alerts-allow") {
       try { if ("Notification" in window) Notification.requestPermission().then(function () { scoutAlertPaint(); }); } catch (e) {}
+    } else if (action.indexOf("td-") === 0) {
+      tdAction(action, btn);   // TIDE-WATCH-1
     } else if (action.indexOf("ns-") === 0) {
       nsAction(action, btn);   // NOSTOP-ABCD-1
     } else if (action === "bought-open") {
@@ -15717,17 +15810,17 @@ function unifiedScoutRowHtml(r){
           return open+
             '<div class="uc-l1">'+(triageEdit?removeAction:'')+head+'<span class="verdict '+vc+'">'+vw+'</span><span class="uc-caret">'+(whyOpen?'\u25b4':'\u25be')+'</span></div>'+
             '<div class="uc-l2"><span class="uc-reason">'+esc(g.why||'Not evaluated')+'</span><span class="uc-lights">'+tiles+'</span></div>'+
-            (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
+            (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+tdTideLine(c.ticker)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
         }
         return open+
           '<div class="uc-l1"><span class="verdict '+vc+'">'+vw+'</span>'+(triageEdit?removeAction:'')+head+'<span class="why-link">'+(whyOpen?'Close':'Why?')+'</span></div>'+
           '<div class="uc-tiles">'+tiles+'</div>'+
           '<div class="uc-l2"><span class="uc-reason">'+esc(g.why||'Not evaluated')+'</span></div>'+
-          (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
+          (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+tdTideLine(c.ticker)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
       }
       return '<article class="triage-unified-row triage-combined-row uni-card verdict-'+vc+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'">'+
         '<div class="uni-decision"><span class="verdict '+vc+'">'+vw+'</span><span class="reason">'+esc(g.why||'Not evaluated')+'</span><span role="button" tabindex="0" class="why-link" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'">'+(whyOpen?'Close':'Why?')+'</span></div>'+
-        '<div class="uni-strip">'+strip+'</div>'+(vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+whyList+
+        '<div class="uni-strip">'+strip+'</div>'+(vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+tdTideLine(c.ticker)+whyList+
         '<div class="uni-body">'+
           '<div class="uni-identity"><div class="coin-row"><b>'+ticker+'</b><small>'+price+'</small></div>'+(locked?reason:'')+'</div>'+
           '<div class="uni-signal uni-signal-quiet"><b>'+esc(trend)+'</b><small>'+watch+'</small></div>'+
