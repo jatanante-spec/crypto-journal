@@ -1768,7 +1768,7 @@
     remoteSettings.scoutLocks = mergeScoutLocks(state.settings && state.settings.scoutLocks, remoteSettings.scoutLocks);
     /* NOSTOP-ABCD-1 · BUY log and plans: combine both devices by id instead of overwriting */
     var nsMl = nsMergeById(state.settings && state.settings.buyLog, remoteSettings.buyLog, 200); if (nsMl) remoteSettings.buyLog = nsMl;
-    var nsMp = nsMergeById(state.settings && state.settings.nsPlans, remoteSettings.nsPlans, 40); if (nsMp) remoteSettings.nsPlans = nsMp;
+    var nsMp = nsMergeById(state.settings && state.settings.nsPlans, remoteSettings.nsPlans, 40, true); if (nsMp) remoteSettings.nsPlans = nsMp;   /* PLAN-END-FIX-1: ended/sold wins */
     if (Number(remoteSettings.scoutTriageLayoutVersion || 0) < 3) {
       remoteSettings.scoutTriageLayout = remoteSettings.scoutTriageLayout === "deck" ? "ledger" : "glance";
       remoteSettings.scoutTriageLayoutVersion = 3;
@@ -12929,11 +12929,12 @@
   function nsBarMs(v){if(typeof v==='number')return v<1e12?v*1000:v;var t=Date.parse(v);return isFinite(t)?t:0;}
   function nsNowPrice(ticker){var b=triageBook(String(ticker||'').toUpperCase()),m=(b&&b.market)||{};return {px:Number(m.price)||0,at:m.lastFetchedAt||'',bars:Array.isArray(m.hourlyOhlc)?m.hourlyOhlc:[]};}
   function nsId(p){return p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
-  function nsMergeById(local,remote,cap){
+  function nsMergeById(local,remote,cap,plans){
     var l=Array.isArray(local)?local:null,r=Array.isArray(remote)?remote:null;
     if(!l&&!r)return undefined;if(!r)return l.slice();if(!l)return r.slice();
-    var map={};
+    var map={},done=function(x){return !!x&&x.status&&x.status!=='active';};
     l.concat(r).forEach(function(e){if(!e||!e.id)return;var o=map[e.id];
+      if(plans&&o&&done(o)!==done(e)){if(done(e))map[e.id]=e;return;}   /* PLAN-END-FIX-1: a plan you ended or sold never comes back as active */
       if(!o||String(e.updatedAt||e.at||'')>String(o.updatedAt||o.at||''))map[e.id]=e;});
     return Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){return String(b.at||'').localeCompare(String(a.at||''));}).slice(0,cap||200);
   }
@@ -13107,7 +13108,7 @@
   }
   function nsAlertItemsHtml(){
     var items=[];
-    nsPlans().forEach(function(p){(p.ev||[]).forEach(function(e){if(!e.ack&&(p.status==='active'||Date.now()-Date.parse(e.at)<864e5))items.push({p:p,e:e});});});
+    nsPlans().forEach(function(p){if(!p||p.status!=='active')return;(p.ev||[]).forEach(function(e){if(!e.ack)items.push({p:p,e:e});});});   /* PLAN-END-FIX-1: an ended or sold plan shows no alerts */
     items.sort(function(x,y){return String(y.e.at).localeCompare(String(x.e.at));});
     return items.slice(0,4).map(function(x){
       return '<div class="scout-alert ns-plan-alert"><span><b class="ns-tag">PLAN</b> '+esc(x.e.title)+' \u00b7 '+nsWhen(x.e.at,false)+'<small>'+esc(x.e.body)+'</small></span>'+
@@ -13225,11 +13226,11 @@
       var q=nsNowPrice(p.t),a=nsPlanAvg(p);
       var s=window.prompt('Price you sold '+p.t+' at:',q.px>0?String(Number(q.px.toPrecision(6))):'');if(s==null)return true;
       var sp=Number(String(s).replace(/[^0-9.]/g,''));if(!(sp>0))return true;
-      p.status='sold';p.soldPx=sp;p.soldAt=new Date().toISOString();nsTouch(p);
+      p.status='sold';p.soldPx=sp;p.soldAt=new Date().toISOString();(p.ev||[]).forEach(function(x){x.ack=true;});nsTouch(p);
       nsLog().forEach(function(e){if(e.planId===p.id){e.soldPx=sp;e.soldAt=p.soldAt;e.avg=a?a.avg:e.px;e.updatedAt=p.soldAt;}});
       save();render();return true;
     }
-    if(action==='ns-end'){if(!window.confirm('End the '+p.t+' plan and stop its alerts? (Use Sold if you sold.)'))return true;p.status='ended';p.endedAt=new Date().toISOString();nsTouch(p);save();render();return true;}
+    if(action==='ns-end'){if(!window.confirm('End the '+p.t+' plan and stop its alerts? (Use Sold if you sold.)'))return true;p.status='ended';p.endedAt=new Date().toISOString();(p.ev||[]).forEach(function(x){x.ack=true;});nsTouch(p);save();render();return true;}
     return true;
   }
   /* /NOSTOP-ABCD-1 */
@@ -13351,7 +13352,7 @@
     res.chipInfo={loc:x.tape.locPct,rsi:x.tape.rsi,hour:x.tape.hourRsi,gap:tr.sma7!=null&&tr.sma14?(tr.sma14-tr.sma7)/tr.sma14*100:null,rr:x.out.rewardRisk,minRr:Number(state.settings.minRr)||1.5};
     res.waived=[];res.turn=teTurn(x.closes);
     var c=teCfg();
-    if(!res.turn.on||!c.on||res.verdict==='BUY'||res.verdict==='NO-GO'||res.verdict==='BANK')return;
+    if(!res.turn.on||!c.on||res.verdict==='BUY'||res.verdict==='BANK')return;   /* NO-GO is re-judged: v2 stays NO-GO unless the block was a waived stop-based check */
     var o2={recentHigh:x.high,fetchWhy:x.fetchWhy,turnSpot:true,turnRr:c.skip};
     var v2=computeGoNoGo(x.tape,x.out,x.sess,state.settings,x.ticket,o2);
     var r2=p1GateReasons(x.tape,x.out,x.sess,v2,x.plan,{recentHigh:x.high,fetchWhy:x.fetchWhy,ticket:x.ticket,closes:x.closes});
