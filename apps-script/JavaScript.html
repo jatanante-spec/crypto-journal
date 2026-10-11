@@ -3341,11 +3341,12 @@
     var preview = previewFlatOn();
     var room = preview ? dayRoomWhy(sizerOut, session) : roomWhy(sizerOut, session);
     var fetchWhy = opts && opts.fetchWhy !== undefined ? opts.fetchWhy : fetchBlockWhy();
-    var dip = dipOk(tape);
+    var dip = dipOk(tape) || !!(opts && opts.turnSpot);   // TURN-ENTRY-1 (opt-in turn entry only)
+    if (opts && opts.turnRr) reach = { far: false, high: reach.high };   // TURN-ENTRY-1 (no-stop turn BUY only)
     var weakTape = tape.action === "STAND ASIDE" || tape.action === "DON'T BUY";
     var checks = [
       { name: "Ticket", pass: !sizerOut.invalid, note: sizerOut.invalid ? "broken" : "ok" },
-      { name: "R:R", pass: rr != null && rr >= minRr, note: rr == null ? "—" : num(rr, 2) },
+      { name: "R:R", pass: (rr != null && rr >= minRr) || !!(opts && opts.turnRr), note: rr == null ? "—" : num(rr, 2) },
       { name: "Tide", pass: !tape.tideDown, note: tape.tide || "—" },
       { name: "RSI", pass: !tape.overbought, note: tape.rsi == null ? "—" : num(tape.rsi, 0) },
       { name: "Hour", pass: tape.hourRsi == null || tape.hourCool, note: tape.hourRsi == null ? "—" : num(tape.hourRsi, 0) },
@@ -11129,7 +11130,7 @@
     var ctxMeta=f.c.ready?(f.observation.trend+' · Tide '+tape.tide):'Hourly evidence unavailable';
     var toolsMeta=gbp(state.settings.capitalGbp)+' · '+num(state.settings.riskPct,2)+'% risk'+(out.invalid?' · review prices':' · '+num(out.stopDistancePct,2)+'% stop');
     var dataMeta=String((f.fresh&&f.fresh.label)||'Provider');
-    return '<div class="sizer-screen cd-workspace">'+sectionNavHtml('sizer')+cdHeader(f)+scoutHandoffHtml()+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')
+    return '<div class="sizer-screen cd-workspace">'+sectionNavHtml('sizer')+cdHeader(f)+scoutHandoffHtml()+teSizerBanner()+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')
       +(nsP?nsPlanBoxHtml(nsP):'')+(managing?'':nsStyleSwitchHtml()+nsOtherPlansHtml(String(state.settings.coinTicker)))+(nsOn?nsCardHtml(f):'')
       +(managing?'<section class="cd-card cd-manage"><h3>Manage existing ticket</h3>'+manageCueHtml(manageAdvice(primaryOpenTrade()))+sizerManagePanel()+'</section><details class="cd-fold" data-cd-fold="new-ticket"><summary>New ticket · Log locked</summary><div>'+ticket+cdPlanHtml(f)+'</div></details>':nsOn?'<details class="cd-fold" data-cd-fold="ns-stop-ticket"><summary>With-stop ticket (not used by the no-stop plan)</summary><div>'+ticket+'</div></details>':ticket)
       +'<div class="cd-more">'
@@ -12748,14 +12749,21 @@
     });
     return g;
   }
+  /* SCOUT-HOUR-FIX-1 · computeTape reads the hourly series from state (the coin open in Sizer). Scout judges
+     other coins, so give it that coin's own hourly closes/volumes/times, exactly as scoutClimateFromBook does. */
+  function scoutTapeOwn(book,m,closes){
+    var sH=state.hourly,sV=state.hourlyVolumes,sA=state.hourlyAts;
+    try{state.hourly=book.hourly||[];state.hourlyVolumes=book.hourlyVolumes||[];state.hourlyAts=book.hourlyAts||[];return computeTape(m,closes);}
+    finally{state.hourly=sH;state.hourlyVolumes=sV;state.hourlyAts=sA;}
+  }
   function scoutReadiness(row,session){
     var book=(row&&row.book)||{},m=book.market||{},ticket=book.sizer||{};
     var closes=book.closes||[];
     var key=[row&&row.pair&&row.pair.ticker,m.lastFetchedAt,m.price,m.high24h,m.low24h,m.change24h,m.atr14,m.atrHourly,
-             ticket.entry,ticket.stop,ticket.target,closes.length,(book.hourly||[]).length,m.swing4h&&m.swing4h.barAt,
+             ticket.entry,ticket.stop,ticket.target,closes.length,(book.hourly||[]).length,(book.hourly||[]).slice(-1)[0],m.swing4h&&m.swing4h.barAt,
              session&&session.halt?'halt':'',session&&session.haltProfit?'bank':'',
              state.settings.minRr,state.settings.capitalGbp,state.settings.riskPct,state.settings.slipAllowPct,
-             alreadyInWhy()?'in':'flat',previewFlatOn()?'p':''].join('|');
+             alreadyInWhy()?'in':'flat',previewFlatOn()?'p':'',state.settings.turnEntry?'te':'',state.settings.turnSkip?'ts':'',new Date().toISOString().slice(0,13)].join('|');   /* TURN-ENTRY-1 */
     if(READY_CACHE[key])return READY_CACHE[key];
     var res={state:'nodata',groups:{ticket:'none',timing:'none',account:'none',plan:'none'},pass:0,judged:0,
              rows:[],why:'',planJudged:false,title:''};
@@ -12764,7 +12772,7 @@
       if(!(Number(m.price)>0)||!closes.length){ res.why='Not fetched yet.'; return done(); }
       if(bookFreshness(book).stale){ res.why='Fetch is stale. Tap Fetch before judging this coin.'; return done(); }
       var sess=session||computeSession(state.trades,state.settings);
-      var tape=computeTape(m,closes), high=bookRecentHigh(book), fetchWhy=bookFetchWhy(book);
+      var tape=scoutTapeOwn(book,m,closes), high=bookRecentHigh(book), fetchWhy=bookFetchWhy(book);   // SCOUT-HOUR-FIX-1
       var out=computeSizer(state.settings,ticket,tape.dailyRangePct,bookAtr(m,'atr14'),bookAtr(m,'atrHourly'));
       var v=computeGoNoGo(tape,out,sess,state.settings,ticket,{recentHigh:high,fetchWhy:fetchWhy});
       // The plan gate is only judged when this book carries candle metadata that
@@ -12802,6 +12810,7 @@
         :v.go==='GO'&&!planOk?(plan&&plan.status==='DATA_MISSING'?'Swing plan data missing \u2014 refresh':'No swing plan at today\u2019s price yet')
         :/^Target is above/.test(v.why||'')?'Target beyond the recent-reference check':String(v.why||(reasons[0]&&reasons[0].title)||'Inspect all checks').split('. ')[0];
       res.title=order.map(function(k){return words[k]+' '+marks[g[k]];}).join(' · ');
+      try{teApply(res,{tape:tape,out:out,sess:sess,ticket:ticket,plan:plan,high:high,fetchWhy:fetchWhy,closes:closes,m:m});}catch(e){}   // TURN-ENTRY-1
       return done();
     }catch(err){ res.why='Could not be judged for this coin.'; return done(); }
   }
@@ -12820,6 +12829,7 @@
   /* Open a coin in Sizer carrying Scout's ticket (unless locked, or a trade is open). Undo restores it. */
   var scoutHandoffNote=null;
   function scoutOpenInSizer(ticker){
+    teBeforeOpen(ticker);   // TURN-ENTRY-1
     applyPair(ticker);
     try{
       var pair=pairByTicker(ticker),r=scoutReadiness({pair:pair,book:triageBook(pair.ticker)},null),tk=r&&r.atTicket;
@@ -12851,8 +12861,11 @@
         o.active=o.active.slice(0,6);
         nsLogScoutBuy(pair,r);   // NOSTOP-ABCD-1 B
         scoutNotify(pair.ticker+' is BUY at '+scoutPx(r.price),'All checks pass at today\u2019s price \u00b7 stop '+scoutPx(r.atTicket.stop)+' \u00b7 target '+scoutPx(r.atTicket.target)+'.'+nsOddsShort()+' Tap to open it in Sizer.',pair.ticker);
-      }else if(r.verdict!=='BUY'){
-        o.active.forEach(function(a){if(a.ticker===pair.ticker&&!a.goneAt)a.goneAt=now;});
+      }else if(r.verdict==='TURN BUY'&&prev!=='TURN BUY'){
+        teOnTurnBuy(pair,r,o,now);   // TURN-ENTRY-1
+      }
+      if(r.verdict!=='BUY'){
+        o.active.forEach(function(a){if(a.ticker===pair.ticker&&!a.goneAt&&!(a.kind==='turn'&&r.verdict==='TURN BUY'))a.goneAt=now;});
       }
       scoutAlertSave(o);scoutAlertPaint();
     }catch(e){}
@@ -12874,16 +12887,16 @@
   }
   function scoutAlertBarHtml(){
     var o=scoutAlertLoad(),mins=Number(state.settings.scoutWatchMins)||0,perm=scoutAlertPermWord();
-    var list=o.active.map(function(a){var t=new Date(a.at),hm=isFinite(t.getTime())?t.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
+    var list=o.active.map(function(a){if(a.kind==='turn')return teAlertItem(a);var t=new Date(a.at),hm=isFinite(t.getTime())?t.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
       return '<div class="scout-alert'+(a.goneAt?' gone':'')+'"><span><b>'+esc(a.ticker)+'</b> '+(a.goneAt?'was BUY at '+scoutPx(a.price)+' ('+hm+') \u00b7 no longer':'<b class="go">BUY</b> '+scoutPx(a.price)+' \u00b7 '+hm+'<small>stop '+scoutPx(a.stop)+' \u00b7 target '+scoutPx(a.target)+'</small>'+nsOddsLine(a.ticker))+'</span>'+
         '<span class="scout-alert-acts">'+(a.goneAt?'':'<span role="button" tabindex="0" data-action="scout-alert-open" data-ticker="'+esc(a.ticker)+'">Open</span>')+'<span role="button" tabindex="0" aria-label="Dismiss" data-action="scout-alert-dismiss" data-ticker="'+esc(a.ticker)+'">\u00d7</span></span></div>';}).join('');
     list=nsAlertItemsHtml()+tdAlertItemsHtml()+list;   // NOSTOP-ABCD-1 D · TIDE-WATCH-1
     var opts=[0,15,30,60].map(function(n){return '<span role="button" tabindex="0" class="scout-watch-opt'+(mins===n?' on':'')+'" data-action="scout-watch" data-mins="'+n+'">'+(n?n+'m':'Off')+'</span>';}).join('');
     var rs=scoutRowStyle(),rowOpts=[['compact','Compact'],['medium','Medium'],['full','Full']].map(function(o){return '<span role="button" tabindex="0" class="scout-watch-opt'+(rs===o[0]?' on':'')+'" data-action="scout-row-style" data-style="'+o[0]+'">'+o[1]+'</span>';}).join('');
-    var summary='<span role="button" tabindex="0" class="scout-watch-sum" data-action="scout-watch-more" aria-expanded="'+scoutWatchOpen+'">Auto '+(mins?mins+'m':'off')+' \u00b7 Alerts '+esc(/blocked/.test(perm)?'blocked':perm)+' \u00b7 Rows '+rs+' <i>'+(scoutWatchOpen?'\u25b4':'\u25be')+'</i></span>';
+    var summary='<span role="button" tabindex="0" class="scout-watch-sum" data-action="scout-watch-more" aria-expanded="'+scoutWatchOpen+'">Auto '+(mins?mins+'m':'off')+' \u00b7 Alerts '+esc(/blocked/.test(perm)?'blocked':perm)+' \u00b7 Rows '+rs+(teCfg().on?' \u00b7 Turn entry on':'')+' <i>'+(scoutWatchOpen?'\u25b4':'\u25be')+'</i></span>';
     var panel=scoutWatchOpen?'<div class="scout-watch-row"><span class="scout-watch-lab">Auto-refresh while open</span>'+opts+'</div>'+
       '<div class="scout-watch-row"><span class="scout-watch-lab">Alerts '+esc(perm)+'</span>'+(perm==='off'?'<span role="button" tabindex="0" class="scout-watch-opt" data-action="scout-alerts-allow">Allow</span>':'')+'</div>'+
-      '<div class="scout-watch-row"><span class="scout-watch-lab">Rows</span>'+rowOpts+'</div>':'';
+      '<div class="scout-watch-row"><span class="scout-watch-lab">Rows</span>'+rowOpts+'</div>'+tePanelHtml():'';   // TURN-ENTRY-1
     /* SCOUT-ALERTBOX-1 · every BUY alert sits together in one box */
     return '<div class="scout-watch" id="scout-watch">'+(list?'<div class="scout-alert-box">'+list+'</div>':'')+summary+panel+'</div>';
   }
@@ -12992,13 +13005,13 @@
   function nsLogSectionHtml(){
     var l=nsLog();
     var coins=[],seen={};l.forEach(function(e){if(!seen[e.t]){seen[e.t]=1;coins.push(e.t);}});
-    var chips=[['all','All'],['buy','App BUYs'],['mine','My buys']].concat(coins.slice(0,6).map(function(t){return [t,t];}));
+    var chips=[['all','All'],['buy','App BUYs'],['turn','TURN BUYs'],['mine','My buys']].concat(coins.slice(0,6).map(function(t){return [t,t];}));
     var list=l.filter(function(e){return nsLogFilter==='all'||e.k===nsLogFilter||e.t===nsLogFilter;}).slice(0,60).map(function(e){
       var since=e.now>0||e.hi>0?'Since then: best <span class="'+nsTone(e.hi/e.px-1)+'">'+nsPct((e.hi/e.px-1)*100)+'</span> \u00b7 worst <span class="'+nsTone(e.lo/e.px-1)+'">'+nsPct((e.lo/e.px-1)*100)+'</span>'+(e.now>0?' \u00b7 now <span class="'+nsTone(e.now/e.px-1)+'">'+nsPct((e.now/e.px-1)*100)+'</span>':''):'Since then: not checked yet. Refresh '+esc(e.t)+' in Scout.';
       var old=Date.now()-Date.parse(e.at)>14*864e5?' <span class="ns-mut">(first 14 days)</span>':'';
       var pill=e.k==='mine'?'I bought \u00b7 app said '+esc(e.v):esc(e.v);
       var mine=e.k==='mine'?'<b>You bought at '+scoutPx(e.px)+(e.amt>0?' \u00b7 '+gbp(e.amt):'')+(e.soldPx>0?' \u00b7 sold '+nsWhen(e.soldAt)+' at '+scoutPx(e.soldPx)+' ('+nsPct((e.soldPx/(e.avg||e.px)-1)*100)+(e.avg&&e.avg!==e.px?' on your average':'')+')':'')+'</b><br>':'';
-      return '<details class="ns-log-e"><summary><div class="ns-l1"><b>'+esc(e.t)+'</b> '+scoutPx(e.px)+' <span class="ns-mut">'+nsWhen(e.at)+'</span><span class="ns-pill '+(e.v==='BUY'?'buy':'wait')+'">'+pill+'</span></div>'+
+      return '<details class="ns-log-e"><summary><div class="ns-l1"><b>'+esc(e.t)+'</b> '+scoutPx(e.px)+' <span class="ns-mut">'+nsWhen(e.at)+'</span><span class="ns-pill '+(e.v==='BUY'?'buy':e.v==='TURN BUY'?'tb':'wait')+'">'+pill+'</span></div>'+
         '<div class="ns-l2">'+esc(e.why||'')+'</div><div class="ns-lights">'+nsLightsHtml(e.g)+'</div><div class="ns-l2">'+since+old+'</div></summary>'+
         '<div class="ns-more">'+mine+'Plan at the time: '+esc(e.plan||'none')+(e.note?'<br>'+esc(e.note):'')+'<br><span class="ns-mut">Recorded by '+esc(e.src||'app')+(e.nostop?' \u00b7 no-stop plan':'')+'</span></div></details>';
     }).join('');
@@ -13287,11 +13300,11 @@
       tdSave(o);
     }catch(e){}
   }
-  function tdNotify(title,body,ticker){
+  function tdNotify(title,body,ticker,pre){
     try{if(navigator.vibrate)navigator.vibrate([120,60,120]);}catch(e){}
     try{
       if(!('Notification' in window)||Notification.permission!=='granted')return;
-      var opts={body:body,tag:'tide-'+ticker,data:{ticker:ticker},renotify:true};
+      var opts={body:body,tag:(pre||'tide-')+ticker,data:{ticker:ticker},renotify:true};
       if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration){
         navigator.serviceWorker.getRegistration().then(function(reg){if(reg&&reg.showNotification)reg.showNotification(title,opts);else{try{new Notification(title,opts);}catch(e){}}}).catch(function(){});
       }else new Notification(title,opts);
@@ -13310,6 +13323,130 @@
     return false;
   }
   /* /TIDE-WATCH-1 */
+  /* TURN-ENTRY-1 · Idea 1: every reason on the Scout row as chips (with how far off).
+     Idea 4: opt-in "Turn entry" (default off). In the first 2 days of a new up-Tide after 3+ days down,
+     "upper half" stops blocking and the coin shows TURN BUY (never plain BUY). A second opt-in switch
+     (default Keep) skips the stop-based 1.5R plan, R:R and target-reach checks for turn BUYs only, using the
+     no-stop swing plan instead. Normal BUY, its alerts, log and odds are unchanged. */
+  var TE_ODDS={3:[87,86],5:[78,74],8:[66,62]};   /* Tide-turn entries 1 Apr-24 Sep 2026, 37 coins: near the high / upper half; +T% within 14 days, no stop, no fees */
+  function teCfg(){var s=(state&&state.settings)||{},on=s.turnEntry===true;return {on:on,skip:on&&s.turnSkip===true};}
+  function teTurn(closes){
+    var out={on:false,fresh:false,run:0,pre:0,endsAt:0,left:0};
+    try{
+      var raw=(closes||[]).map(Number).filter(function(v){return v>0&&isFinite(v);});if(raw.length<24)return out;
+      if(tdSide(raw)<=0)return out;
+      var done=raw.slice(0,-1),run=0,pre=0,k;
+      for(k=1;k<=done.length-14;k++){if(tdSide(done.slice(0,done.length-k+1))>0)run++;else break;}
+      for(k=run+1;k<=done.length-14;k++){if(tdSide(done.slice(0,done.length-k+1))<0)pre++;else break;}
+      var d0=new Date();d0.setUTCHours(0,0,0,0);
+      out.run=run;out.pre=pre;out.endsAt=d0.getTime()-run*864e5+2*864e5;out.left=Math.max(0,Math.ceil((out.endsAt-Date.now())/36e5));
+      out.fresh=run<=1&&pre>=3&&Date.now()<out.endsAt;out.on=out.fresh;
+    }catch(e){}
+    return out;
+  }
+  function teOddsText(pos){var T=nsCfg().T,k=T<=4?3:T<=6?5:8,o=TE_ODDS[k],hi=pos!=null&&pos>=75;
+    return 'Past turn entries '+(hi?'near the high':'in the upper half')+': '+(hi?o[0]:o[1])+' of 100 reached +'+k+'% within 14 days (normal BUY odds don\u2019t apply). 1 in 10 dipped about \u221215% first.';}
+  function teApply(res,x){
+    var tr=computeTrend(x.closes||[]);
+    res.chipInfo={loc:x.tape.locPct,rsi:x.tape.rsi,hour:x.tape.hourRsi,gap:tr.sma7!=null&&tr.sma14?(tr.sma14-tr.sma7)/tr.sma14*100:null,rr:x.out.rewardRisk,minRr:Number(state.settings.minRr)||1.5};
+    res.waived=[];res.turn=teTurn(x.closes);
+    var c=teCfg();
+    if(!res.turn.on||!c.on||res.verdict==='BUY'||res.verdict==='NO-GO'||res.verdict==='BANK')return;
+    var o2={recentHigh:x.high,fetchWhy:x.fetchWhy,turnSpot:true,turnRr:c.skip};
+    var v2=computeGoNoGo(x.tape,x.out,x.sess,state.settings,x.ticket,o2);
+    var r2=p1GateReasons(x.tape,x.out,x.sess,v2,x.plan,{recentHigh:x.high,fetchWhy:x.fetchWhy,ticket:x.ticket,closes:x.closes});
+    if(c.skip)r2=r2.filter(function(r){return r.group!=='Plan';});
+    var keep=function(r){return r2.some(function(q){return q.title===r.title;});};
+    res.waived=(res.rows||[]).filter(function(r){return !keep(r);});
+    var planOk=!!(x.plan&&x.plan.ok);
+    if(v2.go==='GO'&&(planOk||c.skip)&&!r2.length){
+      res.verdict='TURN BUY';res.rows=[];res.groups=scoutGateGroups([],true);res.pass=res.judged;
+      res.turnNoStop=c.skip&&!planOk;
+      res.why='Tide turn \u00b7 other checks pass at today\u2019s price '+scoutPx(Number(x.m.price));
+    }else if(res.waived.length){
+      res.rows=(res.rows||[]).filter(keep);res.groups=scoutGateGroups(res.rows,true);
+    }
+  }
+  function teChipText(r,ci){
+    var t=r.title,f=function(v,d){return v==null||!isFinite(v)?'':num(v,d);};
+    if(t==='Current quote in the upper half')return 'Upper half'+(ci&&ci.loc!=null?' \u00b7 '+Math.round(ci.loc)+'%':'');
+    if(t==='Daily Tide down')return 'Tide down'+(ci&&ci.gap!=null&&ci.gap>0?' \u00b7 '+f(ci.gap,2)+'% apart':'');
+    if(t==='Daily RSI hot')return 'Daily RSI '+f(ci&&ci.rsi,0);
+    if(t==='Hourly RSI not cool')return 'Hour RSI '+f(ci&&ci.hour,0)+' (needs <60)';
+    if(t==='No complete swing plan')return 'No '+f(ci&&ci.minRr,1).replace(/\.0$/,'')+'R plan';
+    if(t==='Reward/risk below minimum')return 'R:R '+f(ci&&ci.rr,2)+' (needs '+f(ci&&ci.minRr,1)+')';
+    if(t==='Target beyond recent reference')return 'Target above 16-day high';
+    if(t==='Tape action blocks entry')return 'Tape weak';
+    if(t==='Quote sample / stale')return 'Data stale';
+    if(t==='Invalid entry / stop / target')return 'Ticket invalid';
+    return t;
+  }
+  function teChipCls(r){var t=r.title;return t==='Daily Tide down'?'te-c-tide':r.group==='Plan'?'te-c-plan':(r.group==='Account'||r.group==='Ticket')?'te-c-block':r.group==='Data'?'te-c-data':'te-c-time';}
+  function teWaivedText(r,ci){return teChipText(r,ci)+(r.title==='Current quote in the upper half'?' \u00b7 allowed (turn)':' \u00b7 skipped (no-stop)');}
+  function teChipsHtml(g){
+    var ci=g.chipInfo||{},rows=g.rows||[],w=g.waived||[];
+    if(!rows.length&&!w.length)return '';
+    return '<span class="te-chips">'+rows.map(function(r){return '<span class="te-chip '+teChipCls(r)+'" title="'+esc(r.group+' \u00b7 '+r.title+': '+r.why)+'">'+esc(teChipText(r,ci))+'</span>';}).join('')+
+      w.map(function(r){return '<span class="te-chip te-c-ok" title="'+esc('Turn entry: '+r.title+' does not block in the first 2 days after the Tide turns up.')+'">'+esc(teWaivedText(r,ci))+'</span>';}).join('')+'</span>';
+  }
+  function teRowLine(g){
+    if(g.verdict==='TURN BUY')return '<div class="te-line">Turn window: '+g.turn.left+' h left'+(g.turnNoStop?' \u00b7 no-stop swing plan':'')+' \u00b7 '+esc(teOddsText(g.chipInfo&&g.chipInfo.loc))+'</div>';
+    if(g.turn&&g.turn.on&&!teCfg().on)return '<div class="te-line te-off">Fresh Tide turn \u00b7 turn entry is off in settings</div>';
+    return '';
+  }
+  var teAutoNs=false;
+  function teBeforeOpen(ticker){
+    try{
+      var r=scoutReadiness({pair:pairByTicker(ticker),book:triageBook(ticker)},null);
+      if(r&&r.verdict==='TURN BUY'&&r.turnNoStop){if(state.settings.planStyle!=='nostop'){state.settings.planStyle='nostop';teAutoNs=true;}}
+      else if(teAutoNs){state.settings.planStyle='stop';teAutoNs=false;}
+    }catch(e){}
+  }
+  function teSizerBanner(){
+    try{
+      var coin=String(state.settings.coinTicker),r=scoutReadiness({pair:pairByTicker(coin),book:triageBook(coin)},null);
+      if(!r||r.verdict!=='TURN BUY')return '';
+      return '<section class="te-banner" role="status"><div class="te-banner-h"><b class="te-tag">TURN BUY</b><b>'+esc(coin)+'</b> '+scoutPx(r.price)+' \u00b7 turn window '+r.turn.left+' h left</div>'+
+        '<div class="te-chips">'+(r.waived||[]).map(function(x){return '<span class="te-chip te-c-ok">'+esc(teWaivedText(x,r.chipInfo))+'</span>';}).join('')+'<span class="te-chip te-c-ok">Other checks pass</span></div>'+
+        '<p>Tide turned up after '+r.turn.pre+' days down. '+esc(teOddsText(r.chipInfo&&r.chipInfo.loc))+'</p>'+
+        '<p class="te-mut">The normal verdict below still uses today\u2019s rules'+(r.turnNoStop?'; use the no-stop swing plan for this one.':'.')+'</p></section>';
+    }catch(e){return '';}
+  }
+  function teLogTurn(pair,r){
+    try{
+      var cut=Date.now()-60*60000;if(nsLog().some(function(e){return e.t===pair.ticker&&e.k==='turn'&&Date.parse(e.at)>cut;}))return;
+      nsLogAdd({k:'turn',t:pair.ticker,px:Number(r.price)||0,v:'TURN BUY',src:'Scout',
+        g:['ticket','timing','account','plan'].map(function(k){return [k,nsGroupWord(r.groups&&r.groups[k])];}),
+        why:('Tide turned up after '+r.turn.pre+' days down \u00b7 '+(r.waived||[]).map(function(x){return teWaivedText(x,r.chipInfo);}).join(' \u00b7 ')).slice(0,160),
+        plan:r.turnNoStop?'no-stop swing plan (1.5R check skipped)':(r.atTicket&&Number(r.atTicket.stop)>0?'stop '+scoutPx(r.atTicket.stop)+' \u00b7 target '+scoutPx(r.atTicket.target):''),nostop:!!r.turnNoStop});
+    }catch(e){}
+  }
+  function teAlertItem(a){
+    var t=new Date(a.at),hm=isFinite(t.getTime())?t.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
+    return '<div class="scout-alert te-alert'+(a.goneAt?' gone':'')+'"><span><b class="te-tag">TURN BUY</b> <b>'+esc(a.ticker)+'</b> '+(a.goneAt?'was TURN BUY at '+scoutPx(a.price)+' ('+hm+') \u00b7 no longer':scoutPx(a.price)+' \u00b7 '+hm+'<small>'+esc(a.body||'')+'</small>')+'</span>'+
+      '<span class="scout-alert-acts">'+(a.goneAt?'':'<span role="button" tabindex="0" data-action="scout-alert-open" data-ticker="'+esc(a.ticker)+'">Open</span>')+'<span role="button" tabindex="0" aria-label="Dismiss" data-action="scout-alert-dismiss" data-ticker="'+esc(a.ticker)+'">\u00d7</span></span></div>';
+  }
+  function teOnTurnBuy(pair,r,o,now){
+    var body='Tide turned up \u00b7 upper half allowed \u00b7 turn window '+r.turn.left+' h left \u00b7 '+(r.turnNoStop?'no-stop swing plan':'stop '+scoutPx(r.atTicket.stop)+' \u00b7 target '+scoutPx(r.atTicket.target))+'. '+teOddsText(r.chipInfo&&r.chipInfo.loc);
+    o.active=o.active.filter(function(a){return a.ticker!==pair.ticker;});
+    o.active.unshift({ticker:pair.ticker,kind:'turn',price:r.price,stop:r.atTicket&&r.atTicket.stop,target:r.atTicket&&r.atTicket.target,at:now,body:body});
+    o.active=o.active.slice(0,6);
+    teLogTurn(pair,r);
+    tdNotify(pair.ticker+' is TURN BUY at '+scoutPx(r.price),body+' Tap to open it.',pair.ticker,'turn-');
+  }
+  function tePanelHtml(){
+    var c=teCfg(),opt=function(k,v,lab,on,dis){return '<span role="button" tabindex="0" class="scout-watch-opt'+(on?' on':'')+'"'+(dis?' aria-disabled="true" style="opacity:.45"':'')+' data-action="te-set" data-k="'+k+'" data-v="'+v+'">'+lab+'</span>';};
+    return '<div class="scout-watch-row te-set-row"><span class="scout-watch-lab">Turn entry \u00b7 first 2 days after the Tide turns up: upper half doesn\u2019t block (TURN BUY)</span>'+opt('turnEntry',0,'Off',!c.on)+opt('turnEntry',1,'On',c.on)+'</div>'+
+      '<div class="scout-watch-row te-set-row"><span class="scout-watch-lab">1.5R check on turn BUYs \u00b7 Skip = no-stop swing plan instead (normal BUY unchanged)</span>'+opt('turnSkip',0,'Keep',!c.skip,!c.on)+opt('turnSkip',1,'Skip',c.skip,!c.on)+'</div>';
+  }
+  function teAction(action,btn){
+    if(action!=='te-set')return false;
+    var k=btn.getAttribute('data-k'),v=btn.getAttribute('data-v')==='1';
+    if(k==='turnEntry'){state.settings.turnEntry=v;if(!v)state.settings.turnSkip=false;}
+    else if(k==='turnSkip'){if(!state.settings.turnEntry)return true;state.settings.turnSkip=v;}
+    save();render();return true;
+  }
+  /* /TURN-ENTRY-1 */
   var scoutWatchLast=Date.now();
   function scoutWatchTick(){
     var mins=Number(state.settings&&state.settings.scoutWatchMins)||0;if(!mins)return;
@@ -15087,6 +15224,8 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
       save(); scoutAlertPaint();
     } else if (action === "scout-alerts-allow") {
       try { if ("Notification" in window) Notification.requestPermission().then(function () { scoutAlertPaint(); }); } catch (e) {}
+    } else if (action.indexOf("te-") === 0) {
+      teAction(action, btn);   // TURN-ENTRY-1
     } else if (action.indexOf("td-") === 0) {
       tdAction(action, btn);   // TIDE-WATCH-1
     } else if (action.indexOf("ns-") === 0) {
@@ -15784,7 +15923,7 @@ function unifiedScoutRowHtml(r){
       var g=r.ready||(r.ready=scoutReadiness(r,null));
       /* SCOUT-HONEST-1 · the Sizer's own words and colours; the verdict drives the row colour. */
       var vw=g.verdict||(g.state==='ready'?'BUY':g.state==='blocked'?'NO-GO':'WAIT');
-      var vc=vw==='BUY'?'go':(vw==='NO-GO'||vw==='BANK')?'block':'wait';
+      var vc=vw==='BUY'?'go':vw==='TURN BUY'?'tb':(vw==='NO-GO'||vw==='BANK')?'block':'wait';
       var gWords={ticket:'Ticket',timing:'Timing',account:'Account',plan:'Plan'};
       var gMarks={ok:'Pass',wait:'Wait',block:'Block',none:'\u2014'};
       var gCls={ok:'us-pass',wait:'us-wait',block:'us-block',none:'us-unknown'};
@@ -15809,18 +15948,18 @@ function unifiedScoutRowHtml(r){
           tiles=notPass.length?notPass.map(function(k){var st=g.groups[k]||'none';return '<span class="uc-light '+gCls[st]+'" title="'+gWords[k]+': '+gMarks[st]+'"><i></i>'+shortW[k]+'</span>';}).join(''):'<span class="uc-light us-pass" title="Ticket, Timing, Account and Plan all pass"><i></i>All 4 pass</span>';
           return open+
             '<div class="uc-l1">'+(triageEdit?removeAction:'')+head+'<span class="verdict '+vc+'">'+vw+'</span><span class="uc-caret">'+(whyOpen?'\u25b4':'\u25be')+'</span></div>'+
-            '<div class="uc-l2"><span class="uc-reason">'+esc(g.why||'Not evaluated')+'</span><span class="uc-lights">'+tiles+'</span></div>'+
-            (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+tdTideLine(c.ticker)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
+            '<div class="uc-l2"><span class="uc-reason">'+(teChipsHtml(g)||esc(g.why||'Not evaluated'))+'</span><span class="uc-lights">'+tiles+'</span></div>'+
+            (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+tdTideLine(c.ticker)+teRowLine(g)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
         }
         return open+
           '<div class="uc-l1"><span class="verdict '+vc+'">'+vw+'</span>'+(triageEdit?removeAction:'')+head+'<span class="why-link">'+(whyOpen?'Close':'Why?')+'</span></div>'+
           '<div class="uc-tiles">'+tiles+'</div>'+
-          '<div class="uc-l2"><span class="uc-reason">'+esc(g.why||'Not evaluated')+'</span></div>'+
-          (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+tdTideLine(c.ticker)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
+          '<div class="uc-l2"><span class="uc-reason">'+(teChipsHtml(g)||esc(g.why||'Not evaluated'))+'</span></div>'+
+          (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+tdTideLine(c.ticker)+teRowLine(g)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
       }
       return '<article class="triage-unified-row triage-combined-row uni-card verdict-'+vc+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'">'+
-        '<div class="uni-decision"><span class="verdict '+vc+'">'+vw+'</span><span class="reason">'+esc(g.why||'Not evaluated')+'</span><span role="button" tabindex="0" class="why-link" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'">'+(whyOpen?'Close':'Why?')+'</span></div>'+
-        '<div class="uni-strip">'+strip+'</div>'+(vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+tdTideLine(c.ticker)+whyList+
+        '<div class="uni-decision"><span class="verdict '+vc+'">'+vw+'</span><span class="reason">'+(teChipsHtml(g)||esc(g.why||'Not evaluated'))+'</span><span role="button" tabindex="0" class="why-link" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'">'+(whyOpen?'Close':'Why?')+'</span></div>'+
+        '<div class="uni-strip">'+strip+'</div>'+(vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+tdTideLine(c.ticker)+teRowLine(g)+whyList+
         '<div class="uni-body">'+
           '<div class="uni-identity"><div class="coin-row"><b>'+ticker+'</b><small>'+price+'</small></div>'+(locked?reason:'')+'</div>'+
           '<div class="uni-signal uni-signal-quiet"><b>'+esc(trend)+'</b><small>'+watch+'</small></div>'+
