@@ -13255,7 +13255,8 @@
       return {now:now,run:run,flipDay:flipDay,p:p,sma7:tr.sma7,sma14:tr.sma14,gap:(tr.sma7-tr.sma14)/tr.sma14*100,needToday:needToday,needTomorrow:needTomorrow,pos:pos};
     }catch(e){return null;}
   }
-  function tdDayWord(d){if(d===1)return 'tomorrow';var t=new Date(Date.now()+d*864e5);return t.toLocaleDateString('en-GB',{weekday:'short'});}
+  function tdDayWord(d){if(d===1)return 'tomorrow';var t=new Date(Date.now()+d*864e5);   /* TIDE-DATE-1: weekday + date, and "next" a week or more out, so Monday's "Mon" can't be read as today */
+    return (d>=7?'next ':'')+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][t.getUTCDay()]+' '+t.getUTCDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][t.getUTCMonth()];}
   function tdPctTo(p,x){return (x>=p?'+':'\u2212')+Math.abs((x/p-1)*100).toFixed(1)+'%';}
   function tdTideLine(ticker){
     var t=tdRead(ticker);if(!t)return '';
