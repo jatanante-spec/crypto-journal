@@ -15987,7 +15987,28 @@ function triageUnfoldHtml(r, o){
     '<p class="tq-note">Research evidence, not entry approval. Ready means the evidence is usable; it does not mean Buy.</p>' +
   '</section>';
 }
-function unifiedScoutRowHtml(r){
+/* DEEP-DIP-1 · information-only tag on Scout rows: price 15%+ under its 7-day high (highest hourly high in the
+     168 hourly bars the row already has). Past test (37 coins, Apr–Oct 2026, no stop): 80/100 reached +5% within
+     14 days vs 69 at any time; 1 in 10 fell another 16.5% first. 10–15% is not tagged (72 vs 69, deeper drops).
+     Checks, verdict and every other label are unchanged. */
+  function ddInfo(r){
+    try{
+      if(!r||r.scanStatus&&r.scanStatus!=='done')return null;
+      var m=r.book&&r.book.market,rows=m&&m.hourlyOhlc,p=Number(r.price);
+      if(!Array.isArray(rows)||rows.length<160||!(p>0))return null;
+      var hi=0,hiAt=null;rows.forEach(function(b){var h=Number(b&&b[2]);if(h>hi){hi=h;hiAt=b[0];}});
+      if(!(hi>0))return null;
+      var off=(p/hi-1)*100;
+      return off<=-15?{off:off,hi:hi,hiAt:hiAt}:null;
+    }catch(e){return null;}
+  }
+  function ddTagHtml(d){var n=Math.floor(Math.abs(d.off));return d?'<span class="dd-tag" title="'+n+'% under the 7-day high \u00b7 tap the row for details">DIP '+n+'%</span>':'';}
+  function ddWhyHtml(d){
+    var t=new Date(d.hiAt),day=isFinite(t.getTime())?', '+t.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}):'';
+    return '<p class="dd-why"><b>Deep dip</b>: '+Math.abs(d.off).toFixed(1)+'% under the 7-day high ('+esc(scoutPx(d.hi))+day+'). Past deep dips (15%+): <b>80/100 reached +5% in 14d</b> \u00b7 any time 69 \u00b7 <b>1 in 10 fell another 16.5%</b> first. <small>Information only: checks and verdict unchanged.</small></p>';
+  }
+  /* /DEEP-DIP-1 */
+  function unifiedScoutRowHtml(r){
     var c=r.pair,scanPending=r.scanStatus&&r.scanStatus!=='done',scanFailed=r.scanStatus==='failed',lock=scoutLockFor(c.ticker),locked=!!lock,trend=scanFailed?'Outdated':scanPending?'Refreshing…':r.context.ready?(r.observation.trend||'Observed'):'Unknown',change=!scanPending&&!scanFailed&&r.change!=null?(r.change>=0?'+':'')+num(r.change,1)+'%':'—',star=state.settings.watchlist.indexOf(c.ticker)>=0,health=locked?'Locked':scanFailed?'Refresh failed':scanPending?'Pending':r.mismatch?'Old Bid':r.context.ready?'Data OK':'Needs data',healthClass=locked?'attention':r.context.ready&&!r.mismatch?'ready':r.mismatch?'attention':'unknown',ticker=esc(c.ticker),name=esc(c.name||c.ticker),price=esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched'),watchText=unifiedScoutCompactWatch(r),watch=scoutCueMarkup(watchText),signalClass=scoutSignalClass(r,trend),location=esc(r.pos&&r.pos.word||'not checked'),reason=locked?'<small class="triage-lock-note">🔒 '+esc(lock.reason)+'</small>':'',openClass=locked?'locked':'',openLabel=locked?'🔒 Locked':'Open';
     var coin='<span class="triage-unified-coin"><b>'+ticker+'</b><small>'+price+'</small>'+reason+'</span>';
     var combinedCoin='<span class="triage-unified-coin"><b>'+ticker+'</b><small>'+price+'</small></span>';
@@ -16012,6 +16033,7 @@ function unifiedScoutRowHtml(r){
       ['ticket','timing','account','plan'].forEach(function(k){var st=g.groups[k]||'none';strip+='<button class="'+gCls[st]+'"><span class="us-label">'+gWords[k]+'</span><span class="us-status">\u25cf '+gMarks[st]+'</span></button>';});
       var whyOpen=scoutWhyTicker===c.ticker,whyList=whyOpen?'<div class="uni-why">'+((g.rows||[]).length?(g.rows||[]).map(function(x){return '<p><b>'+esc(x.group+' \u00b7 '+x.title)+'</b> '+esc(x.why)+'</p>';}).join(''):'<p>'+esc(g.why||'No listed blocker.')+'</p>')+'<p class="uni-why-note">Judged at today\u2019s price'+(g.atTicket?' \u00b7 Bid '+priceGbp(g.atTicket.entry,4)+' \u00b7 stop '+priceGbp(g.atTicket.stop,4)+' \u00b7 target '+priceGbp(g.atTicket.target,4):'')+'. Opening it in Sizer copies this ticket.</p></div>':'';
       if(whyOpen&&vw==='BUY')whyList=whyList.replace('<div class="uni-why">','<div class="uni-why">'+nsOddsPlain(c.ticker));   // NOSTOP-ABCD-1 C
+      var dd=ddInfo(r);if(whyOpen&&dd)whyList=whyList.replace('<div class="uni-why">','<div class="uni-why">'+ddWhyHtml(dd));   // DEEP-DIP-1
       var rowStyle=scoutRowStyle();
       if(rowStyle!=='full'){
         /* SCOUT-ROWS-1 · same facts, fewer lines. Tap anywhere on the row to open Why + buttons. */
@@ -16020,7 +16042,7 @@ function unifiedScoutRowHtml(r){
         var tiles=['ticket','timing','account','plan'].map(function(k){var st=g.groups[k]||'none';return '<span class="uc-light '+gCls[st]+'" title="'+gWords[k]+': '+gMarks[st]+'"><i></i>'+shortW[k]+'</span>';}).join('');
         var sigLine='<div class="uc-l3"><span class="uc-sig"><b>'+esc(trend)+'</b> \u00b7 '+watch+'</span><span class="uc-meta">'+location+' \u00b7 '+esc(triageFreshShort(String(r.fresh&&r.fresh.label||'not checked')))+'</span>'+healthMarkup+'</div>';
         var openPart=whyOpen?whyList+'<div class="uni-actions"><div class="triage-ledger-actions">'+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+name:'Inspect '+name)+'">'+(locked?'Research':'Inspect')+'</button></div></div>':'';
-        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span><span class="uc-fill"></span>';
+        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+'<span class="uc-fill"></span>';   // DEEP-DIP-1 tag
         var cls='triage-unified-row triage-combined-row uni-card uv2 uv2-'+rowStyle+' verdict-'+vc+(whyOpen?' uv2-open':'')+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'');
         var open='<article class="'+cls+'" data-ticker="'+ticker+'" data-action="scout-why" aria-expanded="'+whyOpen+'">';
         var lockNote=locked?'<div class="uc-lock">'+reason+'</div>':'';
