@@ -8659,4 +8659,36 @@ p.ns-mut{margin:6px 0}
 .te-banner p{margin:5px 0 0;color:#cfe3f2;font-size:12.5px;line-height:1.4}
 .te-banner .te-mut{color:#93a4bd}
 .te-set-row .scout-watch-lab{white-space:normal!important}
+
+/* ALERT-LINE-1 · alerts folded into the Scout status line + hairline strip on other tabs + SCOUT count + banner */
+.al-row{display:flex;flex-wrap:wrap;align-items:center;gap:0 6px;min-width:0;font-size:11.5px;color:#8597b0}
+.al-row-scout .scout-watch-sum{display:inline;flex:0 1 auto}
+.al-part{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;min-width:0;max-width:100%;cursor:pointer;border-radius:6px;padding:1px 2px}
+.al-part:focus-visible{outline:1px solid var(--accent,#f5b13d)}
+.al-dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto;background:#5d6b80}
+.al-tk{font-weight:700;font-size:11.5px;letter-spacing:.02em}
+.al-tk[hidden]{display:none}
+.al-more{color:#c2cee0;font-weight:600}
+.al-more:empty{display:none}
+.al-car{font-style:normal;color:#8597b0;font-size:10px}
+.al-sep{color:#4a5a73}
+.al-k-buy{color:#3ddc97}.al-dot.al-k-buy{background:#3ddc97}
+.al-k-turn{color:#36c5f0}.al-dot.al-k-turn{background:#36c5f0}
+.al-k-plan{color:#a99cff}.al-dot.al-k-plan{background:#8b7bff}
+.al-k-tide{color:#6fd8c4}.al-dot.al-k-tide{background:#6fd8c4}
+.al-k-gone{color:#6b7a90}.al-dot.al-k-gone{background:#5d6b80}
+.al-part.al-new .al-dot{animation:alPulse 1s ease-in-out 10}
+@keyframes alPulse{0%,100%{box-shadow:0 0 0 0 rgba(61,220,151,.0)}50%{box-shadow:0 0 0 4px rgba(61,220,151,.35)}}
+.al-strip{margin:2px 0 4px;padding:2px 2px 3px;border-bottom:1px solid rgba(133,151,176,.18)}
+.al-strip .al-row{flex-wrap:nowrap}
+.al-strip .al-part{flex:1 1 auto}
+.al-strip-box{margin-top:4px}
+.cmd-btn .al-badge{display:inline-block;min-width:15px;height:15px;line-height:15px;padding:0 4px;margin-left:4px;border-radius:8px;background:#3ddc97;color:#06231a;font:700 10px/15px system-ui,sans-serif;font-style:normal;text-align:center;vertical-align:1px}
+.al-banner{position:fixed;left:50%;top:10px;z-index:9999;display:flex;align-items:center;gap:10px;max-width:min(560px,calc(100vw - 20px));padding:9px 12px;border-radius:10px;border:1px solid #2f8f66;background:#10261d;color:#dbe6f3;font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,.45);transform:translate(-50%,-140%);opacity:0;transition:transform .25s ease,opacity .25s ease;pointer-events:none}
+.al-banner.on{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+.al-bn-t{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.al-banner .al-tag{font-size:10px;letter-spacing:.06em}
+.al-bn-act{cursor:pointer;color:var(--accent,#f5b13d);font-weight:600;flex:0 0 auto}
+.al-bn-x{color:#8597b0;font-size:16px;line-height:1}
+@media (prefers-reduced-motion:reduce){.al-part.al-new .al-dot{animation:none}.al-banner{transition:none}}
 </style>

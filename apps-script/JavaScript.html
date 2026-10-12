@@ -12885,12 +12885,16 @@
     if(!('Notification' in window))return 'not supported here';
     return Notification.permission==='granted'?'on':Notification.permission==='denied'?'blocked in browser settings':'off';
   }
-  function scoutAlertBarHtml(){
-    var o=scoutAlertLoad(),mins=Number(state.settings.scoutWatchMins)||0,perm=scoutAlertPermWord();
+  function scoutAlertListHtml(){   /* ALERT-LINE-1: same items as before, now also used by the strip on other tabs */
+    var o=scoutAlertLoad();
     var list=o.active.map(function(a){if(a.kind==='turn')return teAlertItem(a);var t=new Date(a.at),hm=isFinite(t.getTime())?t.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
       return '<div class="scout-alert'+(a.goneAt?' gone':'')+'"><span><b>'+esc(a.ticker)+'</b> '+(a.goneAt?'was BUY at '+scoutPx(a.price)+' ('+hm+') \u00b7 no longer':'<b class="go">BUY</b> '+scoutPx(a.price)+' \u00b7 '+hm+'<small>stop '+scoutPx(a.stop)+' \u00b7 target '+scoutPx(a.target)+'</small>'+nsOddsLine(a.ticker))+'</span>'+
         '<span class="scout-alert-acts">'+(a.goneAt?'':'<span role="button" tabindex="0" data-action="scout-alert-open" data-ticker="'+esc(a.ticker)+'">Open</span>')+'<span role="button" tabindex="0" aria-label="Dismiss" data-action="scout-alert-dismiss" data-ticker="'+esc(a.ticker)+'">\u00d7</span></span></div>';}).join('');
-    list=nsAlertItemsHtml()+tdAlertItemsHtml()+list;   // NOSTOP-ABCD-1 D · TIDE-WATCH-1
+    return nsAlertItemsHtml()+tdAlertItemsHtml()+list;   // NOSTOP-ABCD-1 D · TIDE-WATCH-1
+  }
+  function scoutAlertBarHtml(){
+    var o=scoutAlertLoad(),mins=Number(state.settings.scoutWatchMins)||0,perm=scoutAlertPermWord();
+    var list=scoutAlertListHtml();
     var opts=[0,15,30,60].map(function(n){return '<span role="button" tabindex="0" class="scout-watch-opt'+(mins===n?' on':'')+'" data-action="scout-watch" data-mins="'+n+'">'+(n?n+'m':'Off')+'</span>';}).join('');
     var rs=scoutRowStyle(),rowOpts=[['compact','Compact'],['medium','Medium'],['full','Full']].map(function(o){return '<span role="button" tabindex="0" class="scout-watch-opt'+(rs===o[0]?' on':'')+'" data-action="scout-row-style" data-style="'+o[0]+'">'+o[1]+'</span>';}).join('');
     var summary='<span role="button" tabindex="0" class="scout-watch-sum" data-action="scout-watch-more" aria-expanded="'+scoutWatchOpen+'">Auto '+(mins?mins+'m':'off')+' \u00b7 Alerts '+esc(/blocked/.test(perm)?'blocked':perm)+' \u00b7 Rows '+rs+(teCfg().on?' \u00b7 Turn entry on':'')+' <i>'+(scoutWatchOpen?'\u25b4':'\u25be')+'</i></span>';
@@ -12898,9 +12902,83 @@
       '<div class="scout-watch-row"><span class="scout-watch-lab">Alerts '+esc(perm)+'</span>'+(perm==='off'?'<span role="button" tabindex="0" class="scout-watch-opt" data-action="scout-alerts-allow">Allow</span>':'')+'</div>'+
       '<div class="scout-watch-row"><span class="scout-watch-lab">Rows</span>'+rowOpts+'</div>'+tePanelHtml():'';   // TURN-ENTRY-1
     /* SCOUT-ALERTBOX-1 · every BUY alert sits together in one box */
-    return '<div class="scout-watch" id="scout-watch">'+(list?'<div class="scout-alert-box">'+list+'</div>':'')+summary+panel+'</div>';
+    /* ALERT-LINE-1 · the box folds into the status line ("● SAND +3 ▾ · Auto 15m · …"); tap the coins to unfold it */
+    var alIt=alItems();alSeed(alIt);if(!alIt.length)alOpen.scout=false;else setTimeout(alFit,0);
+    var row=alIt.length?'<div class="al-row al-row-scout">'+alPartHtml(alIt,'scout')+'<span class="al-sep">\u00b7</span>'+summary+'</div>':summary;
+    var box=list&&(alOpen.scout||!alIt.length)?'<div class="scout-alert-box">'+list+'</div>':'';
+    return '<div class="scout-watch" id="scout-watch">'+row+box+panel+'</div>';
   }
-  function scoutAlertPaint(){var el=document.getElementById('scout-watch');if(el)el.outerHTML=scoutAlertBarHtml();}
+  function scoutAlertPaint(){var el=document.getElementById('scout-watch');if(el)el.outerHTML=scoutAlertBarHtml();alPaintOutside();}
+  /* ALERT-LINE-1 · alerts fold into the Scout status line, a hairline strip under the tab bar on the other tabs,
+     a count on the SCOUT tab, and an 8-second pop-up banner when a new alert arrives while you're on another tab.
+     The alert items themselves (words, stats, Open, ×) are unchanged; phone notifications are unchanged. */
+  var alOpen={scout:false,strip:false},alSeen=null,alPulseUntil=0,alBnTimer=null;
+  function alItems(){
+    var out=[];
+    try{
+      var pl=[];nsPlans().forEach(function(p){if(!p||p.status!=='active')return;(p.ev||[]).forEach(function(e){if(!e.ack)pl.push({p:p,e:e});});});
+      pl.sort(function(x,y){return String(y.e.at).localeCompare(String(x.e.at));});
+      pl.slice(0,4).forEach(function(x){out.push({k:'plan',t:x.p.t,key:'p:'+x.e.id,tag:'PLAN',rest:String(x.e.title||'').replace(x.p.t+': ','')});});
+      tdLoad().active.forEach(function(a){out.push({k:'tide',t:a.ticker,gone:!!a.goneAt,key:'t:'+a.id,tag:'TIDE',rest:'turned UP after '+a.down+' days down \u00b7 '+scoutPx(a.price)});});
+      scoutAlertLoad().active.forEach(function(a){var turn=a.kind==='turn';out.push({k:turn?'turn':'buy',t:a.ticker,gone:!!a.goneAt,key:'b:'+a.ticker+':'+a.at,tag:turn?'TURN BUY':'BUY',
+        rest:scoutPx(a.price)+(a.stop>0&&a.target>0?' \u00b7 stop '+scoutPx(a.stop)+' \u00b7 target '+scoutPx(a.target):'')});});
+    }catch(e){}
+    return out;
+  }
+  function alLive(items){return items.filter(function(x){return !x.gone;});}
+  function alPartHtml(items,where){
+    var live=alLive(items),seen={},tks=[];
+    live.concat(items.filter(function(x){return x.gone;})).forEach(function(x){if(!seen[x.t]){seen[x.t]=1;tks.push(x);}});
+    var lead=live[0],open=!!alOpen[where];
+    return '<span role="button" tabindex="0" class="al-part'+(Date.now()<alPulseUntil?' al-new':'')+'" data-action="al-toggle" data-where="'+where+'" aria-expanded="'+open+'" title="'+esc(items.length+' alert'+(items.length===1?'':'s')+' \u00b7 tap to '+(open?'fold':'show'))+'">'+
+      '<i class="al-dot al-k-'+(lead?lead.k:'gone')+'"></i>'+tks.map(function(x){return '<b class="al-tk al-k-'+(x.gone?'gone':x.k)+'">'+esc(x.t)+'</b>';}).join('')+
+      '<span class="al-more"></span><i class="al-car">'+(open?'\u25b4':'\u25be')+'</i></span>';
+  }
+  function alFit(){   /* as many coins as fit, then +N; on Scout never pushes "Auto · Alerts · Rows ▾" off the line */
+    document.querySelectorAll('.al-row').forEach(function(row){
+      var part=row.querySelector('.al-part');if(!part)return;
+      var tks=[].slice.call(part.querySelectorAll('.al-tk')),more=part.querySelector('.al-more'),sum=row.querySelector('.scout-watch-sum'),shown=tks.length;
+      tks.forEach(function(t){t.hidden=false;});more.textContent='';
+      var over=function(){return sum?sum.offsetTop>part.offsetTop+4:part.scrollWidth>part.clientWidth+1;};
+      while(shown>0&&over()){shown--;tks[shown].hidden=true;more.textContent=(shown?'+':'')+(tks.length-shown);}   /* 0 names left → just "● 4 ▾" */
+    });
+  }
+  function alBadgeHtml(){var n=alLive(alItems()).length;return n?' <i class="al-badge" aria-label="'+n+' alerts">'+n+'</i>':'';}
+  function alStripHtml(){
+    var items=page==='scout'?[]:alItems();alSeed(items);
+    if(!items.length){if(page!=='scout')alOpen.strip=false;return '<div id="al-strip" hidden></div>';}
+    setTimeout(alFit,0);
+    return '<div id="al-strip" class="al-strip"><div class="al-row">'+alPartHtml(items,'strip')+'</div>'+(alOpen.strip?'<div class="scout-alert-box al-strip-box">'+scoutAlertListHtml()+'</div>':'')+'</div>';
+  }
+  function alSeed(){if(alSeen)return;alSeen={};alItems().forEach(function(x){alSeen[x.key]=1;});}   /* alerts already there when the app opens don't pop up */
+  function alPaintOutside(){
+    try{
+      var items=alItems(),n=alLive(items).length,b=document.querySelector('.cmd-btn[data-page="scout"]');
+      if(b){var old=b.querySelector('.al-badge');if(old)old.remove();if(n)b.insertAdjacentHTML('beforeend',alBadgeHtml());}
+      var st=document.getElementById('al-strip');if(st){var tmp=document.createElement('div');tmp.innerHTML=alStripHtml();st.parentNode.replaceChild(tmp.firstChild,st);}
+      if(!alSeen){alSeed(items);return;}
+      var fresh=items.filter(function(x){return !x.gone&&!alSeen[x.key];});
+      items.forEach(function(x){alSeen[x.key]=1;});
+      if(!fresh.length)return;
+      if(page==='scout'){alPulseUntil=Date.now()+10000;var pt=document.querySelector('.al-row-scout .al-part');if(pt)pt.classList.add('al-new');return;}
+      if(!document.hidden)alBanner(fresh[0]);
+    }catch(e){}
+  }
+  function alBanner(x){
+    var el=document.getElementById('al-banner');
+    if(!el){el=document.createElement('div');el.id='al-banner';el.className='al-banner';el.setAttribute('role','status');document.body.appendChild(el);}
+    el.innerHTML='<span class="al-bn-ic">\ud83d\udd14</span><span class="al-bn-t"><b>'+esc(x.t)+'</b> <b class="al-tag al-k-'+x.k+'">'+esc(x.tag)+'</b> '+esc(x.rest)+'</span>'+
+      '<span role="button" tabindex="0" class="al-bn-act" data-action="al-bn-open" data-ticker="'+esc(x.t)+'">Open</span><span role="button" tabindex="0" class="al-bn-act al-bn-x" aria-label="Close" data-action="al-bn-x">\u00d7</span>';
+    el.classList.add('on');clearTimeout(alBnTimer);alBnTimer=setTimeout(alBnHide,8000);
+  }
+  function alBnHide(){var el=document.getElementById('al-banner');if(el)el.classList.remove('on');}
+  document.addEventListener('click',function(e){var b=e.target&&e.target.closest?e.target.closest('[data-action]'):null;if(!b)return;var a=b.getAttribute('data-action')||'';if(a.indexOf('al-')!==0)return;e.preventDefault();e.stopImmediatePropagation();
+    if(a==='al-toggle'){var w=b.getAttribute('data-where')==='strip'?'strip':'scout';alOpen[w]=!alOpen[w];if(w==='scout')scoutAlertPaint();else alPaintOutside();}
+    else if(a==='al-bn-x')alBnHide();
+    else if(a==='al-bn-open'){alBnHide();var t=b.getAttribute('data-ticker');if(t){if(scoutLockFor(t))applyPair(t);else scoutOpenInSizer(t);alOpen.strip=false;page='sizer';render();}}
+  },true);
+  window.addEventListener('resize',function(){setTimeout(alFit,50);});
+  /* /ALERT-LINE-1 */
   /* NOSTOP-ABCD-1 · A no-stop swing plan in Sizer · B BUY log · C past-BUY odds line · D plan alerts.
      Odds come from a fixed table worked out offline from past app BUYs (all coins, 4-hour steps, no fees):
      b = [hit%, loss%, avg%, typical dip%, 1-in-10 dip%, typical days to hit, % that filled every part],
@@ -13088,7 +13166,8 @@
   function nsRepaint(){
     var ae=document.activeElement,typing=ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName);
     if(page==='scout')scoutAlertPaint();
-    else if(!typing&&(page==='sizer'||page==='journal'))render();
+    else{alPaintOutside();   // ALERT-LINE-1
+      if(!typing&&(page==='sizer'||page==='journal'))render();}
   }
   function nsAfterPeek(){try{nsCheckPlans();nsTrack();}catch(e){}}
   function nsPlanTick(){
@@ -13197,7 +13276,7 @@
     if(action==='ns-style'){state.settings.planStyle=btn.getAttribute('data-v')==='nostop'?'nostop':'stop';nsBoughtOpen=false;save();render();return true;}
     if(action==='ns-parts'){state.settings.nsParts=Number(btn.getAttribute('data-v'))||2;save();render();return true;}
     if(action==='ns-log-filter'){nsLogFilter=btn.getAttribute('data-v')||'all';render();return true;}
-    if(action==='ns-open'){var t=btn.getAttribute('data-ticker');if(t){if(scoutLockFor(t))applyPair(t);else scoutOpenInSizer(t);page='sizer';save();render();}return true;}
+    if(action==='ns-open'){var t=btn.getAttribute('data-ticker');if(t){if(scoutLockFor(t))applyPair(t);else scoutOpenInSizer(t);alOpen.strip=false;page='sizer';save();render();}return true;}
     if(action==='ns-ev-ack'){if(p){(p.ev||[]).forEach(function(x){if(x.id===btn.getAttribute('data-ev'))x.ack=true;});nsTouch(p);save();}try{document.title=scoutBaseTitle;}catch(x){}scoutAlertPaint();return true;}
     if(action==='ns-start'||action==='ns-bought-save'){
       var b=nsBid(),c=nsCfg(),f=cdFrame();
@@ -14607,12 +14686,12 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
 
   function commandStripHtml() {
     return '<div class="cmd-strip" role="toolbar" aria-label="Main navigation">'+
-      '<button type="button" class="cmd-btn '+(page==='scout'?'on':'')+'" data-page="scout">SCOUT</button>'+ 
+      '<button type="button" class="cmd-btn '+(page==='scout'?'on':'')+'" data-page="scout">SCOUT'+alBadgeHtml()+'</button>'+ 
       '<button type="button" class="cmd-btn '+(page==='sizer'?'on':'')+'" data-page="sizer">SIZER</button>'+ 
       '<button type="button" class="cmd-btn '+(page==='journal'?'on':'')+'" data-page="journal">JOURNAL</button>'+ 
       '<button type="button" class="cmd-btn '+(page==='market'?'on':'')+'" data-page="market">MARKET</button>'+ 
       '<button type="button" class="cmd-btn '+((page==='settings'||page==='manual'||page==='trend'||page==='updates')?'on':'')+'" data-page="settings">MORE</button>'+ 
-    '</div>';
+    '</div>'+alStripHtml();   // ALERT-LINE-1
   }
   document.addEventListener("change", function (e) {
     if (e.target && e.target.id === "settings-theme") setColorTheme(e.target.value);
@@ -15214,7 +15293,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
       render();
     } else if (action === "scout-alert-open") {
       var sat = btn.getAttribute("data-ticker");
-      if (sat) { if (scoutLockFor(sat)) { applyPair(sat); } else { scoutOpenInSizer(sat); } page = "sizer"; render(); }
+      if (sat) { if (scoutLockFor(sat)) { applyPair(sat); } else { scoutOpenInSizer(sat); } alOpen.strip = false; page = "sizer"; render(); }
     } else if (action === "scout-alert-dismiss") {
       var sao = scoutAlertLoad(), sad = btn.getAttribute("data-ticker");
       sao.active = sao.active.filter(function (a) { return a.ticker !== sad; });
