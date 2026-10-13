@@ -13130,11 +13130,31 @@
       }else new Notification(title,opts);
     }catch(e){}
   }
-  function nsEvent(p,k,title,body){
+  function nsEvent(p,k,title,body,opts){
     p.ev=(p.ev||[]).filter(function(x){return !(x.k===k&&x.ack);});
-    p.ev.unshift({id:nsId('e'),at:new Date().toISOString(),k:k,title:title,body:body});
+    var e={id:nsId('e'),at:new Date().toISOString(),k:k,title:title,body:body};
+    if(opts&&opts.nogo)e.nogo=true;
+    p.ev.unshift(e);
     if(p.ev.length>8)p.ev.length=8;nsTouch(p);nsNotify(title,body,p.t);
   }
+
+  /* PLAN-NOGO-1 · check the Scout verdict before firing buy-level alerts */
+  function nsVerdictFor(t){
+    try{
+      var row=triageCache.filter(function(r){return r.pair.ticker===t;})[0];
+      if(!row)return null;
+      var g=row.ready||(row.ready=scoutReadiness(row,null));
+      return g&&g.verdict?g.verdict:null;
+    }catch(e){return null;}
+  }
+  function nsNogoBody(p,g){
+    var blocks=[];
+    if(g.groups.ticket==='block')blocks.push('1.5R');
+    if(g.groups.timing==='block')blocks.push('Hour RSI / range');
+    if(g.groups.plan==='block')blocks.push('Plan');
+    return 'Price hit the level but Scout checks fail: '+(blocks.length?blocks.join(' · '):'checks blocked')+'. Don\'t buy until checks pass. Wait for RSI to cool and price to drop, then re-check.';
+  }
+
   function nsCheckPlans(){
     var now=Date.now(),iso=new Date().toISOString(),changed=false;
     nsActivePlans().forEach(function(p){
@@ -13146,8 +13166,18 @@
       (p.lv||[]).forEach(function(l,i){
         if(l.fp>0||l.hitAt||!(low<=l.px))return;
         l.hitAt=iso;changed=true;
-        nsEvent(p,'level'+i,p.t+': '+(i===0&&!a?'your bid':'buy level '+(i+1))+' reached \u00b7 '+scoutPx(l.px),
-          'Price '+(fresh?scoutPx(q.px):scoutPx(low))+(lowAt&&Date.parse(lowAt)<qa-36e5?' (dipped to '+scoutPx(low)+' at '+nsWhen(lowAt,false)+')':'')+'. Plan says buy about '+gbp(l.amt)+'. After buying, tap Bought on the plan so the sell price updates.');
+        var v=nsVerdictFor(p.t);
+        if(v==='NO-GO'){
+          l.hitAt=iso;changed=true;
+          var row2=triageCache.filter(function(r){return r.pair.ticker===p.t;})[0];
+          var g2=row2&&row2.ready?row2.ready:null;
+          nsEvent(p,'level'+i,p.t+': buy level '+(i+1)+' £'+scoutPx(l.px)+' · DON\'T BUY YET · checks NO-GO',
+            nsNogoBody(p,g2),{nogo:true});
+        }else{
+          l.hitAt=iso;changed=true;
+          nsEvent(p,'level'+i,p.t+': '+(i===0&&!a?'your bid':'buy level '+(i+1))+' reached \u00b7 '+scoutPx(l.px),
+            'Price '+(fresh?scoutPx(q.px):scoutPx(low))+(lowAt&&Date.parse(lowAt)<qa-36e5?' (dipped to '+scoutPx(low)+' at '+nsWhen(lowAt,false)+')':'')+'. Plan says buy about '+gbp(l.amt)+'. After buying, tap Bought on the plan so the sell price updates.');
+        }
       });
       var tg=nsPlanTarget(p);
       if(tg&&!p.tgAt&&high>=tg){p.tgAt=iso;changed=true;
@@ -13190,7 +13220,8 @@
     nsPlans().forEach(function(p){if(!p||p.status!=='active')return;(p.ev||[]).forEach(function(e){if(!e.ack)items.push({p:p,e:e});});});   /* PLAN-END-FIX-1: an ended or sold plan shows no alerts */
     items.sort(function(x,y){return String(y.e.at).localeCompare(String(x.e.at));});
     return items.slice(0,4).map(function(x){
-      return '<div class="scout-alert ns-plan-alert"><span><b class="ns-tag">PLAN</b> '+esc(x.e.title)+' \u00b7 '+nsWhen(x.e.at,false)+'<small>'+esc(x.e.body)+'</small></span>'+
+      var nogoCls=x.e.nogo?' nogo':'';
+      return '<div class="scout-alert ns-plan-alert'+nogoCls+'"><span><b class="ns-tag'+nogoCls+'">PLAN</b> '+esc(x.e.title)+' \u00b7 '+nsWhen(x.e.at,false)+'<small>'+esc(x.e.body)+'</small></span>'+
         '<span class="scout-alert-acts"><span role="button" tabindex="0" data-action="ns-open" data-ticker="'+esc(x.p.t)+'">Open</span><span role="button" tabindex="0" aria-label="Dismiss" data-action="ns-ev-ack" data-plan="'+esc(x.p.id)+'" data-ev="'+esc(x.e.id)+'">\u00d7</span></span></div>';
     }).join('');
   }
