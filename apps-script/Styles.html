@@ -7924,6 +7924,67 @@ body:not(.command-strip-mode) .sizer-screen{padding-bottom:calc(130px + env(safe
 }
 
 
+
+/* SCOUT-HEADER-C-1 · ultra-minimal single-row Scout header */
+#main .triage-compact-page .triage-whisper-c{position:relative;margin-bottom:0}
+#main .triage-compact-page .triage-whisper-c-row{
+  display:flex;align-items:center;gap:4px;padding:0 8px;height:38px;
+  border-bottom:1px solid rgba(30,53,88,.4);background:rgba(10,18,32,.6)
+}
+#main .triage-compact-page .triage-whisper-c-title{
+  font-size:13px;font-weight:700;margin:0;white-space:nowrap;line-height:1
+}
+#main .triage-compact-page .triage-whisper-c-badge{
+  font-size:8px;color:var(--muted);font-family:var(--mono);
+  padding:2px 5px;border-radius:4px;background:rgba(30,53,88,.3);white-space:nowrap
+}
+#main .triage-compact-page .triage-whisper-c-search{
+  flex:1;min-width:0;height:28px;padding:0 8px;border-radius:6px;
+  border:1px solid transparent;background:rgba(17,31,53,.5);
+  display:flex;align-items:center;gap:5px;cursor:text;
+  transition:all .15s;-webkit-tap-highlight-color:transparent
+}
+#main .triage-compact-page .triage-whisper-c-search:focus-within{
+  border-color:rgba(61,125,255,.3);background:rgba(17,31,53,.8)
+}
+#main .triage-compact-page .triage-whisper-c-search svg{
+  flex:0 0 auto;width:14px;height:14px;color:#7f97b8;pointer-events:none
+}
+#main .triage-compact-page .triage-whisper-c-search input{
+  flex:1;min-width:0;width:100%;border:0;background:transparent;color:var(--text);
+  font-size:12px;font-family:inherit;outline:none;height:100%;
+  -webkit-appearance:none;appearance:none
+}
+#main .triage-compact-page .triage-whisper-c-search input::placeholder{color:#4a6080}
+#main .triage-compact-page .triage-whisper-c-icon{
+  width:30px;height:30px;min-width:30px;border:none;border-radius:6px;
+  background:transparent;color:var(--muted);font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;transition:all .15s;
+  -webkit-tap-highlight-color:transparent
+}
+#main .triage-compact-page .triage-whisper-c-icon:hover,
+#main .triage-compact-page .triage-whisper-c-icon:active{
+  background:rgba(30,53,88,.4);color:var(--text)
+}
+#main .triage-compact-page .triage-whisper-c-icon.on{
+  color:var(--accent);background:rgba(61,125,255,.12)
+}
+#main .triage-compact-page .triage-whisper-c-more{font-size:12px}
+/* Hide old whisper elements when using C layout */
+#main .triage-compact-page .triage-whisper-main,
+#main .triage-compact-page .triage-whisper-sub,
+#main .triage-compact-page .triage-whisper-left,
+#main .triage-compact-page .triage-whisper-center,
+#main .triage-compact-page .triage-whisper-right{display:none}
+/* Pop menu positioning for C header */
+#main .triage-compact-page #triage-pop{
+  position:absolute;top:38px;right:8px;left:auto;
+  min-width:160px;padding:4px;z-index:40;
+  border:1px solid #315c9a;border-radius:10px;background:#122a4b;
+  box-shadow:0 16px 34px rgba(0,0,0,.55)
+}
+
 /* ==== COMFORT-1 (3 Oct 2026) ================================================================
    The deep black floor. It is a per-look deepening of that look's OWN backdrop: every colour is
    scaled to half, which leaves the hue ratios exactly where they were, so Amber Night stays warm,

@@ -13811,6 +13811,19 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
         return item('triage-focus-density-set','data-density',o[0],o[1],null,triageFocusDensity===o[0]);}));
       out+=group('Header',[['fixed','Always show'],['auto','Fold away while scrolling']].map(function(o){
         return item('triage-focus-header-set','data-header',o[0],o[1],null,triageFocusHeaderMode===o[0]);}));
+    }else if(kind==='menu'){
+      /* SCOUT-HEADER-C-1 · combined menu for the ultra-minimal header ⋯ button */
+      out=group('Scope',[['shortlist','Shortlist'],['all','All coins'],['find','Find / add']].map(function(o){
+        return item('triage-scope','data-scope',o[0],o[1],null,unifiedScoutScope===o[0]);}));
+      var c=triageFocusCounts();
+      out+=group('Filter',[['all','All',c.all],['quality','Needs attention',c.quality],['ready','Research ready',c.ready],['gates','Can buy now',c.gates],['starred','★ Starred',c.starred],['locked','Locked',c.locked]].map(function(o){
+        return item('triage-filter','data-filter',o[0],o[1],o[2],triageFilter===o[0]);}));
+      out+=group('Sort',[['priority','Review priority'],['green','Closest to green'],['az','Symbol A–Z'],['change','24h change']].map(function(o){
+        return item('triage-focus-sort','data-sort',o[0],o[1],null,triageSort===o[0]);}));
+      out+='<div class="triage-focus-popgroup"><span>Actions</span>'+
+        '<button type="button" role="menuitem" class="triage-focus-popitem" data-action="triage-focus-open"><span>⛶ Focus</span></button>'+
+        '<button type="button" role="menuitem" class="triage-focus-popitem" data-action="plans-jump"><span>Plans</span><b>'+normalisePlans(state.plans).length+'</b></button>'+
+        '</div>';
     }
     return out+'<button type="button" class="triage-focus-popclose" data-action="'+(withDensity?'triage-focus-pop-close':'triage-page-pop-close')+'">Close menu</button>';
   }
@@ -16256,41 +16269,20 @@ function triageUnfoldHtml(r, o){
       var scopeCap=unifiedScoutScope==='shortlist'?'List':unifiedScoutScope==='find'?'Find':'All';
       var filterCap=triageFilter==='quality'?'Attn':triageFilter==='ready'?'Ready':triageFilter==='gates'?'Buy':triageFilter==='starred'?'★':triageFilter==='locked'?'🔒':'All';
       var sortCap=triageSort==='az'?'A–Z':triageSort==='change'?'24h':triageSort==='green'?'Near':'Pri';
-      var whisperBar='<div class="triage-whisper-bar">'+
-        '<div class="triage-whisper-main">'+
-          '<div class="triage-whisper-left">'+
-            '<h2>Scout</h2>'+
-            '<span class="triage-whisper-badge" id="triage-hub-counts">'+
-              libraryPairs().length+' saved · '+state.settings.watchlist.length+' ★</span>'+
-          '</div>'+
-          '<div class="triage-whisper-center triage-combined-controls">'+
-            /* SCOUT-SEARCH-1 · a <label>, not a <div>: the magnifier beside the
-               box is a bare decorative <svg>, so tapping it landed on nothing and
-               the search looked like a dead button. A label forwards the tap to
-               the input it wraps, which focuses it and raises the keyboard. */
-            '<label class="triage-whisper-search">'+
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.7-3.7"/></svg>'+
-              '<input id="triage-search" type="search" placeholder="Search coins…" aria-label="Search coins" value="'+esc(triageQuery)+'">'+
-            '</label>'+
-            triageFocusIconBtn({act:'triage-pop',pop:'scope',icon:'scope',label:'Scope',cap:scopeCap,on:unifiedScoutScope!=='all'})+
-            triageFocusIconBtn({act:'triage-pop',pop:'filter',icon:'filter',label:'Filter',cap:filterCap,on:triageFilter!=='all'})+
-            triageFocusIconBtn({act:'triage-pop',pop:'sort',icon:'sort',label:'Sort',cap:sortCap,on:triageSort!=='priority'})+
-            triageFocusIconBtn({act:'triage-add-jump',icon:'plus',label:'Add a coin',cls:'triage-add-jump'})+
-          '</div>'+
-          '<div class="triage-whisper-right">'+
-            '<button id="triage-focus-open" type="button" class="triage-whisper-micro pri" data-action="triage-focus-open" aria-label="Open full-screen coin focus">⛶ Focus</button>'+
-            '<button id="triage-refresh" type="button" class="triage-whisper-micro" data-action="triage-refresh">↻ Refresh</button>'+
-            '<button id="triage-retry" type="button" class="triage-whisper-micro" data-action="triage-retry" hidden>Retry</button>'+
-            '<button id="triage-cancel" type="button" class="triage-whisper-micro" data-action="triage-cancel" hidden>Cancel</button>'+
-          '</div>'+
-        '</div>'+
-        '<div class="triage-whisper-sub">'+
-          '<span id="triage-combined-summary">0 shown</span>'+
-          '<span id="triage-scan-status" hidden></span>'+
-          '<div class="triage-whisper-sub-actions">'+
-            '<button type="button" class="triage-plans-button" data-action="plans-jump">Plans <b>'+normalisePlans(state.plans).length+'</b></button>'+
-            '<button type="button" class="triage-edit-button'+(triageEdit?' on':'')+'" data-action="triage-edit" aria-pressed="'+triageEdit+'">'+(triageEdit?'Done':'Edit')+'</button>'+
-          '</div>'+
+      /* SCOUT-HEADER-C-1 · ultra-minimal single-row header */
+      var whisperBar='<div class="triage-whisper-bar triage-whisper-c">'+
+        '<div class="triage-whisper-c-row">'+
+          '<h2 class="triage-whisper-c-title">Scout</h2>'+
+          '<span class="triage-whisper-c-badge" id="triage-hub-counts">'+
+            libraryPairs().length+' · '+state.settings.watchlist.length+' ★</span>'+
+          '<label class="triage-whisper-c-search">'+
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.7-3.7"/></svg>'+
+            '<input id="triage-search" type="search" placeholder="Search coins…" aria-label="Search coins" value="'+esc(triageQuery)+'">'+
+          '</label>'+
+          '<button type="button" class="triage-whisper-c-icon" data-action="triage-add-jump" aria-label="Add a coin" title="Add a coin">＋</button>'+
+          '<button type="button" class="triage-whisper-c-icon" id="triage-refresh" data-action="triage-refresh" aria-label="Refresh" title="Refresh all">↻</button>'+
+          '<button type="button" class="triage-whisper-c-icon triage-whisper-c-edit'+(triageEdit?' on':'')+'" data-action="triage-edit" aria-label="Edit" aria-pressed="'+triageEdit+'" title="Edit list">✎</button>'+
+          '<button type="button" class="triage-whisper-c-icon triage-whisper-c-more" data-action="triage-pop" data-pop="menu" aria-label="More options" title="More options"></button>'+
         '</div>'+
         '<div class="triage-pop" id="triage-pop" role="menu" aria-label="Scout options" hidden></div>'+
       '</div>';
