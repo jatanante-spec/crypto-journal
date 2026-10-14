@@ -8762,4 +8762,101 @@ p.ns-mut{margin:6px 0}
 /* PLAN-NOGO-1 · orange variant for buy-level alerts when Scout says NO-GO */
 #main .scout-alert.ns-plan-alert.nogo{background:rgba(255,183,77,.10);border-color:rgba(255,183,77,.3)}
 #main .scout-alert.ns-plan-alert.nogo .ns-tag{background:#ffb74d;color:#000}
+
+/* PORTFOLIO-UPGRADES-1 · health bar, context badge, progress bar, exit button */
+#main .pf-health-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: var(--panel-2, #182338);
+  border-bottom: 1px solid var(--border, #243354);
+  font-size: 10px;
+}
+#main .pf-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+#main .pf-dot.buy { background: var(--go, #3ddc97); }
+#main .pf-dot.wait { background: var(--wait, #e0a83a); }
+#main .pf-dot.nogo { background: var(--no, #ff718e); }
+#main .pf-count {
+  font-weight: 700;
+  color: var(--text, #eef3fb);
+}
+#main .pf-market-status {
+  margin-left: auto;
+  font-weight: 700;
+  font-size: 9px;
+}
+#main .pf-market-status.weak { color: var(--no, #ff718e); }
+#main .pf-market-status.ok { color: var(--go, #3ddc97); }
+
+/* Context badge on row line 1 */
+#main .uv2 .uc-chip.badge {
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  flex-shrink: 0;
+}
+#main .uv2 .uc-chip.badge.urgent {
+  color: var(--no, #ff718e);
+  background: rgba(255, 113, 142, 0.10);
+  border: 1px solid rgba(255, 113, 142, 0.3);
+}
+#main .uv2 .uc-chip.badge.warn {
+  color: var(--wait, #e0a83a);
+  background: rgba(224, 168, 58, 0.10);
+  border: 1px solid rgba(224, 168, 58, 0.25);
+}
+#main .uv2 .uc-chip.badge.info {
+  color: var(--muted, #8fa0b8);
+  background: var(--panel-2, #182338);
+  border: 1px solid var(--border, #243354);
+}
+
+/* Hold progress bar in plan line */
+#main .hold-bar {
+  display: inline-block;
+  width: 36px;
+  height: 4px;
+  background: rgba(30, 53, 88, 0.5);
+  border-radius: 2px;
+  overflow: hidden;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+#main .hold-bar .fill {
+  height: 100%;
+  border-radius: 2px;
+}
+#main .hold-bar .fill.safe { background: var(--go, #3ddc97); }
+#main .hold-bar .fill.warn { background: var(--wait, #e0a83a); }
+#main .hold-bar .fill.danger { background: var(--no, #ff718e); }
+
+/* Exit button for broken setups */
+#main .pf-exit-btn {
+  display: block;
+  width: calc(100% - 20px);
+  margin: 0 10px 8px;
+  padding: 7px;
+  background: rgba(255, 113, 142, 0.08);
+  border: 1px solid rgba(255, 113, 142, 0.25);
+  border-radius: 6px;
+  color: var(--no, #ff718e);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  font-family: inherit;
+}
+#main .pf-exit-btn:hover {
+  background: rgba(255, 113, 142, 0.12);
+}
+/* /PORTFOLIO-UPGRADES-1 */
+
 </style>

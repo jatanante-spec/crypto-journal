@@ -13213,7 +13213,7 @@
   function nsLevelsText(p){return (p.lv||[]).map(function(l,i){return (i+1)+' '+scoutPx(l.px)+(l.fp>0?' \u2713':'');}).join(' \u00b7 ');}
   function nsPlanRowLine(t){
     var p=nsPlanFor(t);if(!p)return '';var a=nsPlanAvg(p),next=(p.lv||[]).filter(function(l){return !(l.fp>0);})[0],left=Math.max(0,Math.ceil((Date.parse(p.endAt)-Date.now())/864e5));
-    return '<div class="ns-planline">Plan: '+(a?'avg '+scoutPx(a.avg)+' \u00b7 sell '+scoutPx(nsPlanTarget(p)):'waiting to buy at '+scoutPx(p.lv[0].px))+(next&&a?' \u00b7 next buy '+scoutPx(next.px):'')+' \u00b7 '+left+'d left</div>';
+    return '<div class="ns-planline">Plan: '+(a?'avg '+scoutPx(a.avg)+' \u00b7 sell '+scoutPx(nsPlanTarget(p)):'waiting to buy at '+scoutPx(p.lv[0].px))+(next&&a?' \u00b7 next buy '+scoutPx(next.px):'')+' '+pfHoldProgressHtml(t)+' '+left+'d</div>';   // PORTFOLIO-UPGRADES-1 progress bar
   }
   function nsAlertItemsHtml(){
     var items=[];
@@ -16052,6 +16052,103 @@ function triageUnfoldHtml(r, o){
     return '<p class="dd-why"><b>Deep dip</b>: '+Math.abs(d.off).toFixed(1)+'% under the 7-day high ('+esc(scoutPx(d.hi))+day+'). Past deep dips (15%+): <b>80/100 reached +5% in 14d</b> \u00b7 any time 69 \u00b7 <b>1 in 10 fell another 16.5%</b> first. <small>Information only: checks and verdict unchanged.</small></p>';
   }
   /* /DEEP-DIP-1 */
+  /* PORTFOLIO-UPGRADES-1 · helper functions for health bar, context badge, progress bar, exit button */
+  function pfBreakEvenPct(r) {
+    /* Returns % from break-even. Positive = above BE, negative = below BE. */
+    try {
+      var plan = nsPlanFor(r.pair.ticker);
+      if (!plan) return null;
+      var avg = nsPlanAvg(plan);
+      if (!avg || !(avg.avg > 0) || !(r.price > 0)) return null;
+      return ((r.price / avg.avg) - 1) * 100;
+    } catch (e) { return null; }
+  }
+  function pfSetupScore(r) {
+    /* Returns 0-10 setup quality score. Uses readiness groups. */
+    try {
+      var g = r.ready || (r.ready = scoutReadiness(r, null));
+      if (!g) return 5;
+      var pass = 0, total = 4;
+      ['ticket','timing','account','plan'].forEach(function(k) {
+        if (g.groups && g.groups[k] === 'ok') pass++;
+      });
+      /* Bonus for Tide up, deep dip, etc. */
+      var bonus = 0;
+      var t = tdRead(r.pair.ticker);
+      if (t && t.now > 0) bonus += 1; /* Tide up */
+      var dd = ddInfo(r);
+      if (dd && dd.off <= -15) bonus += 1; /* Deep dip 15%+ */
+      return Math.min(10, pass * 2 + bonus);
+    } catch (e) { return 5; }
+  }
+  function pfContextBadge(r) {
+    /* Returns HTML for one context badge, or empty string. */
+    var g = r.ready || (r.ready = scoutReadiness(r, null));
+    var vw = g && g.verdict ? g.verdict : (g && g.state === 'ready' ? 'BUY' : g && g.state === 'blocked' ? 'NO-GO' : 'WAIT');
+    var dd = ddInfo(r);
+    /* If DIP tag exists, no second badge */
+    if (dd) return '';
+    /* If BUY and no DIP: show break-even if meaningful (< 5% away) */
+    if (vw === 'BUY' || vw === 'TURN BUY') {
+      var be = pfBreakEvenPct(r);
+      if (be != null && Math.abs(be) < 5 && be < 0) {
+        return '<span class="uc-chip badge info">' + be.toFixed(1) + '% BE</span>';
+      }
+      return '';
+    }
+    /* If WAIT/NO-GO: show days left + score */
+    var plan = nsPlanFor(r.pair.ticker);
+    var daysLeft = plan ? Math.max(0, Math.ceil((Date.parse(plan.endAt) - Date.now()) / 864e5)) : null;
+    var score = pfSetupScore(r);
+    var cls = daysLeft != null && daysLeft <= 5 ? 'urgent' : daysLeft != null && daysLeft <= 10 ? 'warn' : 'info';
+    return '<span class="uc-chip badge ' + cls + '">' + (daysLeft != null ? daysLeft + 'd' : '—') + ' · score ' + score + '</span>';
+  }
+  function pfHoldProgressHtml(ticker) {
+    /* Returns mini progress bar HTML for plan line. */
+    var plan = nsPlanFor(ticker);
+    if (!plan) return '';
+    var total = plan.D || 14;
+    var used = total - Math.max(0, Math.ceil((Date.parse(plan.endAt) - Date.now()) / 864e5));
+    var pct = Math.min(100, Math.max(0, (used / total) * 100));
+    var cls = pct >= 75 ? 'danger' : pct >= 50 ? 'warn' : 'safe';
+    return '<span class="hold-bar"><span class="fill ' + cls + '" style="width:' + pct + '%"></span></span>';
+  }
+  function pfExitButtonHtml(r) {
+    /* Returns exit button HTML for broken setups only. */
+    var g = r.ready || (r.ready = scoutReadiness(r, null));
+    var vw = g && g.verdict ? g.verdict : 'WAIT';
+    if (vw === 'BUY' || vw === 'TURN BUY') return '';
+    var score = pfSetupScore(r);
+    if (score >= 6) return ''; /* Only show for degraded setups */
+    return '<button type="button" class="pf-exit-btn" data-action="pf-exit" data-ticker="' + esc(r.pair.ticker) + '">Sell 50% to reduce exposure</button>';
+  }
+  function pfHealthBarHtml() {
+    /* Returns health bar HTML for top of Scout page. */
+    var rows = triageCache || [];
+    var buys = 0, waits = 0, nogos = 0;
+    rows.forEach(function(r) {
+      var g = r.ready || (r.ready = scoutReadiness(r, null));
+      var vw = g && g.verdict ? g.verdict : 'WAIT';
+      if (vw === 'BUY' || vw === 'TURN BUY') buys++;
+      else if (vw === 'NO-GO' || vw === 'BANK') nogos++;
+      else waits++;
+    });
+    /* Detect market correlation: count coins with negative change */
+    var downs = rows.filter(function(r) { return r.change != null && r.change < 0; }).length;
+    var total = rows.length || 1;
+    var marketStatus = '';
+    if (downs >= Math.ceil(total * 0.7)) {
+      marketStatus = '<span class="pf-market-status weak">● Market weak · ' + downs + '/' + total + ' down</span>';
+    } else if (downs <= Math.floor(total * 0.3)) {
+      marketStatus = '<span class="pf-market-status ok">● Market strong · ' + (total - downs) + '/' + total + ' up</span>';
+    }
+    return '<div class="pf-health-bar"><span class="pf-dot buy"></span><span class="pf-count">' + buys + ' BUY</span>' +
+      (waits ? '<span class="pf-dot wait"></span><span class="pf-count">' + waits + ' WAIT</span>' : '') +
+      (nogos ? '<span class="pf-dot nogo"></span><span class="pf-count">' + nogos + ' NO-GO</span>' : '') +
+      marketStatus + '</div>';
+  }
+  /* /PORTFOLIO-UPGRADES-1 */
+
   function unifiedScoutRowHtml(r){
     var c=r.pair,scanPending=r.scanStatus&&r.scanStatus!=='done',scanFailed=r.scanStatus==='failed',lock=scoutLockFor(c.ticker),locked=!!lock,trend=scanFailed?'Outdated':scanPending?'Refreshing…':r.context.ready?(r.observation.trend||'Observed'):'Unknown',change=!scanPending&&!scanFailed&&r.change!=null?(r.change>=0?'+':'')+num(r.change,1)+'%':'—',star=state.settings.watchlist.indexOf(c.ticker)>=0,health=locked?'Locked':scanFailed?'Refresh failed':scanPending?'Pending':r.mismatch?'Old Bid':r.context.ready?'Data OK':'Needs data',healthClass=locked?'attention':r.context.ready&&!r.mismatch?'ready':r.mismatch?'attention':'unknown',ticker=esc(c.ticker),name=esc(c.name||c.ticker),price=esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched'),watchText=unifiedScoutCompactWatch(r),watch=scoutCueMarkup(watchText),signalClass=scoutSignalClass(r,trend),location=esc(r.pos&&r.pos.word||'not checked'),reason=locked?'<small class="triage-lock-note">🔒 '+esc(lock.reason)+'</small>':'',openClass=locked?'locked':'',openLabel=locked?'🔒 Locked':'Open';
     var coin='<span class="triage-unified-coin"><b>'+ticker+'</b><small>'+price+'</small>'+reason+'</span>';
@@ -16086,7 +16183,7 @@ function triageUnfoldHtml(r, o){
         var tiles=['ticket','timing','account','plan'].map(function(k){var st=g.groups[k]||'none';return '<span class="uc-light '+gCls[st]+'" title="'+gWords[k]+': '+gMarks[st]+'"><i></i>'+shortW[k]+'</span>';}).join('');
         var sigLine='<div class="uc-l3"><span class="uc-sig"><b>'+esc(trend)+'</b> \u00b7 '+watch+'</span><span class="uc-meta">'+location+' \u00b7 '+esc(triageFreshShort(String(r.fresh&&r.fresh.label||'not checked')))+'</span>'+healthMarkup+'</div>';
         var openPart=whyOpen?whyList+'<div class="uni-actions"><div class="triage-ledger-actions">'+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+name:'Inspect '+name)+'">'+(locked?'Research':'Inspect')+'</button></div></div>':'';
-        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+'<span class="uc-fill"></span>';   // DEEP-DIP-1 tag
+        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+(dd?'':pfContextBadge(r))+'<span class="uc-fill"></span>';   // DEEP-DIP-1 tag + PORTFOLIO-UPGRADES-1 context badge
         var cls='triage-unified-row triage-combined-row uni-card uv2 uv2-'+rowStyle+' verdict-'+vc+(whyOpen?' uv2-open':'')+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'');
         var open='<article class="'+cls+'" data-ticker="'+ticker+'" data-action="scout-why" aria-expanded="'+whyOpen+'">';
         var lockNote=locked?'<div class="uc-lock">'+reason+'</div>':'';
@@ -16096,7 +16193,7 @@ function triageUnfoldHtml(r, o){
           return open+
             '<div class="uc-l1">'+(triageEdit?removeAction:'')+head+'<span class="verdict '+vc+'">'+vw+'</span><span class="uc-caret">'+(whyOpen?'\u25b4':'\u25be')+'</span></div>'+
             '<div class="uc-l2"><span class="uc-reason">'+(teChipsHtml(g)||esc(g.why||'Not evaluated'))+'</span><span class="uc-lights">'+tiles+'</span></div>'+
-            (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+tdTideLine(c.ticker)+teRowLine(g)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
+            (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+tdTideLine(c.ticker)+teRowLine(g)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+pfExitButtonHtml(r)+'</article>';
         }
         return open+
           '<div class="uc-l1"><span class="verdict '+vc+'">'+vw+'</span>'+(triageEdit?removeAction:'')+head+'<span class="why-link">'+(whyOpen?'Close':'Why?')+'</span></div>'+
@@ -16295,6 +16392,7 @@ function triageUnfoldHtml(r, o){
         '</div>'+
         countCache+
         '<div class="triage-layout"><section class="triage-scanner">'+
+        pfHealthBarHtml()+   // PORTFOLIO-UPGRADES-1 health bar
         '<div class="triage-columns"><span>Coin / price</span><span>Signal / evidence</span><span>24h / location</span><span>Evidence health</span><span></span></div>'+
         '<div id="triage-rows" tabindex="0" aria-label="Scout coin records"></div>'+
         '<footer id="triage-result-count"></footer></section><div id="triage-inspector-host"></div></div>'+
