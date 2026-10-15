@@ -12897,17 +12897,20 @@
     var list=scoutAlertListHtml();
     var opts=[0,15,30,60].map(function(n){return '<span role="button" tabindex="0" class="scout-watch-opt'+(mins===n?' on':'')+'" data-action="scout-watch" data-mins="'+n+'">'+(n?n+'m':'Off')+'</span>';}).join('');
     var rs=scoutRowStyle(),rowOpts=[['compact','Compact'],['medium','Medium'],['full','Full']].map(function(o){return '<span role="button" tabindex="0" class="scout-watch-opt'+(rs===o[0]?' on':'')+'" data-action="scout-row-style" data-style="'+o[0]+'">'+o[1]+'</span>';}).join('');
-    var summary='<span role="button" tabindex="0" class="scout-watch-sum" data-action="scout-watch-more" aria-expanded="'+scoutWatchOpen+'">Auto '+(mins?mins+'m':'off')+' \u00b7 Alerts '+esc(/blocked/.test(perm)?'blocked':perm)+' \u00b7 Rows '+rs+(teCfg().on?' \u00b7 Turn entry on':'')+' <i>'+(scoutWatchOpen?'\u25b4':'\u25be')+'</i></span>';
+    var breakoutOn=isBreakoutMode();
+    var summary='<span role="button" tabindex="0" class="scout-watch-sum" data-action="scout-watch-more" aria-expanded="'+scoutWatchOpen+'">Auto '+(mins?mins+'m':'off')+' · Alerts '+esc(/blocked/.test(perm)?'blocked':perm)+' · Rows '+rs+(breakoutOn?' · Breakout on':'')+(teCfg().on?' · Turn entry on':'')+' <i>'+(scoutWatchOpen?'▴':'▾')+'</i></span>';
     var panel=scoutWatchOpen?'<div class="scout-watch-row"><span class="scout-watch-lab">Auto-refresh while open</span>'+opts+'</div>'+
       '<div class="scout-watch-row"><span class="scout-watch-lab">Alerts '+esc(perm)+'</span>'+(perm==='off'?'<span role="button" tabindex="0" class="scout-watch-opt" data-action="scout-alerts-allow">Allow</span>':'')+'</div>'+
-      '<div class="scout-watch-row"><span class="scout-watch-lab">Rows</span>'+rowOpts+'</div>'+tePanelHtml():'';   // TURN-ENTRY-1
+      '<div class="scout-watch-row"><span class="scout-watch-lab">Rows</span>'+rowOpts+'</div>'+
+      '<div class="scout-watch-row"><span class="scout-watch-lab">Breakout mode</span><span role="button" tabindex="0" class="scout-watch-opt'+(breakoutOn?' on':'')+'" data-action="scout-breakout-toggle">'+(breakoutOn?'On':'Off')+'</span></div>'+tePanelHtml():'';   // TURN-ENTRY-1 + BREAKOUT-MODE-1
     /* SCOUT-ALERTBOX-1 · every BUY alert sits together in one box */
     /* ALERT-LINE-1 · the box folds into the status line ("● SAND +3 ▾ · Auto 15m · …"); tap the coins to unfold it */
     var alIt=alItems();alSeed(alIt);if(!alIt.length)alOpen.scout=false;else setTimeout(alFit,0);
-    var row=alIt.length?'<div class="al-row al-row-scout">'+alPartHtml(alIt,'scout')+'<span class="al-sep">\u00b7</span>'+summary+'</div>':summary;
+    var row=alIt.length?'<div class="al-row al-row-scout">'+alPartHtml(alIt,'scout')+'<span class="al-sep">·</span>'+summary+'</div>':summary;
     var box=list&&(alOpen.scout||!alIt.length)?'<div class="scout-alert-box">'+list+'</div>':'';
     return '<div class="scout-watch" id="scout-watch">'+row+box+panel+'</div>';
   }
+
   function scoutAlertPaint(){var el=document.getElementById('scout-watch');if(el)el.outerHTML=scoutAlertBarHtml();alPaintOutside();}
   /* ALERT-LINE-1 · alerts fold into the Scout status line, a hairline strip under the tab bar on the other tabs,
      a count on the SCOUT tab, and an 8-second pop-up banner when a new alert arrives while you're on another tab.
@@ -15321,6 +15324,8 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
       scoutWatchOpen = !scoutWatchOpen; scoutAlertPaint();
     } else if (action === "scout-row-style") {
       state.settings.scoutRowStyle = btn.getAttribute("data-style") || "compact"; save(); scoutAlertPaint(); triageUpdate(false);
+    } else if (action === "scout-breakout-toggle") {
+      state.settings.breakoutMode = !isBreakoutMode(); save(); scoutAlertPaint(); triageUpdate(false);
     } else if (action === "scout-why") {
       var swt = btn.getAttribute("data-ticker") || "";
       scoutWhyTicker = scoutWhyTicker === swt ? "" : swt;
@@ -16209,6 +16214,81 @@ function triageUnfoldHtml(r, o){
   
   /* /TIMEFRAME-ALIGNMENT-1 */
 
+  /* BREAKOUT-MODE-1 · helper functions for breakout detection and badges */
+  
+  /**
+   * Check if breakout mode is enabled
+   */
+  function isBreakoutMode(){
+    return !!(state.settings && state.settings.breakoutMode);
+  }
+  
+  /**
+   * Check if price has broken above 16-day high
+   */
+  function isBreakoutDetected(r){
+    if(!r || !r.price || !r.book || !r.book.market) return false;
+    var price = Number(r.price);
+    var recentHigh = recentHighPx();
+    if(!(price > 0) || !(recentHigh > 0)) return false;
+    // Price must be above recent high
+    return price > recentHigh;
+  }
+  
+  /**
+   * Check if volume is above average (simplified - uses price momentum as proxy)
+   */
+  function isBreakoutVolume(r){
+    if(!r || !r.change) return false;
+    // Use price change as momentum proxy (>3% in 24h = high momentum)
+    return Math.abs(Number(r.change)) >= 3;
+  }
+  
+  /**
+   * Calculate breakout stop (below breakout level)
+   */
+  function breakoutStop(entry, atr4h){
+    var breakoutLevel = recentHighPx();
+    if(!(breakoutLevel > 0) || !(atr4h > 0)) return null;
+    // Stop = breakout level minus 1 ATR
+    return roundPrice(breakoutLevel - atr4h, 6);
+  }
+  
+  /**
+   * Calculate breakout target (measured move)
+   */
+  function breakoutTarget(entry, swingLow, recentHigh){
+    if(!(entry > 0) || !(swingLow > 0) || !(recentHigh > 0)) return null;
+    var range = recentHigh - swingLow;
+    // Target = recent high + 50% of range
+    return roundPrice(recentHigh + range * 0.5, 6);
+  }
+  
+  /**
+   * Check if breakout criteria are met (price above high + volume)
+   */
+  function breakoutCriteriaMet(r){
+    return isBreakoutDetected(r) && isBreakoutVolume(r);
+  }
+  
+  /**
+   * Render BREAKOUT badge HTML
+   */
+  function pfBreakoutBadge(r){
+    if(!isBreakoutMode()) return '';
+    if(!breakoutCriteriaMet(r)) return '';
+    return '<span class="chip breakout">⚡ BREAKOUT</span>';
+  }
+  
+  /**
+   * Check if row should have breakout highlight
+   */
+  function isBreakoutRow(r){
+    return isBreakoutMode() && breakoutCriteriaMet(r);
+  }
+  
+  /* /BREAKOUT-MODE-1 */
+
   function unifiedScoutRowHtml(r){
     var c=r.pair,scanPending=r.scanStatus&&r.scanStatus!=='done',scanFailed=r.scanStatus==='failed',lock=scoutLockFor(c.ticker),locked=!!lock,trend=scanFailed?'Outdated':scanPending?'Refreshing…':r.context.ready?(r.observation.trend||'Observed'):'Unknown',change=!scanPending&&!scanFailed&&r.change!=null?(r.change>=0?'+':'')+num(r.change,1)+'%':'—',star=state.settings.watchlist.indexOf(c.ticker)>=0,health=locked?'Locked':scanFailed?'Refresh failed':scanPending?'Pending':r.mismatch?'Old Bid':r.context.ready?'Data OK':'Needs data',healthClass=locked?'attention':r.context.ready&&!r.mismatch?'ready':r.mismatch?'attention':'unknown',ticker=esc(c.ticker),name=esc(c.name||c.ticker),price=esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched'),watchText=unifiedScoutCompactWatch(r),watch=scoutCueMarkup(watchText),signalClass=scoutSignalClass(r,trend),location=esc(r.pos&&r.pos.word||'not checked'),reason=locked?'<small class="triage-lock-note">🔒 '+esc(lock.reason)+'</small>':'',openClass=locked?'locked':'',openLabel=locked?'🔒 Locked':'Open';
     var coin='<span class="triage-unified-coin"><b>'+ticker+'</b><small>'+price+'</small>'+reason+'</span>';
@@ -16243,8 +16323,8 @@ function triageUnfoldHtml(r, o){
         var tiles=['ticket','timing','account','plan'].map(function(k){var st=g.groups[k]||'none';return '<span class="uc-light '+gCls[st]+'" title="'+gWords[k]+': '+gMarks[st]+'"><i></i>'+shortW[k]+'</span>';}).join('');
         var sigLine='<div class="uc-l3"><span class="uc-sig"><b>'+esc(trend)+'</b> \u00b7 '+watch+'</span><span class="uc-meta">'+location+' \u00b7 '+esc(triageFreshShort(String(r.fresh&&r.fresh.label||'not checked')))+'</span>'+healthMarkup+'</div>';
         var openPart=whyOpen?whyList+'<div class="uni-actions"><div class="triage-ledger-actions">'+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+name:'Inspect '+name)+'">'+(locked?'Research':'Inspect')+'</button></div></div>':'';
-        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+(dd?'':pfContextBadge(r))+pfTimeframeBadge(r)+'<span class="uc-fill"></span>';   // DEEP-DIP-1 tag + PORTFOLIO-UPGRADES-1 context badge + TIMEFRAME-ALIGNMENT-1
-        var cls='triage-unified-row triage-combined-row uni-card uv2 uv2-'+rowStyle+' verdict-'+vc+(whyOpen?' uv2-open':'')+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'');
+        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+(dd?'':pfContextBadge(r))+pfTimeframeBadge(r)+pfBreakoutBadge(r)+'<span class="uc-fill"></span>';   // DEEP-DIP-1 tag + PORTFOLIO-UPGRADES-1 context badge + TIMEFRAME-ALIGNMENT-1 + BREAKOUT-MODE-1
+        var cls='triage-unified-row triage-combined-row uni-card uv2 uv2-'+rowStyle+' verdict-'+vc+(whyOpen?' uv2-open':'')+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+(isBreakoutRow(r)?' breakout-row':'');
         var open='<article class="'+cls+'" data-ticker="'+ticker+'" data-action="scout-why" aria-expanded="'+whyOpen+'">';
         var lockNote=locked?'<div class="uc-lock">'+reason+'</div>':'';
         if(rowStyle==='compact'){
@@ -16833,3 +16913,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4b2197db9cb7f11',t:'MTc5MjEwMTY1Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
