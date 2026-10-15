@@ -16195,25 +16195,16 @@ function triageUnfoldHtml(r, o){
   }
   
   /**
-   * Render daily trend badge HTML
-   * Shows "Daily ↑" (green) or "Daily ↓" (red)
+   * Render combined timeframe badge HTML
+   * Shows "↑ 2/2" (green) or "↓ 0/2" (red) - combines daily trend + alignment
    */
-  function pfDailyTrendBadge(r){
-    var trend = pfDailyTrend();
-    if(trend === 'flat') return '';
-    var cls = trend === 'up' ? 'up' : 'down';
-    var text = trend === 'up' ? 'Daily ↑' : 'Daily ↓';
-    return '<span class="chip daily-trend ' + cls + '">' + text + '</span>';
-  }
-  
-  /**
-   * Render alignment score badge HTML
-   * Shows "2/2 aligned" (green) or "0/2 aligned" (red)
-   */
-  function pfAlignmentBadge(r){
+  function pfTimeframeBadge(r){
+    var daily = pfDailyTrend();
+    if(daily === 'flat') return '';
     var score = pfTimeframeAlignment(r);
-    var cls = score === 2 ? 'high' : score === 1 ? 'mid' : 'low';
-    return '<span class="chip alignment ' + cls + '">' + score + '/2 aligned</span>';
+    var arrow = daily === 'up' ? '↑' : '↓';
+    var cls = daily === 'up' ? 'up' : 'down';
+    return '<span class="chip timeframe ' + cls + '">' + arrow + ' ' + score + '/2</span>';
   }
   
   /* /TIMEFRAME-ALIGNMENT-1 */
@@ -16252,7 +16243,7 @@ function triageUnfoldHtml(r, o){
         var tiles=['ticket','timing','account','plan'].map(function(k){var st=g.groups[k]||'none';return '<span class="uc-light '+gCls[st]+'" title="'+gWords[k]+': '+gMarks[st]+'"><i></i>'+shortW[k]+'</span>';}).join('');
         var sigLine='<div class="uc-l3"><span class="uc-sig"><b>'+esc(trend)+'</b> \u00b7 '+watch+'</span><span class="uc-meta">'+location+' \u00b7 '+esc(triageFreshShort(String(r.fresh&&r.fresh.label||'not checked')))+'</span>'+healthMarkup+'</div>';
         var openPart=whyOpen?whyList+'<div class="uni-actions"><div class="triage-ledger-actions">'+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+name:'Inspect '+name)+'">'+(locked?'Research':'Inspect')+'</button></div></div>':'';
-        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+(dd?'':pfContextBadge(r))+pfDailyTrendBadge(r)+pfAlignmentBadge(r)+'<span class="uc-fill"></span>';   // DEEP-DIP-1 tag + PORTFOLIO-UPGRADES-1 context badge + TIMEFRAME-ALIGNMENT-1
+        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+(dd?'':pfContextBadge(r))+pfTimeframeBadge(r)+'<span class="uc-fill"></span>';   // DEEP-DIP-1 tag + PORTFOLIO-UPGRADES-1 context badge + TIMEFRAME-ALIGNMENT-1
         var cls='triage-unified-row triage-combined-row uni-card uv2 uv2-'+rowStyle+' verdict-'+vc+(whyOpen?' uv2-open':'')+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'');
         var open='<article class="'+cls+'" data-ticker="'+ticker+'" data-action="scout-why" aria-expanded="'+whyOpen+'">';
         var lockNote=locked?'<div class="uc-lock">'+reason+'</div>':'';
@@ -16842,4 +16833,3 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4af672379c0b339',t:'MTc5MjA3MzM4MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
