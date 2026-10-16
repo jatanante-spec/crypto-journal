@@ -12898,11 +12898,13 @@
     var opts=[0,15,30,60].map(function(n){return '<span role="button" tabindex="0" class="scout-watch-opt'+(mins===n?' on':'')+'" data-action="scout-watch" data-mins="'+n+'">'+(n?n+'m':'Off')+'</span>';}).join('');
     var rs=scoutRowStyle(),rowOpts=[['compact','Compact'],['medium','Medium'],['full','Full']].map(function(o){return '<span role="button" tabindex="0" class="scout-watch-opt'+(rs===o[0]?' on':'')+'" data-action="scout-row-style" data-style="'+o[0]+'">'+o[1]+'</span>';}).join('');
     var breakoutOn=isBreakoutMode();
-    var summary='<span role="button" tabindex="0" class="scout-watch-sum" data-action="scout-watch-more" aria-expanded="'+scoutWatchOpen+'">Auto '+(mins?mins+'m':'off')+' · Alerts '+esc(/blocked/.test(perm)?'blocked':perm)+' · Rows '+rs+(breakoutOn?' · Breakout on':'')+(teCfg().on?' · Turn entry on':'')+' <i>'+(scoutWatchOpen?'▴':'▾')+'</i></span>';
+    var researchOn=isResearchMode();
+    var summary='<span role="button" tabindex="0" class="scout-watch-sum" data-action="scout-watch-more" aria-expanded="'+scoutWatchOpen+'">Auto '+(mins?mins+'m':'off')+' · Alerts '+esc(/blocked/.test(perm)?'blocked':perm)+' · Rows '+rs+(researchOn?' · Research':' · Scan')+(breakoutOn?' · Breakout on':'')+(teCfg().on?' · Turn entry on':'')+' <i>'+(scoutWatchOpen?'▴':'▾')+'</i></span>';
     var panel=scoutWatchOpen?'<div class="scout-watch-row"><span class="scout-watch-lab">Auto-refresh while open</span>'+opts+'</div>'+
       '<div class="scout-watch-row"><span class="scout-watch-lab">Alerts '+esc(perm)+'</span>'+(perm==='off'?'<span role="button" tabindex="0" class="scout-watch-opt" data-action="scout-alerts-allow">Allow</span>':'')+'</div>'+
       '<div class="scout-watch-row"><span class="scout-watch-lab">Rows</span>'+rowOpts+'</div>'+
-      '<div class="scout-watch-row"><span class="scout-watch-lab">Breakout mode</span><span role="button" tabindex="0" class="scout-watch-opt'+(breakoutOn?' on':'')+'" data-action="scout-breakout-toggle">'+(breakoutOn?'On':'Off')+'</span></div>'+tePanelHtml():'';   // TURN-ENTRY-1 + BREAKOUT-MODE-1
+      '<div class="scout-watch-row"><span class="scout-watch-lab">Breakout mode</span><span role="button" tabindex="0" class="scout-watch-opt'+(breakoutOn?' on':'')+'" data-action="scout-breakout-toggle">'+(breakoutOn?'On':'Off')+'</span></div>'+
+      '<div class="scout-watch-row"><span class="scout-watch-lab">View mode</span><span role="button" tabindex="0" class="scout-watch-opt'+(researchOn?' on':'')+'" data-action="scout-view-mode-toggle">'+(researchOn?'Research':'Scan')+'</span></div>'+tePanelHtml():'';   // TURN-ENTRY-1 + BREAKOUT-MODE-1 + SCAN-RESEARCH-1
     /* SCOUT-ALERTBOX-1 · every BUY alert sits together in one box */
     /* ALERT-LINE-1 · the box folds into the status line ("● SAND +3 ▾ · Auto 15m · …"); tap the coins to unfold it */
     var alIt=alItems();alSeed(alIt);if(!alIt.length)alOpen.scout=false;else setTimeout(alFit,0);
@@ -13216,7 +13218,7 @@
   function nsLevelsText(p){return (p.lv||[]).map(function(l,i){return (i+1)+' '+scoutPx(l.px)+(l.fp>0?' \u2713':'');}).join(' \u00b7 ');}
   function nsPlanRowLine(t){
     var p=nsPlanFor(t);if(!p)return '';var a=nsPlanAvg(p),next=(p.lv||[]).filter(function(l){return !(l.fp>0);})[0],left=Math.max(0,Math.ceil((Date.parse(p.endAt)-Date.now())/864e5));
-    return '<div class="ns-planline">Plan: '+(a?'avg '+scoutPx(a.avg)+' \u00b7 sell '+scoutPx(nsPlanTarget(p)):'waiting to buy at '+scoutPx(p.lv[0].px))+(next&&a?' \u00b7 next buy '+scoutPx(next.px):'')+' '+pfHoldProgressHtml(t)+' '+left+'d</div>';   // PORTFOLIO-UPGRADES-1 progress bar
+    return '<div class="ns-planline">Plan: '+(a?'avg '+scoutPx(a.avg)+' \u00b7 sell '+scoutPx(nsPlanTarget(p)):'waiting to buy at '+scoutPx(p.lv[0].px))+(next&&a?' \u00b7 next buy '+scoutPx(next.px):'')+(isResearchMode()?' '+pfHoldProgressHtml(t):'')+' '+left+'d</div>';   // PORTFOLIO-UPGRADES-1 progress bar + SCAN-RESEARCH-1
   }
   function nsAlertItemsHtml(){
     var items=[];
@@ -15326,6 +15328,8 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
       state.settings.scoutRowStyle = btn.getAttribute("data-style") || "compact"; save(); scoutAlertPaint(); triageUpdate(false);
     } else if (action === "scout-breakout-toggle") {
       state.settings.breakoutMode = !isBreakoutMode(); save(); scoutAlertPaint(); triageUpdate(false);
+    } else if (action === "scout-view-mode-toggle") {
+      state.settings.researchMode = !isResearchMode(); save(); scoutAlertPaint(); triageUpdate(false);
     } else if (action === "scout-why") {
       var swt = btn.getAttribute("data-ticker") || "";
       scoutWhyTicker = scoutWhyTicker === swt ? "" : swt;
@@ -16294,6 +16298,24 @@ function triageUnfoldHtml(r, o){
   
   /* /BREAKOUT-MODE-1 */
 
+  /* SCAN-RESEARCH-1 · mode switch for simple vs full row display */
+  
+  /**
+   * Check if research mode is enabled (default: true = current setup)
+   */
+  function isResearchMode(){
+    return state.settings && state.settings.researchMode !== false;
+  }
+  
+  /**
+   * Render research-only wrapper - returns content only in research mode
+   */
+  function researchOnly(html){
+    return isResearchMode() ? html : '';
+  }
+  
+  /* /SCAN-RESEARCH-1 */
+
   function unifiedScoutRowHtml(r){
     var c=r.pair,scanPending=r.scanStatus&&r.scanStatus!=='done',scanFailed=r.scanStatus==='failed',lock=scoutLockFor(c.ticker),locked=!!lock,trend=scanFailed?'Outdated':scanPending?'Refreshing…':r.context.ready?(r.observation.trend||'Observed'):'Unknown',change=!scanPending&&!scanFailed&&r.change!=null?(r.change>=0?'+':'')+num(r.change,1)+'%':'—',star=state.settings.watchlist.indexOf(c.ticker)>=0,health=locked?'Locked':scanFailed?'Refresh failed':scanPending?'Pending':r.mismatch?'Old Bid':r.context.ready?'Data OK':'Needs data',healthClass=locked?'attention':r.context.ready&&!r.mismatch?'ready':r.mismatch?'attention':'unknown',ticker=esc(c.ticker),name=esc(c.name||c.ticker),price=esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched'),watchText=unifiedScoutCompactWatch(r),watch=scoutCueMarkup(watchText),signalClass=scoutSignalClass(r,trend),location=esc(r.pos&&r.pos.word||'not checked'),reason=locked?'<small class="triage-lock-note">🔒 '+esc(lock.reason)+'</small>':'',openClass=locked?'locked':'',openLabel=locked?'🔒 Locked':'Open';
     var coin='<span class="triage-unified-coin"><b>'+ticker+'</b><small>'+price+'</small>'+reason+'</span>';
@@ -16328,7 +16350,7 @@ function triageUnfoldHtml(r, o){
         var tiles=['ticket','timing','account','plan'].map(function(k){var st=g.groups[k]||'none';return '<span class="uc-light '+gCls[st]+'" title="'+gWords[k]+': '+gMarks[st]+'"><i></i>'+shortW[k]+'</span>';}).join('');
         var sigLine='<div class="uc-l3"><span class="uc-sig"><b>'+esc(trend)+'</b> \u00b7 '+watch+'</span><span class="uc-meta">'+location+' \u00b7 '+esc(triageFreshShort(String(r.fresh&&r.fresh.label||'not checked')))+'</span>'+healthMarkup+'</div>';
         var openPart=whyOpen?whyList+'<div class="uni-actions"><div class="triage-ledger-actions">'+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+name:'Inspect '+name)+'">'+(locked?'Research':'Inspect')+'</button></div></div>':'';
-        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+(dd?'':pfContextBadge(r))+pfTimeframeBadge(r)+pfBreakoutBadge(r)+'<span class="uc-fill"></span>';   // DEEP-DIP-1 tag + PORTFOLIO-UPGRADES-1 context badge + TIMEFRAME-ALIGNMENT-1 + BREAKOUT-MODE-1
+        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+(dd?'':pfContextBadge(r))+(isResearchMode()?pfTimeframeBadge(r):'')+pfBreakoutBadge(r)+'<span class="uc-fill"></span>';   // TIMEFRAME-ALIGNMENT-1 + SCAN-RESEARCH-1   // DEEP-DIP-1 tag + PORTFOLIO-UPGRADES-1 context badge + TIMEFRAME-ALIGNMENT-1 + BREAKOUT-MODE-1
         var cls='triage-unified-row triage-combined-row uni-card uv2 uv2-'+rowStyle+' verdict-'+vc+(whyOpen?' uv2-open':'')+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+(isBreakoutRow(r)?' breakout-row':'');
         var open='<article class="'+cls+'" data-ticker="'+ticker+'" data-action="scout-why" aria-expanded="'+whyOpen+'">';
         var lockNote=locked?'<div class="uc-lock">'+reason+'</div>':'';
@@ -16338,17 +16360,17 @@ function triageUnfoldHtml(r, o){
           return open+
             '<div class="uc-l1">'+(triageEdit?removeAction:'')+head+'<span class="verdict '+vc+'">'+vw+'</span><span class="uc-caret">'+(whyOpen?'\u25b4':'\u25be')+'</span></div>'+
             '<div class="uc-l2"><span class="uc-reason">'+(teChipsHtml(g)||esc(g.why||'Not evaluated'))+'</span><span class="uc-lights">'+tiles+'</span></div>'+
-            (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+tdTideLine(c.ticker)+teRowLine(g)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+pfExitButtonHtml(r)+'</article>';
+            (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+(isResearchMode()?pfExitButtonHtml(r):'')+'</article>';   // SCAN-RESEARCH-1
         }
         return open+
           '<div class="uc-l1"><span class="verdict '+vc+'">'+vw+'</span>'+(triageEdit?removeAction:'')+head+'<span class="why-link">'+(whyOpen?'Close':'Why?')+'</span></div>'+
           '<div class="uc-tiles">'+tiles+'</div>'+
           '<div class="uc-l2"><span class="uc-reason">'+(teChipsHtml(g)||esc(g.why||'Not evaluated'))+'</span></div>'+
-          (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+tdTideLine(c.ticker)+teRowLine(g)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';
+          (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';   // SCAN-RESEARCH-1
       }
       return '<article class="triage-unified-row triage-combined-row uni-card verdict-'+vc+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'">'+
         '<div class="uni-decision"><span class="verdict '+vc+'">'+vw+'</span><span class="reason">'+(teChipsHtml(g)||esc(g.why||'Not evaluated'))+'</span><span role="button" tabindex="0" class="why-link" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'">'+(whyOpen?'Close':'Why?')+'</span></div>'+
-        '<div class="uni-strip">'+strip+'</div>'+(vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+tdTideLine(c.ticker)+teRowLine(g)+whyList+
+        '<div class="uni-strip">'+strip+'</div>'+(vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g)+whyList+
         '<div class="uni-body">'+
           '<div class="uni-identity"><div class="coin-row"><b>'+ticker+'</b><small>'+price+'</small></div>'+(locked?reason:'')+'</div>'+
           '<div class="uni-signal uni-signal-quiet"><b>'+esc(trend)+'</b><small>'+watch+'</small></div>'+
@@ -16537,7 +16559,7 @@ function triageUnfoldHtml(r, o){
         '</div>'+
         countCache+
         '<div class="triage-layout"><section class="triage-scanner">'+
-        pfHealthBarHtml()+   // PORTFOLIO-UPGRADES-1 health bar
+        (isResearchMode()?pfHealthBarHtml():'')+   // PORTFOLIO-UPGRADES-1 health bar + SCAN-RESEARCH-1
         '<div class="triage-columns"><span>Coin / price</span><span>Signal / evidence</span><span>24h / location</span><span>Evidence health</span><span></span></div>'+
         '<div id="triage-rows" tabindex="0" aria-label="Scout coin records"></div>'+
         '<footer id="triage-result-count"></footer></section><div id="triage-inspector-host"></div></div>'+
@@ -16918,4 +16940,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4b233ad2e78eb14',t:'MTc5MjEwMjcyOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4b2c92518c4b119',t:'MTc5MjEwODg1Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
