@@ -16493,34 +16493,24 @@ function triageUnfoldHtml(r, o){
   }
   
   /**
-   * Render MA 20 badge HTML
+   * Render combined MA 20 + MACD badge HTML (or CROSSOVER badge if both cross)
+   * Combined into one badge to prevent overflow
    */
-  function pfMA20Badge(coin) {
+  function pfMAMacdBadge(coin) {
     var ta = calcMAMacd(coin);
     if (!ta) return '';
-    var arrow = ta.aboveMA20 ? '↑' : '↓';
-    var crossMark = ta.priceCrossedMA20 ? ' ⚡' : '';
-    return '<span class="chip ma20">MA 20 ' + arrow + crossMark + '</span>';
-  }
-  
-  /**
-   * Render MACD badge HTML
-   */
-  function pfMACDBadge(coin) {
-    var ta = calcMAMacd(coin);
-    if (!ta) return '';
-    var arrow = ta.macdBullish ? '↗' : '↘';
-    var crossMark = ta.macdCrossedSignal ? ' ⚡' : '';
-    return '<span class="chip macd">MACD ' + arrow + crossMark + '</span>';
-  }
-  
-  /**
-   * Render CROSSOVER badge HTML (shown when both cross within 2-bar window)
-   */
-  function pfCrossoverBadge(coin) {
-    var ta = calcMAMacd(coin);
-    if (!ta || !ta.bothCrossed) return '';
-    return '<span class="chip crossover">⚡ CROSSOVER</span>';
+    
+    // If crossover detected, show CROSSOVER badge (strongest signal)
+    if (ta.bothCrossed) {
+      return '<span class="chip crossover">⚡ CROSSOVER</span>';
+    }
+    
+    // Otherwise, combine MA 20 + MACD into one badge
+    var ma20Arrow = ta.aboveMA20 ? '↑' : '↓';
+    var macdArrow = ta.macdBullish ? '↗' : '↘';
+    var ma20Mark = ta.priceCrossedMA20 ? '⚡' : '';
+    var macdMark = ta.macdCrossedSignal ? '⚡' : '';
+    return '<span class="chip ma-macd">' + ma20Mark + 'MA' + ma20Arrow + ' ' + macdMark + 'MACD' + macdArrow + '</span>';
   }
   
   /* /MA-MACD-1 + CROSSOVER-DETECT-1 */
@@ -16559,7 +16549,7 @@ function triageUnfoldHtml(r, o){
         var tiles=['ticket','timing','account','plan'].map(function(k){var st=g.groups[k]||'none';return '<span class="uc-light '+gCls[st]+'" title="'+gWords[k]+': '+gMarks[st]+'"><i></i>'+shortW[k]+'</span>';}).join('');
         var sigLine='<div class="uc-l3"><span class="uc-sig"><b>'+esc(trend)+'</b> \u00b7 '+watch+'</span><span class="uc-meta">'+location+' \u00b7 '+esc(triageFreshShort(String(r.fresh&&r.fresh.label||'not checked')))+'</span>'+healthMarkup+'</div>';
         var openPart=whyOpen?whyList+'<div class="uni-actions"><div class="triage-ledger-actions">'+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+name:'Inspect '+name)+'">'+(locked?'Research':'Inspect')+'</button></div></div>':'';
-        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+(dd?'':pfContextBadge(r))+(isResearchMode()?pfTimeframeBadge(r):'')+pfBreakoutBadge(r)+pfRecoveryBadge(r)+pfMA20Badge(c.ticker)+pfMACDBadge(c.ticker)+pfCrossoverBadge(c.ticker)+'<span class="uc-fill"></span>';   // BREAKOUT-MODE-1 + RECOVERY-MODE-1   // TIMEFRAME-ALIGNMENT-1 + SCAN-RESEARCH-1   // DEEP-DIP-1 tag + PORTFOLIO-UPGRADES-1 context badge + TIMEFRAME-ALIGNMENT-1 + BREAKOUT-MODE-1 + MA-MACD-1 + CROSSOVER-DETECT-1
+        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+(dd?'':pfContextBadge(r))+(isResearchMode()?pfTimeframeBadge(r):'')+pfBreakoutBadge(r)+pfRecoveryBadge(r)+pfMAMacdBadge(c.ticker)+'<span class="uc-fill"></span>';   // BREAKOUT-MODE-1 + RECOVERY-MODE-1   // TIMEFRAME-ALIGNMENT-1 + SCAN-RESEARCH-1   // DEEP-DIP-1 tag + PORTFOLIO-UPGRADES-1 context badge + TIMEFRAME-ALIGNMENT-1 + BREAKOUT-MODE-1 + MA-MACD-1 + CROSSOVER-DETECT-1
         var cls='triage-unified-row triage-combined-row uni-card uv2 uv2-'+rowStyle+' verdict-'+vc+(whyOpen?' uv2-open':'')+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+(isBreakoutRow(r)?' breakout-row':'');
         var open='<article class="'+cls+'" data-ticker="'+ticker+'" data-action="scout-why" aria-expanded="'+whyOpen+'">';
         var lockNote=locked?'<div class="uc-lock">'+reason+'</div>':'';
@@ -17149,4 +17139,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4c7cc666963b326',t:'MTc5MjMyOTE4Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4c7d8129ca66ab1',t:'MTc5MjMyOTY2NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
