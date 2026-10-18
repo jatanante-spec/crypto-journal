@@ -16500,20 +16500,290 @@ function triageUnfoldHtml(r, o){
     var ta = calcMAMacd(coin);
     if (!ta) return '';
     
+    var clickAttr = ' onclick="openIndicatorPopup(\'' + esc(coin) + '\')"';
+    
     // If crossover detected, show CROSSOVER badge (strongest signal)
     if (ta.bothCrossed) {
-      return '<span class="chip crossover">⚡ CROSSOVER</span>';
+      return '<span class="chip crossover"' + clickAttr + '>⚡ CROSSOVER</span>';
     }
     
     // Otherwise, combine MA 20 + MACD into one badge
     var ma20Arrow = ta.aboveMA20 ? '↑' : '↓';
-    var macdArrow = ta.macdBullish ? '↗' : '↘';
+    var macdArrow = ta.macdBullish ? '↗' : '';
     var ma20Mark = ta.priceCrossedMA20 ? '⚡' : '';
     var macdMark = ta.macdCrossedSignal ? '⚡' : '';
-    return '<span class="chip ma-macd">' + ma20Mark + 'MA' + ma20Arrow + ' ' + macdMark + 'MACD' + macdArrow + '</span>';
+    var badges = '<span class="chip ma-macd"' + clickAttr + '>' + ma20Mark + 'MA' + ma20Arrow + ' ' + macdMark + 'MACD' + macdArrow + '</span>';
+    
+    // Add MFI badge if oversold/overbought
+    var mfi = calcMFI(coin);
+    if (mfi) {
+      if (mfi.oversold) {
+        badges += ' <span class="chip oversold"' + clickAttr + '>MFI ' + num(mfi.value, 0) + ' ⚡</span>';
+      } else if (mfi.overbought) {
+        badges += ' <span class="chip distribution"' + clickAttr + '>MFI ' + num(mfi.value, 0) + ' </span>';
+      }
+    }
+    
+    // Add volume badge if spike
+    var volume = calcVolumeSpike(coin);
+    if (volume && volume.isSpike) {
+      badges += ' <span class="chip volume"' + clickAttr + '>VOL ' + num(volume.ratio, 1) + 'x</span>';
+    }
+    
+    return badges;
   }
   
   /* /MA-MACD-1 + CROSSOVER-DETECT-1 */
+
+  /* BADGE-POPUP-1 · Clickable badges with detailed popup view */
+
+  /**
+   * Calculate MFI (Money Flow Index) for a coin
+   * MFI = 100 - (100 / (1 + Money Ratio))
+   * Money Ratio = Positive Money Flow / Negative Money Flow
+   * Uses 14-period like standard MFI
+   */
+  function calcMFI(coin) {
+    var book = state.books && state.books[coin];
+    if (!book || !book.hourly || !book.hourlyVolumes || book.hourly.length < 15) return null;
+    
+    var cacheKey = coin + '_mfi';
+    if (maMacdCache[cacheKey]) return maMacdCache[cacheKey];
+    
+    var hourly = book.hourly;
+    var volumes = book.hourlyVolumes;
+    var len = hourly.length;
+    var period = 14;
+    
+    var positiveFlow = 0;
+    var negativeFlow = 0;
+    
+    for (var i = len - period; i < len; i++) {
+      var typicalPrice = Number(hourly[i]);
+      var prevTypicalPrice = Number(hourly[i - 1]);
+      var volume = Number(volumes[i]) || 0;
+      var rawMoneyFlow = typicalPrice * volume;
+      
+      if (typicalPrice > prevTypicalPrice) {
+        positiveFlow += rawMoneyFlow;
+      } else if (typicalPrice < prevTypicalPrice) {
+        negativeFlow += rawMoneyFlow;
+      }
+    }
+    
+    var moneyRatio = negativeFlow > 0 ? positiveFlow / negativeFlow : 100;
+    var mfi = 100 - (100 / (1 + moneyRatio));
+    
+    var result = {
+      value: mfi,
+      oversold: mfi < 30,
+      overbought: mfi > 70,
+      neutral: mfi >= 30 && mfi <= 70
+    };
+    
+    maMacdCache[cacheKey] = result;
+    return result;
+  }
+
+  /**
+   * Calculate volume spike detection
+   */
+  function calcVolumeSpike(coin) {
+    var book = state.books && state.books[coin];
+    if (!book || !book.hourlyVolumes || book.hourlyVolumes.length < 20) return null;
+    
+    var cacheKey = coin + '_volume';
+    if (maMacdCache[cacheKey]) return maMacdCache[cacheKey];
+    
+    var volumes = book.hourlyVolumes;
+    var len = volumes.length;
+    var current = Number(volumes[len - 1]) || 0;
+    
+    var sum = 0;
+    var count = 0;
+    for (var i = len - 20; i < len; i++) {
+      if (i >= 0) {
+        sum += Number(volumes[i]) || 0;
+        count++;
+      }
+    }
+    var average = count > 0 ? sum / count : 0;
+    var ratio = average > 0 ? current / average : 0;
+    
+    var result = {
+      current: current,
+      average: average,
+      ratio: ratio,
+      isSpike: ratio >= 2.0,
+      isLow: ratio < 0.5
+    };
+    
+    maMacdCache[cacheKey] = result;
+    return result;
+  }
+
+  /**
+   * Calculate combined signal score (0-100)
+   */
+  function calcCombinedScore(coin) {
+    var ta = calcMAMacd(coin);
+    var mfi = calcMFI(coin);
+    var volume = calcVolumeSpike(coin);
+    
+    if (!ta) return { score: 0, breakdown: {} };
+    
+    var score = 0;
+    var breakdown = {};
+    
+    if (ta.aboveMA20) {
+      score += ta.priceCrossedMA20 ? 25 : 20;
+      breakdown.ma20 = ta.priceCrossedMA20 ? 25 : 20;
+    } else {
+      breakdown.ma20 = 0;
+    }
+    
+    if (ta.macdBullish) {
+      score += ta.macdCrossedSignal ? 25 : 20;
+      breakdown.macd = ta.macdCrossedSignal ? 25 : 20;
+    } else {
+      breakdown.macd = 0;
+    }
+    
+    if (mfi) {
+      if (mfi.oversold) {
+        score += 20;
+        breakdown.mfi = 20;
+      } else if (mfi.overbought) {
+        breakdown.mfi = 0;
+      } else {
+        score += 12;
+        breakdown.mfi = 12;
+      }
+    } else {
+      breakdown.mfi = 0;
+    }
+    
+    if (volume) {
+      if (volume.isSpike) {
+        score += 25;
+        breakdown.volume = 25;
+      } else if (volume.isLow) {
+        score += 5;
+        breakdown.volume = 5;
+      } else {
+        score += 15;
+        breakdown.volume = 15;
+      }
+    } else {
+      breakdown.volume = 0;
+    }
+    
+    return {
+      score: score,
+      breakdown: breakdown,
+      ta: ta,
+      mfi: mfi,
+      volume: volume
+    };
+  }
+
+  /**
+   * Open popup with full indicator analysis
+   */
+  function openIndicatorPopup(coin) {
+    var scoreData = calcCombinedScore(coin);
+    var ta = scoreData.ta;
+    var mfi = scoreData.mfi;
+    var volume = scoreData.volume;
+    var score = scoreData.score;
+    var breakdown = scoreData.breakdown;
+    
+    var signalStrength = '';
+    var signalClass = '';
+    var recommendation = '';
+    
+    if (score >= 75) {
+      signalStrength = 'Strong bullish — all signals aligned';
+      signalClass = 'bullish';
+      recommendation = 'All indicators aligned bullish with volume confirmation. <strong>Strong BUY signal.</strong>';
+    } else if (score >= 60) {
+      signalStrength = 'Bullish — most signals positive';
+      signalClass = 'bullish';
+      recommendation = 'Most indicators bullish. <strong>Consider buying</strong> but watch for volume confirmation.';
+    } else if (score >= 40) {
+      signalStrength = 'Mixed — some signals conflict';
+      signalClass = 'mixed';
+      recommendation = 'Mixed signals. <strong>Wait for clarity</strong> before acting.';
+    } else if (score >= 25) {
+      signalStrength = 'Bearish — most signals negative';
+      signalClass = 'bearish';
+      recommendation = 'Most indicators bearish. <strong>Avoid buying</strong> until conditions improve.';
+    } else {
+      signalStrength = 'Strong bearish — all signals negative';
+      signalClass = 'bearish';
+      recommendation = 'All indicators bearish. <strong>Do not buy.</strong> Wait for reversal signals.';
+    }
+    
+    var html = '<div class="popup-overlay" id="indicator-popup" onclick="closeIndicatorPopup(event)">';
+    html += '<div class="popup" onclick="event.stopPropagation()">';
+    html += '<button class="popup-close" onclick="closeIndicatorPopup()">x</button>';
+    html += '<div class="popup-header">' + esc(coin) + '</div>';
+    html += '<div class="popup-subheader">Full Indicator Analysis</div>';
+    
+    html += '<div class="popup-section">';
+    html += '<div class="popup-section-title">Price Indicators</div>';
+    html += '<div class="indicator-row"><span class="indicator-name">MA 20 (4h)</span><span class="indicator-value ' + (ta.aboveMA20 ? 'bullish' : 'bearish') + '">' + (ta.aboveMA20 ? 'Above' : 'Below') + '</span></div>';
+    html += '<div class="indicator-row"><span class="indicator-name">MACD</span><span class="indicator-value ' + (ta.macdBullish ? 'bullish' : 'bearish') + '">' + (ta.macdBullish ? 'Bullish' : 'Bearish') + '</span></div>';
+    html += '<div class="signal-status ' + (ta.aboveMA20 && ta.macdBullish ? 'bullish' : 'bearish') + '">';
+    html += '<span class="signal-icon">' + (ta.aboveMA20 && ta.macdBullish ? 'S' : 'S') + '</span>';
+    html += '<span>Price trend: ' + (ta.aboveMA20 && ta.macdBullish ? 'Bullish' : 'Bearish') + '</span>';
+    html += '</div></div>';
+    
+    html += '<div class="popup-section">';
+    html += '<div class="popup-section-title">Volume Indicators</div>';
+    if (mfi) {
+      html += '<div class="indicator-row"><span class="indicator-name">MFI (14)</span><span class="indicator-value ' + (mfi.oversold ? 'bullish' : mfi.overbought ? 'bearish' : 'neutral') + '">' + num(mfi.value, 1) + (mfi.oversold ? ' (Oversold)' : mfi.overbought ? ' (Overbought)' : '') + '</span></div>';
+    }
+    if (volume) {
+      var volText = volume.ratio >= 2 ? num(volume.ratio, 1) + 'x spike' : volume.ratio < 0.5 ? num(volume.ratio * 100, 0) + '% below avg' : 'Average';
+      html += '<div class="indicator-row"><span class="indicator-name">Volume</span><span class="indicator-value ' + (volume.isSpike ? 'bullish' : volume.isLow ? 'bearish' : 'neutral') + '">' + volText + '</span></div>';
+    }
+    html += '<div class="signal-status ' + ((mfi && mfi.oversold) || (volume && volume.isSpike) ? 'bullish' : 'mixed') + '">';
+    html += '<span class="signal-icon">!</span>';
+    html += '<span>Volume: ' + ((mfi && mfi.oversold) ? 'Oversold - potential bounce' : (volume && volume.isSpike) ? 'Strong activity detected' : 'No strong signal') + '</span>';
+    html += '</div></div>';
+    
+    html += '<div class="combined-score">';
+    html += '<div class="score-title"><span>!</span><span>Combined Signal Score</span></div>';
+    html += '<div class="score-value">' + score + '/100</div>';
+    html += '<div class="score-label">' + signalStrength + '</div>';
+    html += '<div class="score-bar"><div class="score-fill ' + signalClass + '" style="width: ' + score + '%"></div></div>';
+    html += '<div class="score-breakdown"><strong>MA 20:</strong> ' + breakdown.ma20 + '/25 - <strong>MACD:</strong> ' + breakdown.macd + '/25 - <strong>MFI:</strong> ' + breakdown.mfi + '/25 - <strong>Volume:</strong> ' + breakdown.volume + '/25</div>';
+    html += '</div>';
+    
+    html += '<div class="recommendation-box">';
+    html += '<div class="recommendation-title">What This Means</div>';
+    html += '<div class="recommendation-text">' + recommendation + '</div>';
+    html += '</div>';
+    
+    html += '</div></div>';
+    
+    var container = document.createElement('div');
+    container.id = 'popup-container';
+    container.innerHTML = html;
+    document.body.appendChild(container);
+  }
+
+  /**
+   * Close popup
+   */
+  function closeIndicatorPopup(event) {
+    if (event && event.target !== event.currentTarget && !event.target.classList.contains('popup-close')) return;
+    var container = document.getElementById('popup-container');
+    if (container) container.remove();
+  }
+
+  /* /BADGE-POPUP-1 */
 
   function unifiedScoutRowHtml(r){
     var c=r.pair,scanPending=r.scanStatus&&r.scanStatus!=='done',scanFailed=r.scanStatus==='failed',lock=scoutLockFor(c.ticker),locked=!!lock,trend=scanFailed?'Outdated':scanPending?'Refreshing…':r.context.ready?(r.observation.trend||'Observed'):'Unknown',change=!scanPending&&!scanFailed&&r.change!=null?(r.change>=0?'+':'')+num(r.change,1)+'%':'—',star=state.settings.watchlist.indexOf(c.ticker)>=0,health=locked?'Locked':scanFailed?'Refresh failed':scanPending?'Pending':r.mismatch?'Old Bid':r.context.ready?'Data OK':'Needs data',healthClass=locked?'attention':r.context.ready&&!r.mismatch?'ready':r.mismatch?'attention':'unknown',ticker=esc(c.ticker),name=esc(c.name||c.ticker),price=esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched'),watchText=unifiedScoutCompactWatch(r),watch=scoutCueMarkup(watchText),signalClass=scoutSignalClass(r,trend),location=esc(r.pos&&r.pos.word||'not checked'),reason=locked?'<small class="triage-lock-note">🔒 '+esc(lock.reason)+'</small>':'',openClass=locked?'locked':'',openLabel=locked?'🔒 Locked':'Open';
@@ -17139,3 +17409,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4caf049de22eb14',t:'MTc5MjM2MjExMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

@@ -8982,5 +8982,202 @@ p.ns-mut{margin:6px 0}
 }
 /* /SELL-50-BUTTON-1 */
 
+/* BADGE-POPUP-1 · Clickable badge popup styles */
+.popup-overlay {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: popupFadeIn 0.2s ease-out;
+}
+@keyframes popupFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.popup {
+  background: var(--panel, #151f35);
+  border: 1px solid var(--border, #2a3a5c);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: popupSlideUp 0.3s ease-out;
+  position: relative;
+}
+@keyframes popupSlideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.popup-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--bg, #0b1220);
+  border: 1px solid var(--border, #2a3a5c);
+  color: var(--text, #e8eefc);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.popup-close:hover {
+  background: var(--panel-2, #1b2742);
+  border-color: var(--no, #ff6b7a);
+  color: var(--no, #ff6b7a);
+}
+.popup-header {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  padding-right: 40px;
+}
+.popup-subheader {
+  font-size: 12px;
+  color: var(--muted, #93a0c0);
+  margin-bottom: 20px;
+}
+.popup-section {
+  margin-bottom: 20px;
+}
+.popup-section-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted, #93a0c0);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border, #2a3a5c);
+}
+.indicator-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: var(--bg, #0b1220);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.indicator-name {
+  font-size: 12px;
+  font-weight: 700;
+}
+.indicator-value {
+  font-size: 13px;
+  font-weight: 800;
+}
+.indicator-value.bullish { color: var(--go, #3dcf8e); }
+.indicator-value.bearish { color: var(--no, #ff6b7a); }
+.indicator-value.neutral { color: var(--wait, #e6c35c); }
+.signal-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.signal-status.bullish {
+  background: rgba(61, 207, 142, 0.1);
+  color: var(--go, #3dcf8e);
+  border: 1px solid rgba(61, 207, 142, 0.25);
+}
+.signal-status.bearish {
+  background: rgba(255, 107, 122, 0.1);
+  color: var(--no, #ff6b7a);
+  border: 1px solid rgba(255, 107, 122, 0.25);
+}
+.signal-status.mixed {
+  background: rgba(230, 195, 92, 0.1);
+  color: var(--wait, #e6c35c);
+  border: 1px solid rgba(230, 195, 92, 0.25);
+}
+.signal-icon {
+  font-size: 16px;
+}
+.combined-score {
+  background: linear-gradient(135deg, rgba(61, 125, 255, 0.08), rgba(255, 110, 199, 0.08));
+  border: 2px solid rgba(157, 124, 255, 0.3);
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 16px;
+}
+.score-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #9d7cff;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.score-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--text, #e8eefc);
+  margin-bottom: 6px;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--muted, #93a0c0);
+  margin-bottom: 12px;
+}
+.score-bar {
+  height: 8px;
+  background: var(--bg, #0b1220);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.score-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease-out;
+}
+.score-fill.bullish { background: linear-gradient(90deg, var(--go, #3dcf8e), #5de0a8); }
+.score-fill.bearish { background: linear-gradient(90deg, var(--no, #ff6b7a), #ff8a96); }
+.score-fill.mixed { background: linear-gradient(90deg, var(--wait, #e6c35c), #f0c868); }
+.score-breakdown {
+  font-size: 11px;
+  color: var(--muted, #93a0c0);
+  line-height: 1.6;
+}
+.score-breakdown strong { color: var(--text, #e8eefc); }
+.recommendation-box {
+  background: rgba(61, 207, 142, 0.08);
+  border: 1px solid rgba(61, 207, 142, 0.25);
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 16px;
+}
+.recommendation-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--go, #3dcf8e);
+  margin-bottom: 6px;
+}
+.recommendation-text {
+  font-size: 11px;
+  color: var(--text, #e8eefc);
+  line-height: 1.6;
+}
+/* /BADGE-POPUP-1 */
+
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4c9a0894e81d834',t:'MTc5MjM0ODM2MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4caf093888ceb14',t:'MTc5MjM2MjEyNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
