@@ -16775,10 +16775,14 @@ function triageUnfoldHtml(r, o){
   }
 
   /**
-   * Close popup
+   * Close popup - works for backdrop click, X button, or direct call
    */
   function closeIndicatorPopup(event) {
-    if (event && event.target !== event.currentTarget && !event.target.classList.contains('popup-close')) return;
+    // If called from backdrop click, only close if clicking the overlay itself (not popup content)
+    if (event) {
+      // Don't close if clicking inside the popup content
+      if (event.target.closest('.popup')) return;
+    }
     var container = document.getElementById('popup-container');
     if (container) container.remove();
   }
