@@ -16129,7 +16129,7 @@ function triageUnfoldHtml(r, o){
     if (vw === 'BUY' || vw === 'TURN BUY') return '';
     var score = pfSetupScore(r);
     if (score >= 6) return ''; /* Only show for degraded setups */
-    return '<button type="button" class="pf-exit-btn" data-action="pf-exit" data-ticker="' + esc(r.pair.ticker) + '">Sell 50% to reduce exposure</button>';
+    return '<button type="button" class="btn-sell-50" data-action="pf-exit" data-ticker="' + esc(r.pair.ticker) + '">Sell 50%</button>';
   }
   function pfHealthBarHtml() {
     /* Returns health bar HTML for top of Scout page. */
@@ -17139,4 +17139,3 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4c7d8129ca66ab1',t:'MTc5MjMyOTY2NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
