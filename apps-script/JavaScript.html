@@ -16724,9 +16724,9 @@ function triageUnfoldHtml(r, o){
       recommendation = 'All indicators bearish. <strong>Do not buy.</strong> Wait for reversal signals.';
     }
     
-    var html = '<div class="popup-overlay" id="indicator-popup" onclick="closeIndicatorPopup(event)">';
-    html += '<div class="popup" onclick="event.stopPropagation()">';
-    html += '<button class="popup-close" onclick="closeIndicatorPopup()">x</button>';
+    var html = '<div class="popup-overlay" id="indicator-popup">';
+    html += '<div class="popup">';
+    html += '<button class="popup-close">x</button>';
     html += '<div class="popup-header">' + esc(coin) + '</div>';
     html += '<div class="popup-subheader">Full Indicator Analysis</div>';
     
@@ -16735,7 +16735,7 @@ function triageUnfoldHtml(r, o){
     html += '<div class="indicator-row"><span class="indicator-name">MA 20 (4h)</span><span class="indicator-value ' + (ta.aboveMA20 ? 'bullish' : 'bearish') + '">' + (ta.aboveMA20 ? 'Above' : 'Below') + '</span></div>';
     html += '<div class="indicator-row"><span class="indicator-name">MACD</span><span class="indicator-value ' + (ta.macdBullish ? 'bullish' : 'bearish') + '">' + (ta.macdBullish ? 'Bullish' : 'Bearish') + '</span></div>';
     html += '<div class="signal-status ' + (ta.aboveMA20 && ta.macdBullish ? 'bullish' : 'bearish') + '">';
-    html += '<span class="signal-icon">' + (ta.aboveMA20 && ta.macdBullish ? 'S' : 'S') + '</span>';
+    html += '<span class="signal-icon">' + (ta.aboveMA20 && ta.macdBullish ? '📈' : '📉') + '</span>';
     html += '<span>Price trend: ' + (ta.aboveMA20 && ta.macdBullish ? 'Bullish' : 'Bearish') + '</span>';
     html += '</div></div>';
     
@@ -16749,12 +16749,12 @@ function triageUnfoldHtml(r, o){
       html += '<div class="indicator-row"><span class="indicator-name">Volume</span><span class="indicator-value ' + (volume.isSpike ? 'bullish' : volume.isLow ? 'bearish' : 'neutral') + '">' + volText + '</span></div>';
     }
     html += '<div class="signal-status ' + ((mfi && mfi.oversold) || (volume && volume.isSpike) ? 'bullish' : 'mixed') + '">';
-    html += '<span class="signal-icon">!</span>';
+    html += '<span class="signal-icon">⚡</span>';
     html += '<span>Volume: ' + ((mfi && mfi.oversold) ? 'Oversold - potential bounce' : (volume && volume.isSpike) ? 'Strong activity detected' : 'No strong signal') + '</span>';
     html += '</div></div>';
     
     html += '<div class="combined-score">';
-    html += '<div class="score-title"><span>!</span><span>Combined Signal Score</span></div>';
+    html += '<div class="score-title"><span>⚡</span><span>Combined Signal Score</span></div>';
     html += '<div class="score-value">' + score + '/100</div>';
     html += '<div class="score-label">' + signalStrength + '</div>';
     html += '<div class="score-bar"><div class="score-fill ' + signalClass + '" style="width: ' + score + '%"></div></div>';
@@ -16762,7 +16762,7 @@ function triageUnfoldHtml(r, o){
     html += '</div>';
     
     html += '<div class="recommendation-box">';
-    html += '<div class="recommendation-title">What This Means</div>';
+    html += '<div class="recommendation-title">💡 What This Means</div>';
     html += '<div class="recommendation-text">' + recommendation + '</div>';
     html += '</div>';
     
@@ -16772,6 +16772,23 @@ function triageUnfoldHtml(r, o){
     container.id = 'popup-container';
     container.innerHTML = html;
     document.body.appendChild(container);
+    
+    // Attach event listeners after DOM is created
+    var overlay = container.querySelector('.popup-overlay');
+    var closeBtn = container.querySelector('.popup-close');
+    
+    // Close when clicking backdrop (overlay itself, not popup content)
+    overlay.onclick = function(e) {
+      if (e.target === overlay) {
+        container.remove();
+      }
+    };
+    
+    // Close when clicking X button
+    closeBtn.onclick = function(e) {
+      e.stopPropagation();
+      container.remove();
+    };
   }
 
   /**
@@ -17430,3 +17447,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4cb7c872e49793e',t:'MTc5MjM2Nzg1Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
