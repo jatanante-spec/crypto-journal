@@ -16500,34 +16500,34 @@ function triageUnfoldHtml(r, o){
     var ta = calcMAMacd(coin);
     if (!ta) return '';
     
-    var clickAttr = ' onclick="openIndicatorPopup(\'' + esc(coin) + '\')"';
+    var dataAttr = ' data-coin="' + esc(coin) + '"';
     
     // If crossover detected, show CROSSOVER badge (strongest signal)
     if (ta.bothCrossed) {
-      return '<span class="chip crossover"' + clickAttr + '>⚡ CROSSOVER</span>';
+      return '<span class="chip crossover"' + dataAttr + '> CROSSOVER</span>';
     }
     
     // Otherwise, combine MA 20 + MACD into one badge
     var ma20Arrow = ta.aboveMA20 ? '↑' : '↓';
     var macdArrow = ta.macdBullish ? '↗' : '';
     var ma20Mark = ta.priceCrossedMA20 ? '⚡' : '';
-    var macdMark = ta.macdCrossedSignal ? '⚡' : '';
-    var badges = '<span class="chip ma-macd"' + clickAttr + '>' + ma20Mark + 'MA' + ma20Arrow + ' ' + macdMark + 'MACD' + macdArrow + '</span>';
+    var macdMark = ta.macdCrossedSignal ? '' : '';
+    var badges = '<span class="chip ma-macd"' + dataAttr + '>' + ma20Mark + 'MA' + ma20Arrow + ' ' + macdMark + 'MACD' + macdArrow + '</span>';
     
     // Add MFI badge if oversold/overbought
     var mfi = calcMFI(coin);
     if (mfi) {
       if (mfi.oversold) {
-        badges += ' <span class="chip oversold"' + clickAttr + '>MFI ' + num(mfi.value, 0) + ' ⚡</span>';
+        badges += ' <span class="chip oversold"' + dataAttr + '>MFI ' + num(mfi.value, 0) + ' ⚡</span>';
       } else if (mfi.overbought) {
-        badges += ' <span class="chip distribution"' + clickAttr + '>MFI ' + num(mfi.value, 0) + ' </span>';
+        badges += ' <span class="chip distribution"' + dataAttr + '>MFI ' + num(mfi.value, 0) + ' </span>';
       }
     }
     
     // Add volume badge if spike
     var volume = calcVolumeSpike(coin);
     if (volume && volume.isSpike) {
-      badges += ' <span class="chip volume"' + clickAttr + '>VOL ' + num(volume.ratio, 1) + 'x</span>';
+      badges += ' <span class="chip volume"' + dataAttr + '>VOL ' + num(volume.ratio, 1) + 'x</span>';
     }
     
     return badges;
@@ -16781,6 +16781,22 @@ function triageUnfoldHtml(r, o){
     if (event && event.target !== event.currentTarget && !event.target.classList.contains('popup-close')) return;
     var container = document.getElementById('popup-container');
     if (container) container.remove();
+  }
+
+  /**
+   * Attach click listeners to all badges with data-coin attribute
+   * Called after DOM is updated with new badge HTML
+   */
+  function attachBadgeClickListeners() {
+    document.querySelectorAll('.chip.ma-macd, .chip.oversold, .chip.distribution, .chip.volume, .chip.crossover').forEach(function(badge) {
+      if (!badge.getAttribute('data-coin')) return;
+      badge.style.cursor = 'pointer';
+      badge.onclick = function(e) {
+        e.stopPropagation();
+        var coin = this.getAttribute('data-coin');
+        if (coin) openIndicatorPopup(coin);
+      };
+    });
   }
 
   /* /BADGE-POPUP-1 */
@@ -17045,6 +17061,7 @@ function triageUnfoldHtml(r, o){
     document.querySelectorAll('[data-action="triage-scope"]').forEach(function(b){b.classList.toggle('on',b.dataset.scope===unifiedScoutScope);b.setAttribute('aria-selected',b.dataset.scope===unifiedScoutScope);});document.querySelectorAll('[data-action="triage-filter"]').forEach(function(b){b.classList.toggle('on',b.dataset.filter===triageFilter);b.setAttribute('aria-pressed',b.dataset.filter===triageFilter);});document.querySelectorAll('[data-action="triage-kind"]').forEach(function(b){b.classList.toggle('on',b.dataset.kind===triageKind);b.setAttribute('aria-pressed',b.dataset.kind===triageKind);});var sort=document.getElementById('triage-sort');if(sort)sort.value=triageSort;
     var html=triageResultsHtml(rows,findRows);el.innerHTML=html||'<p class="triage-empty"><b>No records match this view.</b><br>Change the scope, search or filter. No result is also useful information.</p>';
     el.scrollTop=oldScroll;
+    attachBadgeClickListeners();
     var toastEl=document.getElementById('triage-toast');
     if(toastEl){toastEl.textContent=watchlistToast||'';}
     var toastRow=document.getElementById('triage-toast-row');
@@ -17409,4 +17426,3 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4caf049de22eb14',t:'MTc5MjM2MjExMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
