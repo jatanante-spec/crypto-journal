@@ -9390,4 +9390,44 @@ p.ns-mut{margin:6px 0}
 /* /BADGE-POPUP-1-INLINE */
 
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4cf993d5879ad54',t:'MTc5MjQxMDk3Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+
+/* VERDICT-MINI-1 · Triangle + tiny label verdict redesign */
+
+#main .verdict-mini {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 30px;
+}
+#main .verdict-mini .triangle {
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 800;
+}
+#main .verdict-mini .label {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* Color variants */
+#main .verdict-mini.go .triangle,
+#main .verdict-mini.go .label {
+  color: #3dcf8e;
+}
+#main .verdict-mini.wait .triangle,
+#main .verdict-mini.wait .label {
+  color: #e6c35c;
+}
+#main .verdict-mini.block .triangle,
+#main .verdict-mini.block .label {
+  color: #ff6b7a;
+}
+#main .verdict-mini.tb .triangle,
+#main .verdict-mini.tb .label {
+  color: #36c5f0;
+}
+/* /VERDICT-MINI-1 */
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d04f792ab0b317',t:'MTc5MjQxODQ0MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

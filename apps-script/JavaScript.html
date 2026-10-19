@@ -16671,6 +16671,15 @@ function triageUnfoldHtml(r, o){
   }
 
   /**
+   * VERDICT-MINI-1 · Generate triangle + tiny label verdict HTML
+   */
+  function verdictMiniHtml(vw, vc) {
+    var triangle = vc === 'go' || vc === 'tb' ? '▲' : vc === 'wait' ? '◆' : '▼';
+    var label = vw === 'TURN BUY' ? 'TB' : vw === 'NO-GO' ? 'NO' : vw.substring(0, 3);
+    return '<div class="verdict-mini ' + vc + '"><div class="triangle">' + triangle + '</div><div class="label">' + label + '</div></div>';
+  }
+
+  /**
    * Calculate combined signal score (0-100)
    */
   function calcCombinedScore(coin) {
@@ -16901,18 +16910,18 @@ function triageUnfoldHtml(r, o){
           var notPass=['ticket','timing','account','plan'].filter(function(k){return (g.groups[k]||'none')!=='ok';});
           tiles=notPass.length?notPass.map(function(k){var st=g.groups[k]||'none';return '<span class="uc-light '+gCls[st]+'" title="'+gWords[k]+': '+gMarks[st]+'"><i></i>'+shortW[k]+'</span>';}).join(''):'<span class="uc-light us-pass" title="Ticket, Timing, Account and Plan all pass"><i></i>All 4 pass</span>';
           return open+
-            '<div class="uc-l1">'+(triageEdit?removeAction:'')+head+'<span class="verdict '+vc+'">'+vw+'</span><span class="uc-caret">'+(whyOpen?'\u25b4':'\u25be')+'</span></div>'+
+            '<div class="uc-l1">'+(triageEdit?removeAction:'')+head+verdictMiniHtml(vw,vc)+'<span class="uc-caret">'+(whyOpen?'\u25b4':'\u25be')+'</span></div>'+
             '<div class="uc-l2"><span class="uc-reason">'+(teChipsHtml(g)||esc(g.why||'Not evaluated'))+'</span><span class="uc-lights">'+tiles+'</span></div>'+
             (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+(isResearchMode()?pfExitButtonHtml(r):'')+'</article>';   // SCAN-RESEARCH-1
         }
         return open+
-          '<div class="uc-l1"><span class="verdict '+vc+'">'+vw+'</span>'+(triageEdit?removeAction:'')+head+'<span class="why-link">'+(whyOpen?'Close':'Why?')+'</span></div>'+
+          '<div class="uc-l1">'+verdictMiniHtml(vw,vc)+(triageEdit?removeAction:'')+head+'<span class="why-link">'+(whyOpen?'Close':'Why?')+'</span></div>'+
           '<div class="uc-tiles">'+tiles+'</div>'+
           '<div class="uc-l2"><span class="uc-reason">'+(teChipsHtml(g)||esc(g.why||'Not evaluated'))+'</span></div>'+
           (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';   // SCAN-RESEARCH-1
       }
       return '<article class="triage-unified-row triage-combined-row uni-card verdict-'+vc+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'">'+
-        '<div class="uni-decision"><span class="verdict '+vc+'">'+vw+'</span><span class="reason">'+(teChipsHtml(g)||esc(g.why||'Not evaluated'))+'</span><span role="button" tabindex="0" class="why-link" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'">'+(whyOpen?'Close':'Why?')+'</span></div>'+
+        '<div class="uni-decision">'+verdictMiniHtml(vw,vc)+'<span class="reason">'+(teChipsHtml(g)||esc(g.why||'Not evaluated'))+'</span><span role="button" tabindex="0" class="why-link" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'">'+(whyOpen?'Close':'Why?')+'</span></div>'+
         '<div class="uni-strip">'+strip+'</div>'+(vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g)+whyList+
         '<div class="uni-body">'+
           '<div class="uni-identity"><div class="coin-row"><b>'+ticker+'</b><small>'+price+'</small></div>'+(locked?reason:'')+'</div>'+
@@ -17484,4 +17493,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4cf990bff39ad54',t:'MTc5MjQxMDk2OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d04f439ceab317',t:'MTc5MjQxODQzMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
