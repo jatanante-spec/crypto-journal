@@ -16690,117 +16690,97 @@ function triageUnfoldHtml(r, o){
   /**
    * Open popup with full indicator analysis
    */
-  function openIndicatorPopup(coin) {
+  /**
+   * Open inline expand popup below badge
+   * Design 1: Inline Expand - fast, contextual, minimal
+   */
+  function openIndicatorPopup(coin, badgeElement) {
+    // Close any existing popup first
+    closeIndicatorPopup();
+    
     var scoreData = calcCombinedScore(coin);
     var ta = scoreData.ta;
     var mfi = scoreData.mfi;
     var volume = scoreData.volume;
     var score = scoreData.score;
-    var breakdown = scoreData.breakdown;
     
-    var signalStrength = '';
-    var signalClass = '';
-    var recommendation = '';
+    // Determine verdict
+    var verdict = '';
+    var verdictClass = '';
+    if (score >= 75) { verdict = 'BUY'; verdictClass = 'bullish'; }
+    else if (score >= 60) { verdict = 'LEAN BUY'; verdictClass = 'bullish'; }
+    else if (score >= 40) { verdict = 'WAIT'; verdictClass = 'neutral'; }
+    else if (score >= 25) { verdict = 'LEAN WAIT'; verdictClass = 'bearish'; }
+    else { verdict = 'NO'; verdictClass = 'bearish'; }
     
-    if (score >= 75) {
-      signalStrength = 'Strong bullish — all signals aligned';
-      signalClass = 'bullish';
-      recommendation = 'All indicators aligned bullish with volume confirmation. <strong>Strong BUY signal.</strong>';
-    } else if (score >= 60) {
-      signalStrength = 'Bullish — most signals positive';
-      signalClass = 'bullish';
-      recommendation = 'Most indicators bullish. <strong>Consider buying</strong> but watch for volume confirmation.';
-    } else if (score >= 40) {
-      signalStrength = 'Mixed — some signals conflict';
-      signalClass = 'mixed';
-      recommendation = 'Mixed signals. <strong>Wait for clarity</strong> before acting.';
-    } else if (score >= 25) {
-      signalStrength = 'Bearish — most signals negative';
-      signalClass = 'bearish';
-      recommendation = 'Most indicators bearish. <strong>Avoid buying</strong> until conditions improve.';
-    } else {
-      signalStrength = 'Strong bearish — all signals negative';
-      signalClass = 'bearish';
-      recommendation = 'All indicators bearish. <strong>Do not buy.</strong> Wait for reversal signals.';
-    }
+    // Build compact HTML
+    var html = '<div class="inline-expand" id="inline-popup">';
+    html += '<div class="inline-header">';
+    html += '<div class="inline-title">' + esc(coin) + ' Analysis</div>';
+    html += '<button class="inline-close" onclick="closeIndicatorPopup()">x</button>';
+    html += '</div>';
     
-    var html = '<div class="popup-overlay" id="indicator-popup">';
-    html += '<div class="popup">';
-    html += '<button class="popup-close">x</button>';
-    html += '<div class="popup-header">' + esc(coin) + '</div>';
-    html += '<div class="popup-subheader">Full Indicator Analysis</div>';
-    
-    html += '<div class="popup-section">';
-    html += '<div class="popup-section-title">Price Indicators</div>';
-    html += '<div class="indicator-row"><span class="indicator-name">MA 20 (4h)</span><span class="indicator-value ' + (ta.aboveMA20 ? 'bullish' : 'bearish') + '">' + (ta.aboveMA20 ? 'Above' : 'Below') + '</span></div>';
-    html += '<div class="indicator-row"><span class="indicator-name">MACD</span><span class="indicator-value ' + (ta.macdBullish ? 'bullish' : 'bearish') + '">' + (ta.macdBullish ? 'Bullish' : 'Bearish') + '</span></div>';
-    html += '<div class="signal-status ' + (ta.aboveMA20 && ta.macdBullish ? 'bullish' : 'bearish') + '">';
-    html += '<span class="signal-icon">' + (ta.aboveMA20 && ta.macdBullish ? '📈' : '📉') + '</span>';
-    html += '<span>Price trend: ' + (ta.aboveMA20 && ta.macdBullish ? 'Bullish' : 'Bearish') + '</span>';
-    html += '</div></div>';
-    
-    html += '<div class="popup-section">';
-    html += '<div class="popup-section-title">Volume Indicators</div>';
+    html += '<div class="inline-grid">';
+    html += '<div class="inline-item"><div class="inline-label">MA 20</div><div class="inline-value ' + (ta.aboveMA20 ? 'bullish' : 'bearish') + '">' + (ta.aboveMA20 ? 'Above' : 'Below') + '</div></div>';
+    html += '<div class="inline-item"><div class="inline-label">MACD</div><div class="inline-value ' + (ta.macdBullish ? 'bullish' : 'bearish') + '">' + (ta.macdBullish ? 'Bullish' : 'Bearish') + '</div></div>';
     if (mfi) {
-      html += '<div class="indicator-row"><span class="indicator-name">MFI (14)</span><span class="indicator-value ' + (mfi.oversold ? 'bullish' : mfi.overbought ? 'bearish' : 'neutral') + '">' + num(mfi.value, 1) + (mfi.oversold ? ' (Oversold)' : mfi.overbought ? ' (Overbought)' : '') + '</span></div>';
+      html += '<div class="inline-item"><div class="inline-label">MFI</div><div class="inline-value ' + (mfi.oversold ? 'bullish' : mfi.overbought ? 'bearish' : 'neutral') + '">' + num(mfi.value, 0) + (mfi.oversold ? ' OS' : mfi.overbought ? ' OB' : '') + '</div></div>';
     }
     if (volume) {
-      var volText = volume.ratio >= 2 ? num(volume.ratio, 1) + 'x spike' : volume.ratio < 0.5 ? num(volume.ratio * 100, 0) + '% below avg' : 'Average';
-      html += '<div class="indicator-row"><span class="indicator-name">Volume</span><span class="indicator-value ' + (volume.isSpike ? 'bullish' : volume.isLow ? 'bearish' : 'neutral') + '">' + volText + '</span></div>';
+      var volLabel = volume.isSpike ? 'Spike ' + num(volume.ratio, 1) + 'x' : volume.isLow ? 'Low ' + num(volume.ratio * 100, 0) + '%' : 'Average';
+      html += '<div class="inline-item"><div class="inline-label">Volume</div><div class="inline-value ' + (volume.isSpike ? 'bullish' : volume.isLow ? 'bearish' : 'neutral') + '">' + volLabel + '</div></div>';
     }
-    html += '<div class="signal-status ' + ((mfi && mfi.oversold) || (volume && volume.isSpike) ? 'bullish' : 'mixed') + '">';
-    html += '<span class="signal-icon">⚡</span>';
-    html += '<span>Volume: ' + ((mfi && mfi.oversold) ? 'Oversold - potential bounce' : (volume && volume.isSpike) ? 'Strong activity detected' : 'No strong signal') + '</span>';
-    html += '</div></div>';
-    
-    html += '<div class="combined-score">';
-    html += '<div class="score-title"><span>⚡</span><span>Combined Signal Score</span></div>';
-    html += '<div class="score-value">' + score + '/100</div>';
-    html += '<div class="score-label">' + signalStrength + '</div>';
-    html += '<div class="score-bar"><div class="score-fill ' + signalClass + '" style="width: ' + score + '%"></div></div>';
-    html += '<div class="score-breakdown"><strong>MA 20:</strong> ' + breakdown.ma20 + '/25 - <strong>MACD:</strong> ' + breakdown.macd + '/25 - <strong>MFI:</strong> ' + breakdown.mfi + '/25 - <strong>Volume:</strong> ' + breakdown.volume + '/25</div>';
     html += '</div>';
     
-    html += '<div class="recommendation-box">';
-    html += '<div class="recommendation-title">💡 What This Means</div>';
-    html += '<div class="recommendation-text">' + recommendation + '</div>';
+    html += '<div class="inline-score">';
+    html += '<span>Score: <strong>' + score + '/100</strong></span>';
+    html += '<span class="inline-verdict ' + verdictClass + '">' + verdict + '</span>';
     html += '</div>';
     
-    html += '</div></div>';
+    html += '</div>';
     
+    // Create container
     var container = document.createElement('div');
-    container.id = 'popup-container';
+    container.id = 'inline-popup-container';
     container.innerHTML = html;
     document.body.appendChild(container);
     
-    // Attach event listeners after DOM is created
-    var overlay = container.querySelector('.popup-overlay');
-    var closeBtn = container.querySelector('.popup-close');
+    // Position below badge
+    var popup = document.getElementById('inline-popup');
+    var badgeRect = badgeElement.getBoundingClientRect();
+    popup.style.position = 'absolute';
+    popup.style.top = (badgeRect.bottom + window.scrollY + 4) + 'px';
+    popup.style.left = (badgeRect.left + window.scrollX) + 'px';
+    popup.style.zIndex = '1001';
     
-    // Close when clicking backdrop (overlay itself, not popup content)
-    overlay.onclick = function(e) {
-      if (e.target === overlay) {
-        container.remove();
-      }
-    };
+    // Adjust if goes off right edge
+    var popupRect = popup.getBoundingClientRect();
+    if (popupRect.right > window.innerWidth) {
+      popup.style.left = (window.innerWidth - popupRect.width - 8) + 'px';
+    }
     
-    // Close when clicking X button
-    closeBtn.onclick = function(e) {
-      e.stopPropagation();
-      container.remove();
-    };
+    // Close when clicking outside
+    setTimeout(function() {
+      document.addEventListener('click', handleOutsideClick);
+    }, 10);
   }
 
   /**
-   * Close popup - works for backdrop click, X button, or direct call
+   * Handle click outside inline popup
    */
-  function closeIndicatorPopup(event) {
-    // If called from backdrop click, only close if clicking the overlay itself (not popup content)
-    if (event) {
-      // Don't close if clicking inside the popup content
-      if (event.target.closest('.popup')) return;
+  function handleOutsideClick(event) {
+    var popup = document.getElementById('inline-popup');
+    if (popup && !popup.contains(event.target)) {
+      closeIndicatorPopup();
     }
-    var container = document.getElementById('popup-container');
+  }
+
+  /**
+   * Close inline popup
+   */
+  function closeIndicatorPopup() {
+    document.removeEventListener('click', handleOutsideClick);
+    var container = document.getElementById('inline-popup-container');
     if (container) container.remove();
   }
 
@@ -16815,7 +16795,7 @@ function triageUnfoldHtml(r, o){
       badge.onclick = function(e) {
         e.stopPropagation();
         var coin = this.getAttribute('data-coin');
-        if (coin) openIndicatorPopup(coin);
+        if (coin) openIndicatorPopup(coin, this);
       };
     });
   }
@@ -17447,4 +17427,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4cb7c872e49793e',t:'MTc5MjM2Nzg1Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4cba843cc78eb18',t:'MTc5MjM2OTY0OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
