@@ -16135,12 +16135,21 @@ function triageUnfoldHtml(r, o){
     /* Returns health bar HTML for top of Scout page. */
     var rows = triageCache || [];
     var buys = 0, waits = 0, nogos = 0;
+    var gateBlocks = { ticket: 0, timing: 0, account: 0, plan: 0 };
     rows.forEach(function(r) {
       var g = r.ready || (r.ready = scoutReadiness(r, null));
       var vw = g && g.verdict ? g.verdict : 'WAIT';
       if (vw === 'BUY' || vw === 'TURN BUY') buys++;
       else if (vw === 'NO-GO' || vw === 'BANK') nogos++;
       else waits++;
+      /* Count gate blockers for non-BUY verdicts */
+      if (vw !== 'BUY' && vw !== 'TURN BUY' && g && g.groups) {
+        ['ticket', 'timing', 'account', 'plan'].forEach(function(gate) {
+          if (g.groups[gate] === 'block' || g.groups[gate] === 'wait') {
+            gateBlocks[gate]++;
+          }
+        });
+      }
     });
     /* Detect market correlation: count coins with negative change */
     var downs = rows.filter(function(r) { return r.change != null && r.change < 0; }).length;
@@ -16151,9 +16160,19 @@ function triageUnfoldHtml(r, o){
     } else if (downs <= Math.floor(total * 0.3)) {
       marketStatus = '<span class="pf-market-status ok">● Market strong · ' + (total - downs) + '/' + total + ' up</span>';
     }
+    /* Build gate summary */
+    var gateSummary = '';
+    var gateLabels = { ticket: 'Ticket', timing: 'Timing', account: 'Account', plan: 'Plan' };
+    var gateOrder = ['timing', 'plan', 'ticket', 'account'];
+    gateOrder.forEach(function(gate) {
+      if (gateBlocks[gate] > 0) {
+        gateSummary += '<span class="pf-gate-blocker"><span class="pf-gate-label">' + gateLabels[gate] + '</span><span class="pf-gate-count">' + gateBlocks[gate] + '</span></span>';
+      }
+    });
     return '<div class="pf-health-bar"><span class="pf-dot buy"></span><span class="pf-count">' + buys + ' BUY</span>' +
       (waits ? '<span class="pf-dot wait"></span><span class="pf-count">' + waits + ' WAIT</span>' : '') +
       (nogos ? '<span class="pf-dot nogo"></span><span class="pf-count">' + nogos + ' NO-GO</span>' : '') +
+      (gateSummary ? '<span class="pf-gate-summary">' + gateSummary + '</span>' : '') +
       marketStatus + '</div>';
   }
   /* /PORTFOLIO-UPGRADES-1 */
@@ -17493,4 +17512,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d0c1dd6e754afb',t:'MTc5MjQyMzEyNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d20d206fd7c9aa',t:'MTc5MjQzNjY5NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
