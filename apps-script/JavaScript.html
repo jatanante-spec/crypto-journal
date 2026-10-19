@@ -16623,6 +16623,54 @@ function triageUnfoldHtml(r, o){
   }
 
   /**
+   * Generate sparkline SVG from hourly data
+   * Samples last 168 hours (7 days) down to 20 points
+   */
+  function generateSparkline(coin) {
+    var book = state.books && state.books[coin];
+    if (!book || !book.hourly || book.hourly.length < 24) return '';
+    
+    var hourly = book.hourly;
+    var len = hourly.length;
+    
+    // Sample last 168 hours (7 days), take every 8th bar = 21 points
+    var sampleRate = Math.floor(len / 20);
+    if (sampleRate < 1) sampleRate = 1;
+    
+    var points = [];
+    for (var i = len - 1; i >= 0 && points.length < 21; i -= sampleRate) {
+      points.unshift(Number(hourly[i]));
+    }
+    
+    if (points.length < 5) return '';
+    
+    // Calculate min/max for scaling
+    var min = Math.min.apply(null, points);
+    var max = Math.max.apply(null, points);
+    var range = max - min;
+    if (range === 0) range = 1;
+    
+    // Determine trend
+    var first = points[0];
+    var last = points[points.length - 1];
+    var change = ((last - first) / first) * 100;
+    var trendClass = change > 1 ? 'sparkline-up' : change < -1 ? 'sparkline-down' : 'sparkline-flat';
+    
+    // Generate SVG path
+    var width = 50;
+    var height = 16;
+    var pathData = '';
+    
+    for (var i = 0; i < points.length; i++) {
+      var x = (i / (points.length - 1)) * width;
+      var y = height - ((points[i] - min) / range) * (height - 2) - 1;
+      pathData += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+    }
+    
+    return '<div class="sparkline-container"><span>7d:</span><svg class="sparkline-svg" viewBox="0 0 50 16"><path class="' + trendClass + '" d="' + pathData + '"/></svg><span style="color: ' + (change > 1 ? '#3dcf8e' : change < -1 ? '#ff6b7a' : '#e6c35c') + ';">' + (change >= 0 ? '+' : '') + change.toFixed(1) + '%</span></div>';
+  }
+
+  /**
    * Calculate combined signal score (0-100)
    */
   function calcCombinedScore(coin) {
@@ -16845,7 +16893,7 @@ function triageUnfoldHtml(r, o){
         var tiles=['ticket','timing','account','plan'].map(function(k){var st=g.groups[k]||'none';return '<span class="uc-light '+gCls[st]+'" title="'+gWords[k]+': '+gMarks[st]+'"><i></i>'+shortW[k]+'</span>';}).join('');
         var sigLine='<div class="uc-l3"><span class="uc-sig"><b>'+esc(trend)+'</b> \u00b7 '+watch+'</span><span class="uc-meta">'+location+' \u00b7 '+esc(triageFreshShort(String(r.fresh&&r.fresh.label||'not checked')))+'</span>'+healthMarkup+'</div>';
         var openPart=whyOpen?whyList+'<div class="uni-actions"><div class="triage-ledger-actions">'+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+name:'Inspect '+name)+'">'+(locked?'Research':'Inspect')+'</button></div></div>':'';
-        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+(dd?'':pfContextBadge(r))+(isResearchMode()?pfTimeframeBadge(r):'')+pfBreakoutBadge(r)+pfRecoveryBadge(r)+pfMAMacdBadge(c.ticker)+'<span class="uc-fill"></span>';   // BREAKOUT-MODE-1 + RECOVERY-MODE-1   // TIMEFRAME-ALIGNMENT-1 + SCAN-RESEARCH-1   // DEEP-DIP-1 tag + PORTFOLIO-UPGRADES-1 context badge + TIMEFRAME-ALIGNMENT-1 + BREAKOUT-MODE-1 + MA-MACD-1 + CROSSOVER-DETECT-1
+        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+(dd?'':pfContextBadge(r))+(isResearchMode()?pfTimeframeBadge(r):'')+pfBreakoutBadge(r)+pfRecoveryBadge(r)+pfMAMacdBadge(c.ticker)+generateSparkline(c.ticker)+'<span class="uc-fill"></span>';   // BREAKOUT-MODE-1 + RECOVERY-MODE-1   // TIMEFRAME-ALIGNMENT-1 + SCAN-RESEARCH-1   // DEEP-DIP-1 tag + PORTFOLIO-UPGRADES-1 context badge + TIMEFRAME-ALIGNMENT-1 + BREAKOUT-MODE-1 + MA-MACD-1 + CROSSOVER-DETECT-1 + GHOST-BADGES-1
         var cls='triage-unified-row triage-combined-row uni-card uv2 uv2-'+rowStyle+' verdict-'+vc+(whyOpen?' uv2-open':'')+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+(isBreakoutRow(r)?' breakout-row':'');
         var open='<article class="'+cls+'" data-ticker="'+ticker+'" data-action="scout-why" aria-expanded="'+whyOpen+'">';
         var lockNote=locked?'<div class="uc-lock">'+reason+'</div>':'';
@@ -17436,4 +17484,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4cbc6984a98b116',t:'MTc5MjM3MDg5MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4cf990bff39ad54',t:'MTc5MjQxMDk2OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

@@ -8926,25 +8926,27 @@ p.ns-mut{margin:6px 0}
 }
 /* /RECOVERY-MODE-1 */
 
-/* MA-MACD-1 + CROSSOVER-DETECT-1 · Combined MA 20 + MACD badge styling */
+/* GHOST-BADGES-1 · Ghost badge styling (1px borders, low opacity) + Status Stripes + Sparklines */
+
+/* MA/MACD badge - ghost purple */
 #main .chip.ma-macd {
-  background: linear-gradient(135deg, rgba(61, 125, 255, 0.12), rgba(255, 149, 0, 0.12));
-  color: #9d7cff;
-  border: 1px solid rgba(157, 124, 255, 0.3);
+  background: rgba(157, 124, 255, 0.05);
+  color: #c084fc;
+  border: 1px solid rgba(157, 124, 255, 0.2);
+  backdrop-filter: blur(4px);
   font-size: 9px;
-  padding: 2px 8px;
+  padding: 2px 6px;
   border-radius: 4px;
   font-weight: 800;
   white-space: nowrap;
-  letter-spacing: 0.3px;
 }
-/* /MA-MACD-1 + CROSSOVER-DETECT-1 */
 
-/* CROSSOVER-DETECT-1 · crossover badge styling */
+/* Crossover - ghost purple (brighter) */
 #main .chip.crossover {
-  background: rgba(157, 124, 255, 0.15);
-  color: #9d7cff;
-  border: 1px solid rgba(157, 124, 255, 0.4);
+  background: rgba(157, 124, 255, 0.08);
+  color: #d8b4fe;
+  border: 1px solid rgba(157, 124, 255, 0.3);
+  backdrop-filter: blur(4px);
   font-size: 9px;
   padding: 2px 6px;
   border-radius: 4px;
@@ -8956,40 +8958,115 @@ p.ns-mut{margin:6px 0}
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
 }
-/* /CROSSOVER-DETECT-1 */
 
-/* BADGE-POPUP-1 · MFI and volume badge styling */
+/* MFI oversold - ghost green */
 #main .chip.oversold {
-  background: rgba(61, 207, 142, 0.12);
-  color: #3dcf8e;
-  border: 1px solid rgba(61, 207, 142, 0.25);
+  background: rgba(61, 207, 142, 0.05);
+  color: #34d399;
+  border: 1px solid rgba(61, 207, 142, 0.2);
+  backdrop-filter: blur(4px);
   font-size: 9px;
   padding: 2px 6px;
   border-radius: 4px;
   font-weight: 800;
   white-space: nowrap;
 }
+
+/* MFI overbought - ghost red */
 #main .chip.distribution {
-  background: rgba(255, 107, 122, 0.12);
-  color: #ff6b7a;
-  border: 1px solid rgba(255, 107, 122, 0.25);
+  background: rgba(255, 107, 122, 0.05);
+  color: #f87171;
+  border: 1px solid rgba(255, 107, 122, 0.2);
+  backdrop-filter: blur(4px);
   font-size: 9px;
   padding: 2px 6px;
   border-radius: 4px;
   font-weight: 800;
   white-space: nowrap;
 }
+
+/* Volume spike - ghost cyan */
 #main .chip.volume {
-  background: rgba(0, 217, 255, 0.12);
-  color: #00d9ff;
-  border: 1px solid rgba(0, 217, 255, 0.25);
+  background: rgba(0, 217, 255, 0.05);
+  color: #22d3ee;
+  border: 1px solid rgba(0, 217, 255, 0.2);
+  backdrop-filter: blur(4px);
   font-size: 9px;
   padding: 2px 6px;
   border-radius: 4px;
   font-weight: 800;
   white-space: nowrap;
 }
-/* /BADGE-POPUP-1 */
+
+/* Breakout - ghost green */
+#main .chip.breakout {
+  background: rgba(61, 207, 142, 0.05);
+  color: #34d399;
+  border: 1px solid rgba(61, 207, 142, 0.2);
+  backdrop-filter: blur(4px);
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Recovery - ghost red */
+#main .chip.recovery {
+  background: rgba(255, 107, 122, 0.05);
+  color: #f87171;
+  border: 1px solid rgba(255, 107, 122, 0.2);
+  backdrop-filter: blur(4px);
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* STATUS STRIPES - Left border on scout rows based on verdict */
+#main .uni-card.verdict-go {
+  border-left: 3px solid #3dcf8e !important;
+}
+#main .uni-card.verdict-wait {
+  border-left: 3px solid #e6c35c !important;
+}
+#main .uni-card.verdict-block {
+  border-left: 3px solid #ff6b7a !important;
+}
+#main .uni-card.verdict-tb {
+  border-left: 3px solid #36c5f0 !important;
+}
+
+/* SPARKLINE CONTAINER */
+#main .sparkline-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  color: #93a0c0;
+  margin-top: 6px;
+}
+#main .sparkline-svg {
+  width: 50px;
+  height: 16px;
+}
+#main .sparkline-up {
+  stroke: #3dcf8e;
+  fill: none;
+  stroke-width: 1.5;
+}
+#main .sparkline-down {
+  stroke: #ff6b7a;
+  fill: none;
+  stroke-width: 1.5;
+}
+#main .sparkline-flat {
+  stroke: #e6c35c;
+  fill: none;
+  stroke-width: 1.5;
+}
+/* /GHOST-BADGES-1 */
 
 /* SELL-50-BUTTON-1 · Understated link style for partial position exit */
 #main .btn-sell-50 {
@@ -9313,4 +9390,4 @@ p.ns-mut{margin:6px 0}
 /* /BADGE-POPUP-1-INLINE */
 
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4cba8981e134f47',t:'MTc5MjM2OTY2Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4cf993d5879ad54',t:'MTc5MjQxMDk3Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
