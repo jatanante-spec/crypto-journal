@@ -9450,34 +9450,32 @@ p.ns-mut{margin:6px 0}
 
 /* CONFLUENCE-1 · Confluence scoring badge + popup */
 #main .conf-badge-btn {
-  background: #1a2238;
-  border: 1px solid #252d45;
-  padding: 6px 12px;
-  border-radius: 8px;
-  text-align: center;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
+  white-space: nowrap;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   flex-shrink: 0;
 }
 #main .conf-badge-btn:hover {
-  border-color: #3b82f6;
-  background: #1e2844;
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.5);
+  color: #bfdbfe;
 }
-#main .conf-score-val {
-  font-size: 16px;
-  font-weight: 800;
-  line-height: 1;
-  margin-bottom: 2px;
-}
-#main .conf-score-lbl {
-  font-size: 9px;
-  color: #8b92a8;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-#main .conf-score-val.high { color: #10b981; }
-#main .conf-score-val.mid { color: #f59e0b; }
-#main .conf-score-val.low { color: #ef4444; }
+#main .conf-badge-btn .conf-val { font-weight: 800; }
+#main .conf-badge-btn .conf-lbl { color: #8b92a8; font-size: 9px; }
+#main .conf-badge-btn.high { background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25); color: #6ee7b7; }
+#main .conf-badge-btn.high:hover { background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.5); }
+#main .conf-badge-btn.low { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.25); color: #fca5a5; }
+#main .conf-badge-btn.low:hover { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.5); }
 
 /* Confluence Popup Overlay */
 #main .conf-popup-overlay {
@@ -9636,3 +9634,4 @@ p.ns-mut{margin:6px 0}
 </style>
 
 
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d387b00da30f12',t:'MTc5MjQ1MjIwMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
