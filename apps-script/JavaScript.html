@@ -16745,19 +16745,21 @@ function triageUnfoldHtml(r, o){
     container.innerHTML = html;
     document.body.appendChild(container);
     
-    // Position below badge
+    // Position below badge using fixed positioning (relative to viewport)
     var popup = document.getElementById('inline-popup');
     var badgeRect = badgeElement.getBoundingClientRect();
-    popup.style.position = 'absolute';
-    popup.style.top = (badgeRect.bottom + window.scrollY + 4) + 'px';
-    popup.style.left = (badgeRect.left + window.scrollX) + 'px';
+    popup.style.position = 'fixed';
+    popup.style.top = (badgeRect.bottom + 4) + 'px';
+    popup.style.left = badgeRect.left + 'px';
     popup.style.zIndex = '1001';
     
     // Adjust if goes off right edge
-    var popupRect = popup.getBoundingClientRect();
-    if (popupRect.right > window.innerWidth) {
-      popup.style.left = (window.innerWidth - popupRect.width - 8) + 'px';
-    }
+    setTimeout(function() {
+      var popupRect = popup.getBoundingClientRect();
+      if (popupRect.right > window.innerWidth - 8) {
+        popup.style.left = (window.innerWidth - popupRect.width - 8) + 'px';
+      }
+    }, 10);
     
     // Close when clicking outside
     setTimeout(function() {
@@ -17427,4 +17429,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4cba843cc78eb18',t:'MTc5MjM2OTY0OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4cbb653d810bdc4',t:'MTc5MjM3MDIyNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
