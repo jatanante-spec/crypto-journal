@@ -13793,6 +13793,15 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
       '</div><span id="triage-scan-status" hidden></span></div>';
   }
   /* one menu implementation, two hosts: coin focus and the Scout page */
+  // CONFLUENCE-1 · Inject popup overlay into page
+  function injectConfluencePopup() {
+    if (!document.getElementById('conf-popup-overlay')) {
+      var div = document.createElement('div');
+      div.innerHTML = CONFLUENCE_POPUP_HTML;
+      document.body.appendChild(div.firstChild);
+    }
+  }
+
   function triagePopContent(kind,withDensity){
     function item(act,attr,val,label,count,on){
       return '<button type="button" role="menuitemradio" aria-checked="'+(on?'true':'false')+'" class="triage-focus-popitem'+(on?' on':'')+
@@ -16921,7 +16930,7 @@ function triageUnfoldHtml(r, o){
         var tiles=['ticket','timing','account','plan'].map(function(k){var st=g.groups[k]||'none';return '<span class="uc-light '+gCls[st]+'" title="'+gWords[k]+': '+gMarks[st]+'"><i></i>'+shortW[k]+'</span>';}).join('');
         var sigLine='<div class="uc-l3"><span class="uc-sig"><b>'+esc(trend)+'</b> \u00b7 '+watch+'</span><span class="uc-meta">'+location+' \u00b7 '+esc(triageFreshShort(String(r.fresh&&r.fresh.label||'not checked')))+'</span>'+healthMarkup+'</div>';
         var openPart=whyOpen?whyList+'<div class="uni-actions"><div class="triage-ledger-actions">'+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+name:'Inspect '+name)+'">'+(locked?'Research':'Inspect')+'</button></div></div>':'';
-        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+(dd?'':pfContextBadge(r))+(isResearchMode()?pfTimeframeBadge(r):'')+pfBreakoutBadge(r)+pfRecoveryBadge(r)+pfMAMacdBadge(c.ticker)+generateSparkline(c.ticker)+'<span class="uc-fill"></span>';   // BREAKOUT-MODE-1 + RECOVERY-MODE-1   // TIMEFRAME-ALIGNMENT-1 + SCAN-RESEARCH-1   // DEEP-DIP-1 tag + PORTFOLIO-UPGRADES-1 context badge + TIMEFRAME-ALIGNMENT-1 + BREAKOUT-MODE-1 + MA-MACD-1 + CROSSOVER-DETECT-1 + GHOST-BADGES-1
+        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+(dd?'':pfContextBadge(r))+(isResearchMode()?pfTimeframeBadge(r):'')+pfBreakoutBadge(r)+pfRecoveryBadge(r)+pfMAMacdBadge(c.ticker)+generateSparkline(c.ticker)+confluenceBadgeHtml(c.ticker)+'<span class="uc-fill"></span>';   // BREAKOUT-MODE-1 + RECOVERY-MODE-1   // TIMEFRAME-ALIGNMENT-1 + SCAN-RESEARCH-1   // DEEP-DIP-1 tag + PORTFOLIO-UPGRADES-1 context badge + TIMEFRAME-ALIGNMENT-1 + BREAKOUT-MODE-1 + MA-MACD-1 + CROSSOVER-DETECT-1 + GHOST-BADGES-1
         var cls='triage-unified-row triage-combined-row uni-card uv2 uv2-'+rowStyle+' verdict-'+vc+(whyOpen?' uv2-open':'')+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+(isBreakoutRow(r)?' breakout-row':'');
         var open='<article class="'+cls+'" data-ticker="'+ticker+'" data-action="scout-why" aria-expanded="'+whyOpen+'">';
         var lockNote=locked?'<div class="uc-lock">'+reason+'</div>':'';
@@ -17148,6 +17157,7 @@ function triageUnfoldHtml(r, o){
     var html=triageResultsHtml(rows,findRows);el.innerHTML=html||'<p class="triage-empty"><b>No records match this view.</b><br>Change the scope, search or filter. No result is also useful information.</p>';
     el.scrollTop=oldScroll;
     attachBadgeClickListeners();
+    injectConfluencePopup();
     var toastEl=document.getElementById('triage-toast');
     if(toastEl){toastEl.textContent=watchlistToast||'';}
     var toastRow=document.getElementById('triage-toast-row');
@@ -17512,4 +17522,221 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d20d206fd7c9aa',t:'MTc5MjQzNjY5NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+
+  
+  /**
+   * CONFLUENCE-1 · Multi-indicator agreement scoring
+   * Groups: Trend (Ichimoku+SAR+MA20), Momentum (Stoch+RSI+MACD), Volatility (BB+ATR), Volume (MFI+Vol)
+   * Each group scores 0-3 or 0-2. Final = average across all groups (0-10 scale).
+   */
+  function calcConfluence(coin) {
+    var book = state.books && state.books[coin];
+    if (!book || !book.market || !book.market.price) return null;
+    
+    var closes = book.closes || [];
+    var hourly = book.hourly || [];
+    var m = book.market;
+    var price = Number(m.price);
+    if (!price || price <= 0) return null;
+    
+    var maMacd = calcMAMacd(coin);
+    var mfi = calcMFI(coin);
+    var volume = calcVolumeSpike(coin);
+    
+    // Trend Group (0-3): Ichimoku + SAR + MA20
+    var trendScore = 0;
+    if (maMacd && maMacd.maAbove) trendScore += 1;
+    if (hourly.length >= 20) {
+      var sarLow = Math.min.apply(null, hourly.slice(-20));
+      if (price > sarLow) trendScore += 1;
+    }
+    if (hourly.length >= 52) {
+      var ichiHigh = Math.max.apply(null, hourly.slice(-52));
+      var ichiLow = Math.min.apply(null, hourly.slice(-52));
+      var ichiMid = (ichiHigh + ichiLow) / 2;
+      if (price > ichiMid) trendScore += 1;
+    }
+    
+    // Momentum Group (0-3): Stoch + RSI + MACD
+    var momentumScore = 0;
+    if (closes.length >= 14) {
+      var rsi = calcConfluenceRSI(closes, 14);
+      if (rsi >= 40 && rsi <= 70) momentumScore += 1;
+      else if (rsi < 40) momentumScore += 0.5;
+    }
+    if (maMacd && maMacd.macdBullish) momentumScore += 1;
+    if (hourly.length >= 21) {
+      var stochHigh = Math.max.apply(null, hourly.slice(-21));
+      var stochLow = Math.min.apply(null, hourly.slice(-21));
+      var stochK = ((price - stochLow) / (stochHigh - stochLow || 1)) * 100;
+      if (stochK >= 20 && stochK <= 80) momentumScore += 1;
+      else if (stochK < 20) momentumScore += 0.5;
+    }
+    
+    // Volatility Group (0-2): BB + ATR
+    var volatilityScore = 0;
+    if (closes.length >= 20) {
+      var bbSma = closes.slice(-20).reduce(function(a, b) { return a + b; }, 0) / 20;
+      var bbStd = Math.sqrt(closes.slice(-20).reduce(function(a, b) { return a + Math.pow(b - bbSma, 2); }, 0) / 20);
+      var bbUpper = bbSma + 2 * bbStd;
+      var bbLower = bbSma - 2 * bbStd;
+      var bbPctB = ((price - bbLower) / (bbUpper - bbLower || 1)) * 100;
+      if (bbPctB >= 20 && bbPctB <= 50) volatilityScore += 1;
+      else if (bbPctB < 20) volatilityScore += 0.5;
+    }
+    if (m.atr14 && m.atr14 > 0) {
+      var atrPct = (m.atr14 / price) * 100;
+      if (atrPct >= 1 && atrPct <= 5) volatilityScore += 1;
+      else volatilityScore += 0.5;
+    }
+    
+    // Volume Group (0-2): MFI + Volume Spike
+    var volumeScore = 0;
+    if (mfi && mfi.value < 30) volumeScore += 1;
+    else if (mfi && mfi.value < 70) volumeScore += 0.5;
+    if (volume && volume.isSpike) volumeScore += 1;
+    else if (volume && volume.ratio >= 0.8) volumeScore += 0.5;
+    
+    var totalScore = trendScore + momentumScore + volatilityScore + volumeScore;
+    
+    var verdict, verdictClass, verdictIcon;
+    if (totalScore >= 8) { verdict = 'STRONG BUY'; verdictClass = 'buy'; verdictIcon = '▲'; }
+    else if (totalScore >= 6) { verdict = 'LEAN BUY'; verdictClass = 'buy'; verdictIcon = '▲'; }
+    else if (totalScore >= 4) { verdict = 'WAIT'; verdictClass = 'wait'; verdictIcon = '◆'; }
+    else { verdict = 'NO-GO'; verdictClass = 'nogo'; verdictIcon = '▼'; }
+    
+    var reasons = [];
+    if (trendScore < 3) reasons.push('Trend weak (' + trendScore.toFixed(1) + '/3)');
+    if (momentumScore < 3) reasons.push('Momentum weak (' + momentumScore.toFixed(1) + '/3)');
+    if (volatilityScore < 2) reasons.push('Volatility mixed (' + volatilityScore.toFixed(1) + '/2)');
+    if (volumeScore < 2) reasons.push('Volume low (' + volumeScore.toFixed(1) + '/2)');
+    var reason = reasons.length ? reasons.join(', ') : 'All groups aligned';
+    
+    var ichiMid = hourly.length >= 52 ? (Math.max.apply(null, hourly.slice(-52)) + Math.min.apply(null, hourly.slice(-52))) / 2 : price;
+    var sarLow = hourly.length >= 20 ? Math.min.apply(null, hourly.slice(-20)) : price;
+    
+    return {
+      total: totalScore, trend: trendScore, momentum: momentumScore,
+      volatility: volatilityScore, volume: volumeScore,
+      verdict: verdict, verdictClass: verdictClass, verdictIcon: verdictIcon, reason: reason,
+      groups: [
+        { name: 'Trend Group', icon: 'T', iconClass: 'trend', score: trendScore, max: 3, cls: trendScore >= 2 ? 'high' : trendScore >= 1 ? 'mid' : 'low',
+          indicators: [
+            { label: 'Ichimoku ' + (price > ichiMid ? '↑' : '↓'), cls: price > ichiMid ? 'bullish' : 'bearish' },
+            { label: 'SAR ' + (price > sarLow ? '↑' : '↓'), cls: price > sarLow ? 'bullish' : 'bearish' },
+            { label: 'MA20 ' + (maMacd && maMacd.maAbove ? '↑' : '↓'), cls: maMacd && maMacd.maAbove ? 'bullish' : 'bearish' }
+          ]
+        },
+        { name: 'Momentum Group', icon: 'M', iconClass: 'momentum', score: momentumScore, max: 3, cls: momentumScore >= 2 ? 'high' : momentumScore >= 1 ? 'mid' : 'low',
+          indicators: [
+            { label: 'Stoch', cls: momentumScore >= 2 ? 'bullish' : momentumScore >= 1 ? 'neutral' : 'bearish' },
+            { label: 'RSI', cls: momentumScore >= 2 ? 'bullish' : momentumScore >= 1 ? 'neutral' : 'bearish' },
+            { label: 'MACD ' + (maMacd && maMacd.macdBullish ? '↑' : '↓'), cls: maMacd && maMacd.macdBullish ? 'bullish' : 'bearish' }
+          ]
+        },
+        { name: 'Volatility Group', icon: 'V', iconClass: 'volatility', score: volatilityScore, max: 2, cls: volatilityScore >= 1.5 ? 'high' : volatilityScore >= 0.5 ? 'mid' : 'low',
+          indicators: [
+            { label: 'BB', cls: volatilityScore >= 1 ? 'bullish' : 'neutral' },
+            { label: 'ATR', cls: volatilityScore >= 1.5 ? 'bullish' : 'neutral' }
+          ]
+        },
+        { name: 'Volume Group', icon: 'V', iconClass: 'volume', score: volumeScore, max: 2, cls: volumeScore >= 1.5 ? 'high' : volumeScore >= 0.5 ? 'mid' : 'low',
+          indicators: [
+            { label: 'MFI ' + (mfi ? mfi.value.toFixed(0) : '—'), cls: mfi && mfi.value < 30 ? 'bullish' : mfi && mfi.value < 70 ? 'neutral' : 'bearish' },
+            { label: 'Vol ' + (volume ? volume.ratio.toFixed(1) + 'x' : '—'), cls: volume && volume.isSpike ? 'bullish' : volume && volume.ratio >= 0.8 ? 'neutral' : 'bearish' }
+          ]
+        }
+      ]
+    };
+  }
+  
+  function calcConfluenceRSI(closes, period) {
+    if (closes.length < period + 1) return 50;
+    var gains = 0, losses = 0;
+    for (var i = closes.length - period; i < closes.length; i++) {
+      var change = closes[i] - closes[i - 1];
+      if (change > 0) gains += change;
+      else losses -= change;
+    }
+    var avgGain = gains / period;
+    var avgLoss = losses / period;
+    if (avgLoss === 0) return 100;
+    var rs = avgGain / avgLoss;
+    return 100 - (100 / (1 + rs));
+  }
+
+/**
+   * CONFLUENCE-1 · Popup open/close handlers
+   */
+  function openConfluencePopup(coin, confData) {
+    if (!confData) return;
+    
+    var overlay = document.getElementById('conf-popup-overlay');
+    var title = document.getElementById('conf-popup-title');
+    var body = document.getElementById('conf-popup-body');
+    
+    title.textContent = coin + ' — Confluence Breakdown';
+    
+    var html = '<div class="conf-score-summary">' +
+      '<span class="conf-score-summary-label">Confluence Score:</span>' +
+      '<span class="conf-score-summary-val ' + (confData.total >= 6 ? 'high' : confData.total >= 4 ? 'mid' : 'low') + '">' + confData.total.toFixed(1) + '/10</span>' +
+      '</div>';
+    
+    confData.groups.forEach(function(g) {
+      var pct = (g.score / g.max) * 100;
+      html += '<div class="conf-group-row">' +
+        '<div class="conf-group-top">' +
+          '<div class="conf-group-name">' +
+            '<div class="conf-group-icon ' + g.iconClass + '">' + g.icon + '</div>' +
+            g.name +
+          '</div>' +
+          '<div class="conf-group-val ' + g.cls + '">' + g.score.toFixed(1) + '/' + g.max.toFixed(1) + '</div>' +
+        '</div>' +
+        '<div class="conf-indicators">';
+      g.indicators.forEach(function(ind) {
+        html += '<span class="conf-ind ' + ind.cls + '">' + ind.label + '</span>';
+      });
+      html += '</div>' +
+        '<div class="conf-bar"><div class="conf-bar-fill ' + g.cls + '" style="width:' + pct + '%"></div></div>' +
+      '</div>';
+    });
+    
+    html += '<div class="conf-popup-verdict ' + confData.verdictClass + '">' +
+      '<span class="conf-popup-verdict-icon">' + confData.verdictIcon + '</span>' +
+      '<span>' + confData.verdict + ' — ' + confData.reason + '</span>' +
+    '</div>';
+    
+    body.innerHTML = html;
+    overlay.classList.add('active');
+  }
+  
+  function closeConfluencePopup(event) {
+    if (event && event.target !== event.currentTarget && !event.target.classList.contains('conf-popup-close')) return;
+    var overlay = document.getElementById('conf-popup-overlay');
+    if (overlay) overlay.classList.remove('active');
+  }
+
+  // CONFLUENCE-1 · Popup overlay HTML
+  
+  /**
+   * CONFLUENCE-1 · Generate confluence badge HTML for coin row
+   */
+  function confluenceBadgeHtml(coin) {
+    var conf = calcConfluence(coin);
+    if (!conf) return '';
+    var scoreClass = conf.total >= 6 ? 'high' : conf.total >= 4 ? 'mid' : 'low';
+    return '<div class="conf-badge-btn" onclick="openConfluencePopup(\'' + coin + '\', calcConfluence(\'' + coin + '\'))">' +
+      '<div class="conf-score-val ' + scoreClass + '">' + conf.total.toFixed(1) + '</div>' +
+      '<div class="conf-score-lbl">Conf</div>' +
+    '</div>';
+  }
+var CONFLUENCE_POPUP_HTML = '<div class="conf-popup-overlay" id="conf-popup-overlay" onclick="closeConfluencePopup(event)">' +
+    '<div class="conf-popup" onclick="event.stopPropagation()">' +
+      '<div class="conf-popup-header">' +
+        '<div class="conf-popup-title" id="conf-popup-title">Confluence Breakdown</div>' +
+        '<button class="conf-popup-close" onclick="closeConfluencePopup()">✕</button>' +
+      '</div>' +
+      '<div class="conf-popup-body" id="conf-popup-body"></div>' +
+    '</div>' +
+  '</div>';
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d344479ca98cad',t:'MTc5MjQ0OTQzOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

@@ -9449,4 +9449,189 @@ p.ns-mut{margin:6px 0}
 /* /VERDICT-MINI-1 */
 
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d20c8ac92ac9aa',t:'MTc5MjQzNjY3MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+
+/* CONFLUENCE-1 · Confluence scoring badge + popup */
+#main .conf-badge-btn {
+  background: #1a2238;
+  border: 1px solid #252d45;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+#main .conf-badge-btn:hover {
+  border-color: #3b82f6;
+  background: #1e2844;
+}
+#main .conf-score-val {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+#main .conf-score-lbl {
+  font-size: 9px;
+  color: #8b92a8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+#main .conf-score-val.high { color: #10b981; }
+#main .conf-score-val.mid { color: #f59e0b; }
+#main .conf-score-val.low { color: #ef4444; }
+
+/* Confluence Popup Overlay */
+#main .conf-popup-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 14, 26, 0.7);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+#main .conf-popup-overlay.active { display: flex; }
+
+/* Confluence Popup */
+#main .conf-popup {
+  background: #141a2e;
+  border: 1px solid #252d45;
+  border-radius: 12px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+#main .conf-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #252d45;
+}
+#main .conf-popup-title { font-size: 14px; font-weight: 800; }
+#main .conf-popup-close {
+  background: none;
+  border: none;
+  color: #8b92a8;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  line-height: 1;
+}
+#main .conf-popup-close:hover { color: #e4e8f1; background: #1a2238; }
+
+#main .conf-popup-body { padding: 16px 18px; }
+
+/* Score Summary */
+#main .conf-score-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px;
+  margin-bottom: 14px;
+  background: #1a2238;
+  border-radius: 8px;
+}
+#main .conf-score-summary-label { font-size: 12px; color: #8b92a8; }
+#main .conf-score-summary-val { font-size: 22px; font-weight: 900; }
+#main .conf-score-summary-val.high { color: #10b981; }
+#main .conf-score-summary-val.mid { color: #f59e0b; }
+#main .conf-score-summary-val.low { color: #ef4444; }
+
+/* Group Row in Popup */
+#main .conf-group-row {
+  background: #1a2238;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+#main .conf-group-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+#main .conf-group-name {
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#main .conf-group-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+}
+#main .conf-group-icon.trend { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+#main .conf-group-icon.momentum { background: rgba(6, 182, 212, 0.15); color: #06b6d4; }
+#main .conf-group-icon.volatility { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+#main .conf-group-icon.volume { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+
+#main .conf-group-val { font-size: 13px; font-weight: 800; }
+#main .conf-group-val.high { color: #10b981; }
+#main .conf-group-val.mid { color: #f59e0b; }
+#main .conf-group-val.low { color: #ef4444; }
+
+#main .conf-indicators {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+#main .conf-ind {
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+}
+#main .conf-ind.bullish { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+#main .conf-ind.bearish { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+#main .conf-ind.neutral { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+
+#main .conf-bar {
+  height: 5px;
+  background: #0a0e1a;
+  border-radius: 3px;
+  overflow: hidden;
+}
+#main .conf-bar-fill { height: 100%; border-radius: 3px; }
+#main .conf-bar-fill.high { background: #10b981; }
+#main .conf-bar-fill.mid { background: #f59e0b; }
+#main .conf-bar-fill.low { background: #ef4444; }
+
+/* Final Verdict */
+#main .conf-popup-verdict {
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.6;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 4px;
+}
+#main .conf-popup-verdict.buy { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); color: #10b981; }
+#main .conf-popup-verdict.wait { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); color: #f59e0b; }
+#main .conf-popup-verdict.nogo { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; }
+
+#main .conf-popup-verdict-icon { font-size: 16px; line-height: 1; flex-shrink: 0; }
+/* /CONFLUENCE-1 */
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d343b28f328cad',t:'MTc5MjQ0OTQxNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
