@@ -13794,6 +13794,17 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
   }
   /* one menu implementation, two hosts: coin focus and the Scout page */
   // CONFLUENCE-1 · Inject popup overlay into page
+  var CONFLUENCE_POPUP_HTML = '<div class="conf-popup-overlay" id="conf-popup-overlay" onclick="closeConfluencePopup(event)">' +
+    '<div class="conf-popup" onclick="event.stopPropagation()">' +
+      '<div class="conf-popup-header">' +
+        '<div class="conf-popup-title" id="conf-popup-title">Confluence Breakdown</div>' +
+        '<button class="conf-popup-close" onclick="closeConfluencePopup()">✕</button>' +
+      '</div>' +
+      '<div class="conf-popup-body" id="conf-popup-body"></div>' +
+    '</div>' +
+  '</div>';
+
+
   function injectConfluencePopup() {
     if (!document.getElementById('conf-popup-overlay')) {
       var div = document.createElement('div');
@@ -17740,14 +17751,5 @@ function triageProposalOpen(ticker){
 </script>
 
   
-var CONFLUENCE_POPUP_HTML = '<div class="conf-popup-overlay" id="conf-popup-overlay" onclick="closeConfluencePopup(event)">' +
-    '<div class="conf-popup" onclick="event.stopPropagation()">' +
-      '<div class="conf-popup-header">' +
-        '<div class="conf-popup-title" id="conf-popup-title">Confluence Breakdown</div>' +
-        '<button class="conf-popup-close" onclick="closeConfluencePopup()">✕</button>' +
-      '</div>' +
-      '<div class="conf-popup-body" id="conf-popup-body"></div>' +
-    '</div>' +
-  '</div>';
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d392226fec9b32',t:'MTc5MjQ1MjYyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d39cd38fc014fb',t:'MTc5MjQ1MzA2Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
