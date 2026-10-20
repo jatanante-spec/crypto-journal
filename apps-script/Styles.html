@@ -9415,37 +9415,42 @@ p.ns-mut{margin:6px 0}
 }
 /* /BADGE-POPUP-1-INLINE */
 
-/* VERDICT-MINI-1 · Triangle + tiny label verdict redesign */
+/* VERDICT-MINI-1 · Compact inline verdict */
 #main .verdict-mini {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
+  flex-direction: row;
   align-items: center;
-  gap: 2px;
-  min-width: 36px;
-  padding: 6px 10px;
-  align-self: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
   flex-shrink: 0;
-  margin-left: auto;
 }
 #main .verdict-mini .triangle {
-  font-size: 18px !important;
+  font-size: 12px;
   line-height: 1;
-  font-weight: 900;
+  color: #f59e0b;
 }
 #main .verdict-mini .label {
-  font-size: 10px !important;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.5px;
+  color: #f59e0b;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+#main .verdict-mini.go {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.25);
 }
 #main .verdict-mini.go .triangle,
-#main .verdict-mini.go .label { color: #3dcf8e; }
-#main .verdict-mini.wait .triangle,
-#main .verdict-mini.wait .label { color: #e6c35c; }
+#main .verdict-mini.go .label { color: #10b981; }
+#main .verdict-mini.block {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+}
 #main .verdict-mini.block .triangle,
-#main .verdict-mini.block .label { color: #ff6b7a; }
-#main .verdict-mini.tb .triangle,
-#main .verdict-mini.tb .label { color: #36c5f0; }
+#main .verdict-mini.block .label { color: #ef4444; }
 /* /VERDICT-MINI-1 */
 
 /* CONFLUENCE-1 · Confluence scoring badge + popup */
@@ -9668,4 +9673,4 @@ p.ns-mut{margin:6px 0}
 </style>
 
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d7c9dddec65395',t:'MTc5MjQ5Njg1NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d7dacdde6ab0ec',t:'MTc5MjQ5NzU0OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
