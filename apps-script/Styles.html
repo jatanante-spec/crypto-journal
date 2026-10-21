@@ -8772,6 +8772,9 @@ p.ns-mut{margin:6px 0}
   background: var(--panel-2, #182338);
   border-bottom: 1px solid var(--border, #243354);
   font-size: 10px;
+  white-space: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 #main .pf-dot {
   width: 7px;
@@ -8785,11 +8788,13 @@ p.ns-mut{margin:6px 0}
 #main .pf-count {
   font-weight: 700;
   color: var(--text, #eef3fb);
+  flex-shrink: 0;
 }
 #main .pf-market-status {
   margin-left: auto;
   font-weight: 700;
   font-size: 9px;
+  flex-shrink: 0;
 }
 #main .pf-market-status.weak { color: var(--no, #ff718e); }
 #main .pf-market-status.ok { color: var(--go, #3ddc97); }
@@ -9699,8 +9704,9 @@ p.ns-mut{margin:6px 0}
 #main .conf-btn-apply:hover { background: #1a8cd8; }
 #main .conf-btn-apply:disabled { background: #30363d; color: #8b949e; cursor: not-allowed; }
 #main .pf-confluence-btn {
-  margin-left: auto; background: transparent; border: 1px solid #30363d; color: #8b949e;
-  padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;
+  margin-left: 4px; background: transparent; border: 1px solid #30363d; color: #8b949e;
+  padding: 2px 6px; border-radius: 4px; font-size: 10px; cursor: pointer;
+  flex-shrink: 0; white-space: nowrap;
 }
 #main .pf-confluence-btn:hover { border-color: #1d9bf0; color: #1d9bf0; }
 /* /CONFLUENCE-MODAL-1 */
@@ -9742,3 +9748,4 @@ p.ns-mut{margin:6px 0}
 </style>
 
 
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4e0aaac192c0ab7',t:'MTc5MjU4OTk0OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
