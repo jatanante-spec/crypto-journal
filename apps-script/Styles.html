@@ -9636,6 +9636,75 @@ p.ns-mut{margin:6px 0}
 #main .conf-popup-verdict-icon { font-size: 16px; line-height: 1; flex-shrink: 0; }
 /* /CONFLUENCE-1 */
 
+/* CONFLUENCE-MODAL-1 · Settings modal */
+#main .conf-modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.75); z-index: 1000;
+  display: none; align-items: center; justify-content: center;
+}
+#main .conf-modal-overlay.active { display: flex; }
+#main .conf-modal {
+  background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+  padding: 24px; width: 90%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+}
+#main .conf-modal-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+}
+#main .conf-modal-header h3 { font-size: 16px; font-weight: 700; color: #1d9bf0; margin: 0; }
+#main .conf-modal-close {
+  background: transparent; border: none; color: #8b949e; font-size: 22px; cursor: pointer; line-height: 1;
+  padding: 4px 8px; border-radius: 4px;
+}
+#main .conf-modal-close:hover { color: #e7e9ea; background: #21262d; }
+#main .conf-modal-impact {
+  display: flex; justify-content: space-around; background: #0f1419; border-radius: 6px; padding: 10px 12px; margin-bottom: 16px;
+}
+#main .conf-impact-item { text-align: center; }
+#main .conf-impact-label { font-size: 10px; color: #8b949e; text-transform: uppercase; }
+#main .conf-impact-value { font-size: 18px; font-weight: 700; margin-top: 2px; }
+#main .conf-impact-value.conf-buy { color: #3fb950; }
+#main .conf-impact-value.conf-wait { color: #d29922; }
+#main .conf-impact-value.conf-change { color: #1d9bf0; font-size: 14px; }
+#main .conf-modal-controls { margin-bottom: 16px; }
+#main .conf-control-row {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+}
+#main .conf-control-row label { font-size: 12px; color: #8b949e; min-width: 110px; }
+#main .conf-control-row input[type="range"] { flex: 1; accent-color: #1d9bf0; }
+#main .conf-control-value { font-size: 14px; font-weight: 700; color: #1d9bf0; min-width: 36px; text-align: right; }
+#main .conf-checkbox-row { gap: 8px; }
+#main .conf-checkbox-row label { min-width: auto; font-size: 13px; color: #e7e9ea; cursor: pointer; }
+#main .conf-checkbox-row input { width: 16px; height: 16px; accent-color: #1d9bf0; }
+#main .conf-analysis-box {
+  background: #0f1419; border: 1px solid #30363d; border-radius: 8px; padding: 14px; margin-bottom: 16px;
+}
+#main .conf-analysis-title { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+#main .conf-analysis-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 12px; }
+#main .conf-analysis-label { color: #8b949e; }
+#main .conf-analysis-value { font-weight: 600; color: #e7e9ea; }
+#main .conf-analysis-value.conf-highlight { color: #1d9bf0; }
+#main .conf-recommendation-box {
+  background: rgba(29,155,240,0.08); border-left: 3px solid #1d9bf0; border-radius: 4px; padding: 12px 14px; margin-bottom: 16px;
+}
+#main .conf-rec-title { font-size: 11px; color: #58a6ff; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 600; }
+#main .conf-rec-text { font-size: 12px; color: #e7e9ea; line-height: 1.5; }
+#main .conf-rec-text strong { color: #58a6ff; }
+#main .conf-modal-actions { display: flex; gap: 8px; }
+#main .conf-btn {
+  flex: 1; padding: 10px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: none;
+}
+#main .conf-btn-cancel { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
+#main .conf-btn-cancel:hover { background: #30363d; color: #e7e9ea; }
+#main .conf-btn-apply { background: #1d9bf0; color: white; }
+#main .conf-btn-apply:hover { background: #1a8cd8; }
+#main .conf-btn-apply:disabled { background: #30363d; color: #8b949e; cursor: not-allowed; }
+#main .pf-confluence-btn {
+  margin-left: auto; background: transparent; border: 1px solid #30363d; color: #8b949e;
+  padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;
+}
+#main .pf-confluence-btn:hover { border-color: #1d9bf0; color: #1d9bf0; }
+/* /CONFLUENCE-MODAL-1 */
+
 
 /* ROW-LAYOUT-E-1 · Two-row layout with verdict outside */
 #main .triage-compact-page .uv2 {
@@ -9673,4 +9742,3 @@ p.ns-mut{margin:6px 0}
 </style>
 
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d7dacdde6ab0ec',t:'MTc5MjQ5NzU0OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

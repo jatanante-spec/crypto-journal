@@ -12690,6 +12690,7 @@
   /* SCOUT-HUB-1 · how the Scout screen happens to be arranged right now. None of it is
      persisted, and none of it touches trading, sizing, risk or verdicts. */
   var triageEdit=false,triageRemoved=null,triageExpanded='';
+  var confluenceThresholds = { buy: 6, strongBuy: 8, groups: 4 }; // CONFLUENCE-MODAL-1
   function triageBook(ticker){return ticker===state.settings.coinTicker?{market:state.market,closes:state.closes,hourly:state.hourly,hourlyAts:state.hourlyAts,hourlyVolumes:state.hourlyVolumes,sizer:state.sizer}:state.books&&state.books[ticker]||{market:{},closes:[],hourly:[],hourlyAts:[],hourlyVolumes:[],sizer:{}};}
   function triageFreshness(book){var m=book.market||{},at=Date.parse(m.lastFetchedAt),age=Date.now()-at,status=String(m.scoutPeekStatus||''),failed=status==='failed',pending=status==='pending';return {stale:failed||pending||!(Number(m.price)>0)||!isFinite(at)||age<0||age>=STALE_MS,age:age,label:failed?'Refresh failed · cached data withheld':pending?'Refresh pending · cached data withheld':!isFinite(at)||!(Number(m.price)>0)?'Not fetched':age<0?'Invalid timestamp':age>=STALE_MS?'Stale '+ageLabel(age):ageLabel(age)};}
   /* SC1 \u2014 Scout's early warning, in the Timing gate's own words. The position words are the labels Market
@@ -13805,6 +13806,181 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
   '</div>';
 
 
+  // CONFLUENCE-MODAL-1 · Settings modal with algorithm
+  var CONFLUENCE_MODAL_HTML = '<div class="conf-modal-overlay" id="conf-modal-overlay">' +
+    '<div class="conf-modal">' +
+      '<div class="conf-modal-header">' +
+        '<h3>Confluence Settings</h3>' +
+        '<button class="conf-modal-close" data-action="close-confluence-modal">×</button>' +
+      '</div>' +
+      '<div class="conf-modal-impact" id="conf-modal-impact">' +
+        '<div class="conf-impact-item"><div class="conf-impact-label">BUYs</div><div class="conf-impact-value conf-buy" id="conf-impact-buys">0</div></div>' +
+        '<div class="conf-impact-item"><div class="conf-impact-label">WAITs</div><div class="conf-impact-value conf-wait" id="conf-impact-waits">0</div></div>' +
+        '<div class="conf-impact-item"><div class="conf-impact-label">Change</div><div class="conf-impact-value conf-change" id="conf-impact-change">+0</div></div>' +
+      '</div>' +
+      '<div class="conf-modal-controls">' +
+        '<div class="conf-control-row"><label>BUY threshold</label><input type="range" id="conf-buy-threshold" min="4" max="8" value="5" step="1"><span class="conf-control-value" id="conf-buy-threshold-val">5/10</span></div>' +
+        '<div class="conf-control-row"><label>STRONG BUY</label><input type="range" id="conf-strong-buy" min="6" max="10" value="8" step="1"><span class="conf-control-value" id="conf-strong-buy-val">8/10</span></div>' +
+        '<div class="conf-control-row"><label>Groups required</label><input type="range" id="conf-groups-required" min="2" max="4" value="3" step="1"><span class="conf-control-value" id="conf-groups-required-val">3/4</span></div>' +
+        '<div class="conf-control-row conf-checkbox-row"><input type="checkbox" id="conf-weight-trend" checked><label for="conf-weight-trend">Weight Trend 1.5x</label></div>' +
+      '</div>' +
+      '<div class="conf-analysis-box">' +
+        '<div class="conf-analysis-title">Market Analysis</div>' +
+        '<div class="conf-analysis-row"><span class="conf-analysis-label">Market regime</span><span class="conf-analysis-value" id="conf-analysis-regime">—</span></div>' +
+        '<div class="conf-analysis-row"><span class="conf-analysis-label">Trend alignment</span><span class="conf-analysis-value" id="conf-analysis-trend">—</span></div>' +
+        '<div class="conf-analysis-row"><span class="conf-analysis-label">Score clusters</span><span class="conf-analysis-value conf-highlight" id="conf-analysis-cluster">—</span></div>' +
+        '<div class="conf-analysis-row"><span class="conf-analysis-label">Top blocker</span><span class="conf-analysis-value" id="conf-analysis-blocker">—</span></div>' +
+      '</div>' +
+      '<div class="conf-recommendation-box">' +
+        '<div class="conf-rec-title">🤖 Algorithm Recommendation</div>' +
+        '<div class="conf-rec-text" id="conf-rec-text">Loading analysis...</div>' +
+      '</div>' +
+      '<div class="conf-modal-actions">' +
+        '<button class="conf-btn conf-btn-cancel" data-action="close-confluence-modal">Cancel</button>' +
+        '<button class="conf-btn conf-btn-apply" id="conf-apply-btn" data-action="apply-confluence">Apply Recommendation</button>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+
+  function injectConfluenceModal() {
+    if (!document.getElementById('conf-modal-overlay')) {
+      var div = document.createElement('div');
+      div.innerHTML = CONFLUENCE_MODAL_HTML;
+      var overlay = div.firstChild;
+      overlay.onclick = function(e) {
+        if (e.target === overlay) closeConfluenceModal();
+      };
+      document.getElementById('main').appendChild(overlay);
+      // Attach slider listeners
+      ['conf-buy-threshold','conf-strong-buy','conf-groups-required'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateConfluenceAlgorithm);
+      });
+      var wt = document.getElementById('conf-weight-trend');
+      if (wt) wt.addEventListener('change', updateConfluenceAlgorithm);
+    }
+  }
+
+  function openConfluenceModal() {
+    var overlay = document.getElementById('conf-modal-overlay');
+    if (overlay) { overlay.classList.add('active'); updateConfluenceAlgorithm(); }
+  }
+  function closeConfluenceModal() {
+    var overlay = document.getElementById('conf-modal-overlay');
+    if (overlay) overlay.classList.remove('active');
+  }
+
+  function updateConfluenceAlgorithm() {
+    var buyT = parseInt(document.getElementById('conf-buy-threshold').value) || 5;
+    var strongB = parseInt(document.getElementById('conf-strong-buy').value) || 8;
+    var groupsR = parseInt(document.getElementById('conf-groups-required').value) || 3;
+    var weightT = document.getElementById('conf-weight-trend').checked;
+    document.getElementById('conf-buy-threshold-val').textContent = buyT + '/10';
+    document.getElementById('conf-strong-buy-val').textContent = strongB + '/10';
+    document.getElementById('conf-groups-required-val').textContent = groupsR + '/4';
+    // Run algorithm on triage cache
+    var rows = triageCache || [];
+    var scores = rows.map(function(r) {
+      var g = r.ready || (r.ready = scoutReadiness(r, null));
+      var conf = (g && g.confluence) ? g.confluence : { trend: 0, momentum: 0, volatility: 0, volume: 0 };
+      var trendScore = conf.trend || 0;
+      if (weightT) trendScore = Math.round(trendScore * 1.5);
+      return Math.min(10, trendScore + (conf.momentum||0) + (conf.volatility||0) + (conf.volume||0));
+    });
+    // Distribution
+    var dist = {}; for (var i = 0; i <= 10; i++) dist[i] = 0;
+    scores.forEach(function(s) { if (dist[s] !== undefined) dist[s]++; });
+    var maxCluster = 0, clusterScore = 0;
+    Object.keys(dist).forEach(function(score) {
+      var s = parseInt(score);
+      if (s >= 4 && dist[s] > maxCluster) { maxCluster = dist[s]; clusterScore = s; }
+    });
+    // Trend alignment
+    var trendUp = rows.filter(function(r) { var g = r.ready || (r.ready = scoutReadiness(r, null)); var c = (g&&g.confluence)||{}; return (c.trend||0) >= 2; }).length;
+    var trendPct = rows.length ? Math.round(trendUp / rows.length * 100) : 0;
+    var fullAlign = rows.filter(function(r) { var g = r.ready || (r.ready = scoutReadiness(r, null)); var c = (g&&g.confluence)||{}; return (c.trend||0)>=2 && (c.momentum||0)>=2 && (c.volume||0)>=1; }).length;
+    var fullAlignPct = rows.length ? Math.round(fullAlign / rows.length * 100) : 0;
+    // Blockers
+    var blockers = { trend: 0, momentum: 0, volatility: 0, volume: 0 };
+    rows.forEach(function(r) { var g = r.ready || (r.ready = scoutReadiness(r, null)); var c = (g&&g.confluence)||{}; if ((c.trend||0)<2) blockers.trend++; if ((c.momentum||0)<2) blockers.momentum++; if ((c.volatility||0)<1) blockers.volatility++; if ((c.volume||0)<1) blockers.volume++; });
+    var topBlocker = 'momentum', topBlockerCount = 0;
+    Object.keys(blockers).forEach(function(k) { if (blockers[k] > topBlockerCount) { topBlocker = k; topBlockerCount = blockers[k]; } });
+    var topBlockerPct = rows.length ? Math.round(topBlockerCount / rows.length * 100) : 0;
+    // Regime
+    var regime = 'Choppy';
+    if (trendPct > 65 && fullAlignPct > 40) regime = 'Bull';
+    else if (trendPct < 35) regime = 'Bear';
+    // Recommendation
+    var recBuy = 5, recGroups = 3;
+    if (regime === 'Bull') { recBuy = 6; recGroups = 4; }
+    else if (regime === 'Bear') { recBuy = 4; recGroups = 2; }
+    if (maxCluster >= Math.ceil(rows.length * 0.2)) recBuy = clusterScore;
+    // Update UI
+    document.getElementById('conf-analysis-regime').textContent = regime;
+    document.getElementById('conf-analysis-trend').textContent = fullAlignPct + '%';
+    document.getElementById('conf-analysis-cluster').textContent = maxCluster + ' coins at ' + clusterScore + '/10';
+    document.getElementById('conf-analysis-blocker').textContent = topBlocker.charAt(0).toUpperCase() + topBlocker.slice(1) + ' (' + topBlockerPct + '%)';
+    // Count buys at current slider settings
+    var currentBuys = 0;
+    rows.forEach(function(r) {
+      var g = r.ready || (r.ready = scoutReadiness(r, null));
+      var conf = (g && g.confluence) ? g.confluence : { trend: 0, momentum: 0, volatility: 0, volume: 0 };
+      var trendScore = conf.trend || 0;
+      if (weightT) trendScore = Math.round(trendScore * 1.5);
+      var total = Math.min(10, trendScore + (conf.momentum||0) + (conf.volatility||0) + (conf.volume||0));
+      var groupsPassed = [(conf.trend||0)>=2, (conf.momentum||0)>=2, (conf.volatility||0)>=1, (conf.volume||0)>=1].filter(Boolean).length;
+      if (total >= buyT && groupsPassed >= groupsR) currentBuys++;
+    });
+    var currentWaits = rows.length - currentBuys;
+    document.getElementById('conf-impact-buys').textContent = currentBuys;
+    document.getElementById('conf-impact-waits').textContent = currentWaits;
+    document.getElementById('conf-impact-change').textContent = (currentBuys > 0 ? '+' : '') + currentBuys;
+    // Rec text
+    document.getElementById('conf-rec-text').innerHTML = '<strong>Market is ' + regime.toLowerCase() + '</strong> — ' + fullAlignPct + '% trend+momentum+volume alignment. ' + maxCluster + ' coins cluster at score ' + clusterScore + '. ' + topBlocker.charAt(0).toUpperCase() + topBlocker.slice(1) + ' blocks ' + topBlockerPct + '% of coins.<br><br><strong>Recommended:</strong> BUY threshold ' + recBuy + '/10, require ' + recGroups + '/4 groups.';
+    // Apply button state
+    var applyBtn = document.getElementById('conf-apply-btn');
+    if (applyBtn) {
+      var isRec = buyT === recBuy && groupsR === recGroups;
+      applyBtn.disabled = isRec;
+      applyBtn.textContent = isRec ? '✓ Already at recommendation' : 'Apply Recommendation';
+    }
+  }
+
+  function applyConfluenceSettings() {
+    // Read recommendation values from analysis
+    var regime = document.getElementById('conf-analysis-regime').textContent;
+    var clusterText = document.getElementById('conf-analysis-cluster').textContent;
+    var clusterScore = 5;
+    var clusterMatch = clusterText.match(/at (\d+)\/10/);
+    if (clusterMatch) clusterScore = parseInt(clusterMatch[1]);
+    var recBuy = 5, recGroups = 3;
+    if (regime === 'Bull') { recBuy = 6; recGroups = 4; }
+    else if (regime === 'Bear') { recBuy = 4; recGroups = 2; }
+    var rows = triageCache || [];
+    var dist = {}; for (var i = 0; i <= 10; i++) dist[i] = 0;
+    rows.forEach(function(r) {
+      var g = r.ready || (r.ready = scoutReadiness(r, null));
+      var conf = (g && g.confluence) ? g.confluence : { trend: 0, momentum: 0, volatility: 0, volume: 0 };
+      var weightT = document.getElementById('conf-weight-trend').checked;
+      var trendScore = conf.trend || 0;
+      if (weightT) trendScore = Math.round(trendScore * 1.5);
+      var total = Math.min(10, trendScore + (conf.momentum||0) + (conf.volatility||0) + (conf.volume||0));
+      if (dist[total] !== undefined) dist[total]++;
+    });
+    var maxCluster = 0;
+    Object.keys(dist).forEach(function(s) { var sc = parseInt(s); if (sc >= 4 && dist[sc] > maxCluster) maxCluster = dist[sc]; });
+    if (maxCluster >= Math.ceil(rows.length * 0.2)) recBuy = clusterScore;
+    // Apply to settings
+    confluenceThresholds = { buy: recBuy, strongBuy: 8, groups: recGroups };
+    // Update sliders
+    document.getElementById('conf-buy-threshold').value = recBuy;
+    document.getElementById('conf-groups-required').value = recGroups;
+    updateConfluenceAlgorithm();
+    // Re-render rows
+    renderTriagePage();
+    setTimeout(closeConfluenceModal, 300);
+  }
+
   function injectConfluencePopup() {
     if (!document.getElementById('conf-popup-overlay')) {
       var div = document.createElement('div');
@@ -14659,6 +14835,14 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
     else if(a==='triage-resume'&&Date.now()>=triagePauseUntil){triagePaused=false;drainScoutPeekQueue();}
     else if(a==='triage-cancel')triageCancelQueue();
     else if(a==='triage-go'){closeWatchlist();page='scout';render();}
+  },true);
+  /* CONFLUENCE-MODAL-1 · Settings modal action handler */
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('[data-action]');if(!b)return;
+    var a=b.getAttribute('data-action');
+    if(a==='open-confluence-modal'){e.preventDefault();openConfluenceModal();}
+    else if(a==='close-confluence-modal'){e.preventDefault();closeConfluenceModal();}
+    else if(a==='apply-confluence'){e.preventDefault();applyConfluenceSettings();}
   },true);
   document.addEventListener('keydown',function(e){var help=e.target.closest&&e.target.closest('[data-action="triage-trend-help"]');if(help&&(e.key==='Enter'||e.key===' ')){e.preventDefault();help.click();}},true);
   document.addEventListener('input',function(e){if(e.target.id==='triage-search'||e.target.id==='triage-focus-search'){triageQuery=e.target.value;var primarySearch=document.getElementById('triage-search');if(primarySearch&&primarySearch!==e.target)primarySearch.value=triageQuery;triageUpdate(false);if(unifiedScoutScope==='find'){watchlistQuery=triageQuery;watchlistMode='find';scheduleFindSearch();}var rowsBox=document.getElementById('triage-rows');if(rowsBox)rowsBox.scrollTop=0;}});
@@ -16212,7 +16396,7 @@ function triageUnfoldHtml(r, o){
       (waits ? '<span class="pf-dot wait"></span><span class="pf-count">' + waits + ' WAIT</span>' : '') +
       (nogos ? '<span class="pf-dot nogo"></span><span class="pf-count">' + nogos + ' NO-GO</span>' : '') +
       (gateSummary ? '<span class="pf-gate-summary">' + gateSummary + '</span>' : '') +
-      marketStatus + '</div>';
+      marketStatus + '<button type="button" class="pf-confluence-btn" data-action="open-confluence-modal">⚙ Confluence</button></div>';
   }
   /* /PORTFOLIO-UPGRADES-1 */
 
@@ -17202,6 +17386,7 @@ function triageUnfoldHtml(r, o){
     el.scrollTop=oldScroll;
     attachBadgeClickListeners();
     injectConfluencePopup();
+    injectConfluenceModal();
     var toastEl=document.getElementById('triage-toast');
     if(toastEl){toastEl.textContent=watchlistToast||'';}
     var toastRow=document.getElementById('triage-toast-row');
@@ -17772,4 +17957,3 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d7e9d8ef3433f4',t:'MTc5MjQ5ODE2NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
