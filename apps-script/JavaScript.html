@@ -16359,12 +16359,17 @@ function triageUnfoldHtml(r, o){
     var rows = triageCache || [];
     var buys = 0, waits = 0, nogos = 0;
     var gateBlocks = { ticket: 0, timing: 0, account: 0, plan: 0 };
+    var confPass = 0;
+    var threshold = (confluenceThresholds && confluenceThresholds.buy) ? confluenceThresholds.buy : 6;
     rows.forEach(function(r) {
       var g = r.ready || (r.ready = scoutReadiness(r, null));
       var vw = g && g.verdict ? g.verdict : 'WAIT';
       if (vw === 'BUY' || vw === 'TURN BUY') buys++;
       else if (vw === 'NO-GO' || vw === 'BANK') nogos++;
       else waits++;
+      /* CONFLUENCE-MODAL-1 · Count confluence pass/fail */
+      var conf = (g && g.confluence) ? g.confluence : (calcConfluence ? calcConfluence(r.pair.ticker) : null);
+      if (conf && conf.total >= threshold) confPass++;
       /* Count gate blockers for non-BUY verdicts */
       if (vw !== 'BUY' && vw !== 'TURN BUY' && g && g.groups) {
         ['ticket', 'timing', 'account', 'plan'].forEach(function(gate) {
@@ -16392,11 +16397,13 @@ function triageUnfoldHtml(r, o){
         gateSummary += '<span class="pf-gate-blocker"><span class="pf-gate-label">' + gateLabels[gate] + '</span><span class="pf-gate-count">' + gateBlocks[gate] + '</span></span>';
       }
     });
+    /* CONFLUENCE-MODAL-1 · Add confluence pass count */
+    var confSummary = confPass > 0 ? '<span class="pf-conf-pass">' + confPass + ' pass conf</span>' : '';
     return '<div class="pf-health-bar"><span class="pf-dot buy"></span><span class="pf-count">' + buys + ' BUY</span>' +
       (waits ? '<span class="pf-dot wait"></span><span class="pf-count">' + waits + ' WAIT</span>' : '') +
       (nogos ? '<span class="pf-dot nogo"></span><span class="pf-count">' + nogos + ' NO-GO</span>' : '') +
       (gateSummary ? '<span class="pf-gate-summary">' + gateSummary + '</span>' : '') +
-      marketStatus + '<button type="button" class="pf-confluence-btn" data-action="open-confluence-modal">⚙ Confluence</button></div>';
+      confSummary + marketStatus + '<button type="button" class="pf-confluence-btn" data-action="open-confluence-modal">⚙ Confluence</button></div>';
   }
   /* /PORTFOLIO-UPGRADES-1 */
 
@@ -17937,7 +17944,10 @@ function triageUnfoldHtml(r, o){
   function confluenceBadgeHtml(coin) {
     var conf = calcConfluence(coin);
     if (!conf) return '';
-    var scoreClass = conf.total >= 6 ? 'high' : conf.total >= 4 ? 'mid' : 'low';
+    /* CONFLUENCE-MODAL-1 · Use threshold from settings for pass/fail color */
+    var threshold = (confluenceThresholds && confluenceThresholds.buy) ? confluenceThresholds.buy : 6;
+    var passes = conf.total >= threshold;
+    var scoreClass = passes ? 'high' : conf.total >= 4 ? 'mid' : 'low';
     return '<span class="conf-badge-btn ' + scoreClass + '" data-coin="' + coin + '"><span class="conf-val">' + conf.total.toFixed(1) + '</span><span class="conf-lbl">Conf</span></span>';
   }
 })();
@@ -17957,3 +17967,4 @@ function triageProposalOpen(ticker){
 
   
 
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4e17b430e050ab7',t:'MTc5MjU5ODQ5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
