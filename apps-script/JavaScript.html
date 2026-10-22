@@ -17897,34 +17897,25 @@ function triageUnfoldHtml(r, o){
     
     title.textContent = coin + ' — Confluence Breakdown';
     
-    var html = '<div class="conf-score-summary">' +
-      '<span class="conf-score-summary-label">Confluence Score:</span>' +
-      '<span class="conf-score-summary-val ' + (confData.total >= 6 ? 'high' : confData.total >= 4 ? 'mid' : 'low') + '">' + confData.total.toFixed(1) + '/10</span>' +
-      '</div>';
+    /* CONFLUENCE-POPUP-CHIPS · Grouped chips layout */
+    var html = '<div class="conf-chips-score-row">' +
+      '<span class="conf-chips-score">' + confData.total.toFixed(1) + '/10</span>' +
+      '<span class="conf-chips-verdict ' + confData.verdictClass + '">' + confData.verdictIcon + ' ' + confData.verdict + '</span>' +
+    '</div>';
     
     confData.groups.forEach(function(g) {
-      var pct = (g.score / g.max) * 100;
-      html += '<div class="conf-group-row">' +
-        '<div class="conf-group-top">' +
-          '<div class="conf-group-name">' +
-            '<div class="conf-group-icon ' + g.iconClass + '">' + g.icon + '</div>' +
-            g.name +
-          '</div>' +
-          '<div class="conf-group-val ' + g.cls + '">' + g.score.toFixed(1) + '/' + g.max.toFixed(1) + '</div>' +
-        '</div>' +
-        '<div class="conf-indicators">';
+      html += '<div class="conf-chips-group">' +
+        '<div class="conf-chips-group-label">' + g.name.split(' ')[0] + ' ' + g.score.toFixed(1) + '/' + g.max.toFixed(1) + '</div>' +
+        '<div class="conf-chips-chips">';
       g.indicators.forEach(function(ind) {
-        html += '<span class="conf-ind ' + ind.cls + '">' + ind.label + '</span>';
+        var chipCls = ind.cls === 'bullish' ? 'pass' : ind.cls === 'bearish' ? 'fail' : 'neutral';
+        html += '<div class="conf-chip ' + chipCls + '">' +
+          '<span class="conf-chip-name">' + ind.label.split(' ')[0] + '</span>' +
+          '<span class="conf-chip-val">' + (ind.label.split(' ').slice(1).join(' ') || '') + '</span>' +
+        '</div>';
       });
-      html += '</div>' +
-        '<div class="conf-bar"><div class="conf-bar-fill ' + g.cls + '" style="width:' + pct + '%"></div></div>' +
-      '</div>';
+      html += '</div></div>';
     });
-    
-    html += '<div class="conf-popup-verdict ' + confData.verdictClass + '">' +
-      '<span class="conf-popup-verdict-icon">' + confData.verdictIcon + '</span>' +
-      '<span>' + confData.verdict + ' — ' + confData.reason + '</span>' +
-    '</div>';
     
     body.innerHTML = html;
     overlay.classList.add('active');
@@ -17967,4 +17958,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4e17b430e050ab7',t:'MTc5MjU5ODQ5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4e7cded5f72b137',t:'MTc5MjY2NDc5Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
