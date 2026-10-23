@@ -16657,10 +16657,26 @@ function triageUnfoldHtml(r, o){
     }
     var ma20Prev = ma20SumPrev / 20;
     
+    // MA50
+    var ma50Sum = 0;
+    for (var i = len - 50; i < len; i++) {
+      ma50Sum += bars4h[i];
+    }
+    var ma50Current = ma50Sum / 50;
+    
+    // MA200
+    var ma200Sum = 0;
+    for (var i = len - 200; i < len; i++) {
+      ma200Sum += bars4h[i];
+    }
+    var ma200Current = ma200Sum / 200;
+    
     var currentPrice = bars4h[len - 1];
     var prevPrice = bars4h[len - 2];
     
     var aboveMA20 = currentPrice > ma20Current;
+    var aboveMA50 = currentPrice > ma50Current;
+    var aboveMA200 = currentPrice > ma200Current;
     var wasAboveMA20 = prevPrice > ma20Prev;
     var priceCrossedMA20 = !wasAboveMA20 && aboveMA20;
     
@@ -16728,8 +16744,12 @@ function triageUnfoldHtml(r, o){
     
     var result = {
       aboveMA20: aboveMA20,
+      aboveMA50: aboveMA50,
+      aboveMA200: aboveMA200,
       macdBullish: macdBullish,
       ma20: ma20Current,
+      ma50: ma50Current,
+      ma200: ma200Current,
       macd: macd,
       signal: signal,
       priceCrossedMA20: priceCrossedMA20,
@@ -17126,6 +17146,16 @@ function triageUnfoldHtml(r, o){
         }
       };
     });
+    /* MA-BADGE-1 · MA badge click handler */
+    document.querySelectorAll('.ma-badge-btn').forEach(function(badge) {
+      if (!badge.getAttribute('data-coin')) return;
+      badge.style.cursor = 'pointer';
+      badge.onclick = function(e) {
+        e.stopPropagation();
+        var coin = this.getAttribute('data-coin');
+        if (coin) openMAPopup(coin);
+      };
+    });
   }
 
   /* /BADGE-POPUP-1 */
@@ -17165,7 +17195,7 @@ function triageUnfoldHtml(r, o){
         var sigLine='<div class="uc-l3"><span class="uc-sig"><b>'+esc(trend)+'</b> \u00b7 '+watch+'</span><span class="uc-meta">'+location+' \u00b7 '+esc(triageFreshShort(String(r.fresh&&r.fresh.label||'not checked')))+'</span>'+healthMarkup+'</div>';
         var openPart=whyOpen?whyList+'<div class="uni-actions"><div class="triage-ledger-actions">'+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+name:'Inspect '+name)+'">'+(locked?'Research':'Inspect')+'</button></div></div>':'';
         var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+(dd?'':pfContextBadge(r))+(isResearchMode()?pfTimeframeBadge(r):'')+pfBreakoutBadge(r)+pfRecoveryBadge(r)+pfMAMacdBadge(c.ticker);   // ROW-LAYOUT-E-1 · split head
-        var head2=generateSparkline(c.ticker)+confluenceBadgeHtml(c.ticker)+'<span class=\"uc-fill\"></span>';   // ROW-LAYOUT-E-1
+        var head2=generateSparkline(c.ticker)+maBadgeHtml(c.ticker)+confluenceBadgeHtml(c.ticker)+'<span class="uc-fill"></span>';   // ROW-LAYOUT-E-1
         var cls='triage-unified-row triage-combined-row uni-card uv2 uv2-'+rowStyle+' verdict-'+vc+(whyOpen?' uv2-open':'')+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+(isBreakoutRow(r)?' breakout-row':'');
         var open='<article class="'+cls+'" data-ticker="'+ticker+'" data-action="scout-why" aria-expanded="'+whyOpen+'">';
         var lockNote=locked?'<div class="uc-lock">'+reason+'</div>':'';
@@ -17393,6 +17423,7 @@ function triageUnfoldHtml(r, o){
     el.scrollTop=oldScroll;
     attachBadgeClickListeners();
     injectConfluencePopup();
+    injectMAPopup();
     injectConfluenceModal();
     var toastEl=document.getElementById('triage-toast');
     if(toastEl){toastEl.textContent=watchlistToast||'';}
@@ -17763,7 +17794,7 @@ function triageUnfoldHtml(r, o){
     var mfi = calcMFI(coin);
     var volume = calcVolumeSpike(coin);
     
-    // Trend Group (0-3): Ichimoku + SAR + MA20
+    // Trend Group (0-5): Ichimoku + SAR + MA20 + MA50 + MA200
     var trendScore = 0;
     if (maMacd && maMacd.maAbove) trendScore += 1;
     if (hourly.length >= 20) {
@@ -17776,6 +17807,10 @@ function triageUnfoldHtml(r, o){
       var ichiMid = (ichiHigh + ichiLow) / 2;
       if (price > ichiMid) trendScore += 1;
     }
+    // MA50 alignment
+    if (maMacd && maMacd.aboveMA50) trendScore += 1;
+    // MA200 alignment
+    if (maMacd && maMacd.aboveMA200) trendScore += 1;
     
     // Momentum Group (0-3): Stoch + RSI + MACD
     var momentumScore = 0;
@@ -17820,13 +17855,13 @@ function triageUnfoldHtml(r, o){
     var totalScore = trendScore + momentumScore + volatilityScore + volumeScore;
     
     var verdict, verdictClass, verdictIcon;
-    if (totalScore >= 8) { verdict = 'STRONG BUY'; verdictClass = 'buy'; verdictIcon = '▲'; }
-    else if (totalScore >= 6) { verdict = 'LEAN BUY'; verdictClass = 'buy'; verdictIcon = '▲'; }
-    else if (totalScore >= 4) { verdict = 'WAIT'; verdictClass = 'wait'; verdictIcon = '◆'; }
+    if (totalScore >= 9) { verdict = 'STRONG BUY'; verdictClass = 'buy'; verdictIcon = '▲'; }
+    else if (totalScore >= 7) { verdict = 'LEAN BUY'; verdictClass = 'buy'; verdictIcon = '▲'; }
+    else if (totalScore >= 5) { verdict = 'WAIT'; verdictClass = 'wait'; verdictIcon = '◆'; }
     else { verdict = 'NO-GO'; verdictClass = 'nogo'; verdictIcon = '▼'; }
     
     var reasons = [];
-    if (trendScore < 3) reasons.push('Trend weak (' + trendScore.toFixed(1) + '/3)');
+    if (trendScore < 3) reasons.push('Trend weak (' + trendScore.toFixed(1) + '/5)');
     if (momentumScore < 3) reasons.push('Momentum weak (' + momentumScore.toFixed(1) + '/3)');
     if (volatilityScore < 2) reasons.push('Volatility mixed (' + volatilityScore.toFixed(1) + '/2)');
     if (volumeScore < 2) reasons.push('Volume low (' + volumeScore.toFixed(1) + '/2)');
@@ -17835,16 +17870,25 @@ function triageUnfoldHtml(r, o){
     var ichiMid = hourly.length >= 52 ? (Math.max.apply(null, hourly.slice(-52)) + Math.min.apply(null, hourly.slice(-52))) / 2 : price;
     var sarLow = hourly.length >= 20 ? Math.min.apply(null, hourly.slice(-20)) : price;
     
+    // MA alignment for badge
+    var maUpCount = 0;
+    if (maMacd && maMacd.aboveMA20) maUpCount++;
+    if (maMacd && maMacd.aboveMA50) maUpCount++;
+    if (maMacd && maMacd.aboveMA200) maUpCount++;
+    
     return {
       total: totalScore, trend: trendScore, momentum: momentumScore,
       volatility: volatilityScore, volume: volumeScore,
       verdict: verdict, verdictClass: verdictClass, verdictIcon: verdictIcon, reason: reason,
+      maAlignment: { above20: maMacd && maMacd.aboveMA20, above50: maMacd && maMacd.aboveMA50, above200: maMacd && maMacd.aboveMA200, upCount: maUpCount, ma20: maMacd ? maMacd.ma20 : null, ma50: maMacd ? maMacd.ma50 : null, ma200: maMacd ? maMacd.ma200 : null },
       groups: [
-        { name: 'Trend Group', icon: 'T', iconClass: 'trend', score: trendScore, max: 3, cls: trendScore >= 2 ? 'high' : trendScore >= 1 ? 'mid' : 'low',
+        { name: 'Trend Group', icon: 'T', iconClass: 'trend', score: trendScore, max: 5, cls: trendScore >= 4 ? 'high' : trendScore >= 2 ? 'mid' : 'low',
           indicators: [
             { label: 'Ichimoku ' + (price > ichiMid ? '↑' : '↓'), cls: price > ichiMid ? 'bullish' : 'bearish' },
             { label: 'SAR ' + (price > sarLow ? '↑' : '↓'), cls: price > sarLow ? 'bullish' : 'bearish' },
-            { label: 'MA20 ' + (maMacd && maMacd.maAbove ? '↑' : '↓'), cls: maMacd && maMacd.maAbove ? 'bullish' : 'bearish' }
+            { label: 'MA20 ' + (maMacd && maMacd.aboveMA20 ? '↑' : '↓'), cls: maMacd && maMacd.aboveMA20 ? 'bullish' : 'bearish' },
+            { label: 'MA50 ' + (maMacd && maMacd.aboveMA50 ? '↑' : '↓'), cls: maMacd && maMacd.aboveMA50 ? 'bullish' : 'bearish' },
+            { label: 'MA200 ' + (maMacd && maMacd.aboveMA200 ? '↑' : '↓'), cls: maMacd && maMacd.aboveMA200 ? 'bullish' : 'bearish' }
           ]
         },
         { name: 'Momentum Group', icon: 'M', iconClass: 'momentum', score: momentumScore, max: 3, cls: momentumScore >= 2 ? 'high' : momentumScore >= 1 ? 'mid' : 'low',
@@ -17941,6 +17985,86 @@ function triageUnfoldHtml(r, o){
     var scoreClass = passes ? 'high' : conf.total >= 4 ? 'mid' : 'low';
     return '<span class="conf-badge-btn ' + scoreClass + '" data-coin="' + coin + '"><span class="conf-val">' + conf.total.toFixed(1) + '</span><span class="conf-lbl">Conf</span></span>';
   }
+  
+  /* MA-BADGE-1 · MA20/50/200 alignment badge with tap-for-details popup */
+  function maBadgeHtml(coin) {
+    var conf = calcConfluence(coin);
+    if (!conf || !conf.maAlignment) return '';
+    var ma = conf.maAlignment;
+    var upCount = ma.upCount || 0;
+    var badgeClass = upCount === 3 ? 'all-up' : upCount === 0 ? 'all-down' : 'mixed';
+    var arrow = upCount >= 2 ? '↑' : '↓';
+    return '<span class="ma-badge-btn ' + badgeClass + '" data-coin="' + coin + '" data-action="open-ma-popup">MA ' + upCount + '/3 ' + arrow + '</span>';
+  }
+  
+  var MA_POPUP_HTML = '<div class="ma-popup-overlay" id="ma-popup-overlay">' +
+    '<div class="ma-popup">' +
+      '<div class="ma-popup-header">' +
+        '<div class="ma-popup-title" id="ma-popup-title">MA Alignment</div>' +
+        '<button class="ma-popup-close" data-action="close-ma-popup">×</button>' +
+      '</div>' +
+      '<div class="ma-popup-body" id="ma-popup-body"></div>' +
+    '</div>' +
+  '</div>';
+  
+  function injectMAPopup() {
+    if (!document.getElementById('ma-popup-overlay')) {
+      var div = document.createElement('div');
+      div.innerHTML = MA_POPUP_HTML;
+      var overlay = div.firstChild;
+      overlay.onclick = function(e) {
+        if (e.target === overlay) closeMAPopup();
+      };
+      document.getElementById('main').appendChild(overlay);
+    }
+  }
+  
+  function openMAPopup(coin) {
+    var conf = calcConfluence(coin);
+    if (!conf || !conf.maAlignment) return;
+    var ma = conf.maAlignment;
+    var overlay = document.getElementById('ma-popup-overlay');
+    var title = document.getElementById('ma-popup-title');
+    var body = document.getElementById('ma-popup-body');
+    
+    title.textContent = coin + ' — MA Alignment';
+    
+    var upCount = ma.upCount || 0;
+    var badgeClass = upCount === 3 ? 'all-up' : upCount === 0 ? 'all-down' : 'mixed';
+    var trendLabel = upCount >= 2 ? '↑ Uptrend' : '↓ Downtrend';
+    
+    var html = '<div class="ma-summary">' +
+      '<div class="ma-summary-label">Trend Alignment</div>' +
+      '<div class="ma-summary-value ' + badgeClass + '">' + upCount + '/3 ' + trendLabel + '</div>' +
+    '</div>';
+    
+    if (ma.ma20 != null) {
+      html += '<div class="ma-detail-row">' +
+        '<div class="ma-detail-left"><div class="ma-detail-color ma20"></div><div><div class="ma-detail-name">MA20</div><div class="ma-detail-value">' + ma.ma20.toFixed(2) + '</div></div></div>' +
+        '<span class="ma-detail-status ' + (ma.above20 ? 'above' : 'below') + '">' + (ma.above20 ? 'Above ↑' : 'Below ↓') + '</span>' +
+      '</div>';
+    }
+    if (ma.ma50 != null) {
+      html += '<div class="ma-detail-row">' +
+        '<div class="ma-detail-left"><div class="ma-detail-color ma50"></div><div><div class="ma-detail-name">MA50</div><div class="ma-detail-value">' + ma.ma50.toFixed(2) + '</div></div></div>' +
+        '<span class="ma-detail-status ' + (ma.above50 ? 'above' : 'below') + '">' + (ma.above50 ? 'Above ↑' : 'Below ↓') + '</span>' +
+      '</div>';
+    }
+    if (ma.ma200 != null) {
+      html += '<div class="ma-detail-row">' +
+        '<div class="ma-detail-left"><div class="ma-detail-color ma200"></div><div><div class="ma-detail-name">MA200</div><div class="ma-detail-value">' + ma.ma200.toFixed(2) + '</div></div></div>' +
+        '<span class="ma-detail-status ' + (ma.above200 ? 'above' : 'below') + '">' + (ma.above200 ? 'Above ↑' : 'Below ↓') + '</span>' +
+      '</div>';
+    }
+    
+    body.innerHTML = html;
+    overlay.classList.add('active');
+  }
+  
+  function closeMAPopup() {
+    var overlay = document.getElementById('ma-popup-overlay');
+    if (overlay) overlay.classList.remove('active');
+  }
 })();
 
 function triageProposalHtml(ticker){
@@ -17958,4 +18082,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4e7cded5f72b137',t:'MTc5MjY2NDc5Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4f39b6a2d0e3c84',t:'MTc5Mjc4ODU1Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
