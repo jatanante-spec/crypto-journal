@@ -15827,6 +15827,18 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
             ? live.hourlyAts.slice(-168)
             : [];
         }
+        /* HOURLY-FALLBACK-1 · If hourly data is missing, try CoinGecko OHLC fallback */
+        if (!state.hourly || state.hourly.length < 15) {
+          var coinId = state.settings.coinId;
+          var vs = state.settings.vsCurrency || 'gbp';
+          fetchHourlyFallback(coinId, vs).then(function(fallback) {
+            if (fallback && applyHourlyFallback(state.book || {market: state.market, pair: {ticker: state.settings.coinTicker}}, fallback)) {
+              console.log('Hourly fallback applied: ' + fallback.source);
+              save();
+              render();
+            }
+          });
+        }
         // BP1: Fetch updates evidence only; all draft prices stay as entered.
         busy = false;
         save();
@@ -17775,6 +17787,63 @@ function triageUnfoldHtml(r, o){
   render();
   syncCoinsNow();
   pullCloud();
+
+  /* HOURLY-FALLBACK-1 · CoinGecko OHLC fallback for missing hourly data */
+  async function fetchHourlyFallback(coinId, vsCurrency) {
+    try {
+      var url = 'https://api.coingecko.com/api/v3/coins/' + coinId + '/ohlc?vs_currency=' + vsCurrency + '&days=14';
+      var resp = await fetch(url);
+      if (!resp.ok) return null;
+      var data = await resp.json();
+      if (!Array.isArray(data) || data.length === 0) return null;
+      
+      var hourlyBars = [];
+      var hourlyAts = [];
+      var hourlyVolumes = [];
+      
+      data.forEach(function(candle) {
+        hourlyBars.push(candle[4]); // close price
+        hourlyAts.push(new Date(candle[0]).toISOString());
+        hourlyVolumes.push(null); // CoinGecko OHLC has no volume
+      });
+      
+      return {
+        bars: hourlyBars,
+        timestamps: hourlyAts,
+        volumes: hourlyVolumes,
+        source: 'CoinGecko OHLC (fallback)',
+        currency: vsCurrency,
+        barCount: hourlyBars.length
+      };
+    } catch (e) {
+      console.warn('Hourly fallback failed:', e);
+      return null;
+    }
+  }
+  
+  function applyHourlyFallback(book, hourlyData) {
+    if (!hourlyData || !book || !book.market) return false;
+    
+    book.market.hourlyOhlc = hourlyData.bars;
+    book.market.hourlyFeed = {
+      version: 1,
+      status: 'READY',
+      source: hourlyData.source,
+      currency: hourlyData.currency,
+      count: hourlyData.barCount,
+      barAt: hourlyData.timestamps[hourlyData.timestamps.length - 1]
+    };
+    
+    if (book === state.book || (state.books && state.books[book.pair && book.pair.ticker])) {
+      state.hourly = hourlyData.bars;
+      state.hourlyAts = hourlyData.timestamps;
+      state.hourlyVolumes = hourlyData.volumes;
+    }
+    
+    return true;
+  }
+  /* /HOURLY-FALLBACK-1 */
+
   /**
    * CONFLUENCE-1 · Multi-indicator agreement scoring
    * Groups: Trend (Ichimoku+SAR+MA20), Momentum (Stoch+RSI+MACD), Volatility (BB+ATR), Volume (MFI+Vol)
@@ -18082,4 +18151,3 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4f39b6a2d0e3c84',t:'MTc5Mjc4ODU1Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
