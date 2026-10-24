@@ -14836,6 +14836,18 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
     else if(a==='triage-cancel')triageCancelQueue();
     else if(a==='triage-go'){closeWatchlist();page='scout';render();}
   },true);
+  /* PREDICTION-1 · Prediction panel toggle handler */
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('[data-action="toggle-prediction"]');
+    if(!b)return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    var ticker=b.getAttribute('data-ticker');
+    if(!ticker)return;
+    var panel=document.getElementById('pred-'+ticker);
+    if(panel)panel.classList.toggle('active');
+  },true);
+  /* /PREDICTION-1 */
   /* CONFLUENCE-MODAL-1 · Settings modal action handler */
   document.addEventListener('click',function(e){
     var b=e.target.closest('[data-action]');if(!b)return;
@@ -18030,12 +18042,12 @@ function triageUnfoldHtml(r, o){
     var winRate = getWinRate(ticker, score);
     
     var regimeClass = regime.regime === 'trending' ? '' : regime.regime === 'choppy' ? 'choppy' : 'volatile';
-    var regimeIcon = regime.regime === 'trending' ? '📈' : regime.regime === 'choppy' ? '↔️' : '⚡';
+    var regimeIcon = regime.regime === 'trending' ? '' : regime.regime === 'choppy' ? '↔️' : '⚡';
     
     return '<span class="badge regime ' + regimeClass + '">' + regimeIcon + ' ' + regime.regime + '</span>' +
-           '<span class="badge signal" onclick="togglePrediction(\'' + ticker + '\')" style="cursor:pointer;">' + score + '% signal</span>' +
-           '<span class="badge winrate">' + winRate.rate + '% win</span>' +
-           '<button class="expand-btn" onclick="togglePrediction(\'' + ticker + '\')">Predict</button>';
+           '<span class="badge pred-badge signal" data-ticker="' + ticker + '" data-action="toggle-prediction">' + score + '% signal</span>' +
+           '<span class="badge pred-badge winrate">' + winRate.rate + '% win</span>' +
+           '<button class="badge pred-badge expand-btn" data-ticker="' + ticker + '" data-action="toggle-prediction">Predict</button>';
   }
   
   /* /PREDICTION-1 */
@@ -18347,4 +18359,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4f8b5d06e07b104',t:'MTc5Mjg0MjA2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4f8c3cb896235e3',t:'MTc5Mjg0MjYzNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
