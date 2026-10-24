@@ -11465,7 +11465,7 @@
 
     var mr = getMondayRange();
     var bias = ws.price > ws.mid ? 'bullish' : ws.price < ws.mid ? 'bearish' : 'neutral';
-    var biasLabel = bias === 'bullish' ? 'BULLISH BIAS' : bias === 'bearish' ? 'BEARISH BIAS' : 'NEUTRAL';
+    var biasLabel = bias === 'bullish' ? 'Bullish Bias' : bias === 'bearish' ? 'Bearish Bias' : 'Neutral';
     var biasClass = bias;
 
     var highDist = ((ws.high - ws.price) / ws.price * 100).toFixed(1);
@@ -11481,7 +11481,7 @@
     var openArrow = openAbove ? '&#9650;' : '&#9660;';
     var openText = openAbove ? 'Above Open' : 'Below Open';
 
-    var html = '<section class="weekly-structure-panel">' +
+    var html = '<section class="weekly-structure-panel design-a">' +
       '<div class="weekly-panel-header">' +
         '<div class="weekly-panel-title"><span class="icon">&#128197;</span> Weekly Structure</div>' +
         '<span class="weekly-badge ' + biasClass + '">' + biasLabel + '</span>' +
@@ -11493,7 +11493,7 @@
       '</div>' +
       '<div class="price-position-wrapper">' +
         '<div class="price-position-labels"><span>Low ' + priceGbp(ws.low, 4) + '</span><span>Mid ' + priceGbp(ws.mid, 4) + '</span><span>High ' + priceGbp(ws.high, 4) + '</span></div>' +
-        '<div class="price-position-bar"><div class="price-position-fill ' + biasClass + '" style="width: ' + posPct + '%;"></div><div class="price-position-marker mid" style="left: 50%;"><span class="price-position-marker-label">Mid</span></div><div class="price-position-marker current" style="left: ' + posPct + '%;"><span class="price-position-marker-label">Now</span></div></div>' +
+        '<div class="price-position-bar"><div class="price-position-fill ' + biasClass + '" style="width: ' + posPct + '%;"></div><div class="price-position-marker mid" style="left: 50%;"></div><div class="price-position-marker current" style="left: ' + posPct + '%;"></div></div>' +
       '</div>' +
       '<div class="weekly-open-section">' +
         '<div class="weekly-open-left"><div class="weekly-open-label">Weekly Open (Mon 00:00)</div><div class="weekly-open-value">' + priceGbp(ws.open, 4) + '</div></div>' +
@@ -11501,29 +11501,30 @@
       '</div>';
 
     // Alerts
-    html += '<div class="weekly-alerts">';
-
+    var alertsHtml = '';
     if (bias === 'bullish') {
-      html += '<div class="weekly-alert success"><span class="weekly-alert-icon">&#9989;</span><div class="weekly-alert-content"><div class="weekly-alert-title">Holding Above Midpoint</div><div class="weekly-alert-msg">Price consolidating above previous week\'s midpoint (' + priceGbp(ws.mid, 4) + '). Structurally biased to test previous week\'s high (' + priceGbp(ws.high, 4) + ').</div></div></div>';
+      alertsHtml += '<div class="weekly-alert success"><span class="weekly-alert-icon">&#9989;</span><div class="weekly-alert-content"><div class="weekly-alert-title">Holding Above Midpoint</div><div class="weekly-alert-msg">Price consolidating above previous week\'s midpoint (' + priceGbp(ws.mid, 4) + '). Structurally biased to test previous week\'s high (' + priceGbp(ws.high, 4) + ').</div></div></div>';
     } else if (bias === 'bearish') {
-      html += '<div class="weekly-alert warning"><span class="weekly-alert-icon">&#9888;&#65039;</span><div class="weekly-alert-content"><div class="weekly-alert-title">Below Midpoint &mdash; Bearish Bias</div><div class="weekly-alert-msg">Price trading below previous week\'s midpoint (' + priceGbp(ws.mid, 4) + '). Watch for retest of previous week\'s low (' + priceGbp(ws.low, 4) + ').</div></div></div>';
+      alertsHtml += '<div class="weekly-alert warning"><span class="weekly-alert-icon">&#9888;&#65039;</span><div class="weekly-alert-content"><div class="weekly-alert-title">Below Midpoint &mdash; Bearish Bias</div><div class="weekly-alert-msg">Price trading below previous week\'s midpoint (' + priceGbp(ws.mid, 4) + '). Watch for retest of previous week\'s low (' + priceGbp(ws.low, 4) + ').</div></div></div>';
     }
 
     if (mr) {
       var sweepTarget = ws.price > mr.high ? 'high' : 'low';
       var sweepPrice = ws.price > mr.high ? mr.high : mr.low;
-      html += '<div class="weekly-alert info"><span class="weekly-alert-icon">&#128202;</span><div class="weekly-alert-content"><div class="weekly-alert-title">Monday Range: ' + priceGbp(mr.low, 4) + ' &ndash; ' + priceGbp(mr.high, 4) + '</div><div class="weekly-alert-msg">Watch for sweep of Monday\'s ' + sweepTarget + ' (' + priceGbp(sweepPrice, 4) + ') during London/NY sessions. Often establishes true weekly direction.</div></div></div>';
+      alertsHtml += '<div class="weekly-alert info"><span class="weekly-alert-icon">&#128202;</span><div class="weekly-alert-content"><div class="weekly-alert-title">Monday Range: ' + priceGbp(mr.low, 4) + ' &ndash; ' + priceGbp(mr.high, 4) + '</div><div class="weekly-alert-msg">Watch for sweep of Monday\'s ' + sweepTarget + ' (' + priceGbp(sweepPrice, 4) + ') during London/NY sessions. Often establishes true weekly direction.</div></div></div>';
     }
 
-    // Weekend warning if near week high
     if (ws.price > ws.high * 0.98) {
-      html += '<div class="weekly-alert warning"><span class="weekly-alert-icon">&#9888;&#65039;</span><div class="weekly-alert-content"><div class="weekly-alert-title">Near Week High &mdash; Watch for Rejection</div><div class="weekly-alert-msg">Price approaching previous week\'s high. If this happens on weekend low volume, be cautious of reversal when CME opens Sunday evening.</div></div></div>';
+      alertsHtml += '<div class="weekly-alert warning"><span class="weekly-alert-icon">&#9888;&#65039;</span><div class="weekly-alert-content"><div class="weekly-alert-title">Near Week High &mdash; Watch for Rejection</div><div class="weekly-alert-msg">Price approaching previous week\'s high. If this happens on weekend low volume, be cautious of reversal when CME opens Sunday evening.</div></div></div>';
     }
 
-    html += '</div></section>';
+    if (alertsHtml) {
+      html += '<div class="weekly-alerts">' + alertsHtml + '</div>';
+    }
+
+    html += '</section>';
     return html;
   }
-
   /* /WEEKLY-STRUCTURE-1 */
 
   function renderMarket(){
@@ -19016,4 +19017,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4fc8a69c8230c19',t:'MTc5Mjg4MjIyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4fca88f7ae5b343',t:'MTc5Mjg4MzQ2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

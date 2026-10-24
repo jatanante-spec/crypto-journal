@@ -10253,25 +10253,25 @@ p.ns-mut{margin:6px 0}
 }
 
 
-/* WEEKLY-STRUCTURE-1 · Weekly structure panel styles */
+/* WEEKLY-STRUCTURE-1 · Weekly structure panel styles - Design A Clean Minimal */
 
 #main .weekly-structure-panel {
   background: #161b22;
-  border: 1px solid #30363d;
-  border-radius: 8px;
-  padding: 18px;
+  border-radius: 10px;
+  padding: 20px;
   margin-bottom: 16px;
+  border: none;
 }
 
 #main .weekly-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 #main .weekly-panel-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: #c9d1d9;
   display: flex;
@@ -10287,7 +10287,7 @@ p.ns-mut{margin:6px 0}
   font-size: 10px;
   font-weight: 700;
   padding: 3px 10px;
-  border-radius: 4px;
+  border-radius: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -10311,15 +10311,14 @@ p.ns-mut{margin:6px 0}
 #main .structure-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 16px;
   margin-bottom: 16px;
 }
 
 #main .structure-item {
-  background: #0d1117;
-  border-radius: 6px;
-  padding: 12px;
   text-align: center;
+  background: transparent;
+  padding: 0;
 }
 
 #main .structure-item-label {
@@ -10327,10 +10326,11 @@ p.ns-mut{margin:6px 0}
   color: #8b949e;
   text-transform: uppercase;
   margin-bottom: 4px;
+  letter-spacing: 0.5px;
 }
 
 #main .structure-item-value {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: #c9d1d9;
 }
@@ -10361,22 +10361,22 @@ p.ns-mut{margin:6px 0}
 #main .price-position-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: 9px;
   color: #8b949e;
   margin-bottom: 6px;
 }
 
 #main .price-position-bar {
-  height: 10px;
+  height: 8px;
   background: #21262d;
-  border-radius: 5px;
+  border-radius: 4px;
   overflow: visible;
   position: relative;
 }
 
 #main .price-position-fill {
   height: 100%;
-  border-radius: 5px;
+  border-radius: 4px;
   transition: all 0.3s;
 }
 
@@ -10394,15 +10394,15 @@ p.ns-mut{margin:6px 0}
 
 #main .price-position-marker {
   position: absolute;
-  top: -3px;
-  width: 3px;
-  height: 16px;
-  border-radius: 2px;
+  top: -2px;
+  width: 2px;
+  height: 12px;
+  border-radius: 1px;
 }
 
 #main .price-position-marker.current {
   background: #fff;
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
 }
 
 #main .price-position-marker.mid {
@@ -10420,13 +10420,11 @@ p.ns-mut{margin:6px 0}
 
 /* Weekly Open Section */
 #main .weekly-open-section {
-  background: #0d1117;
-  border-radius: 6px;
-  padding: 12px;
-  margin-bottom: 14px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid #30363d;
 }
 
 #main .weekly-open-left {
@@ -10436,7 +10434,7 @@ p.ns-mut{margin:6px 0}
 }
 
 #main .weekly-open-label {
-  font-size: 10px;
+  font-size: 11px;
   color: #8b949e;
   text-transform: uppercase;
 }
@@ -10455,42 +10453,38 @@ p.ns-mut{margin:6px 0}
 }
 
 #main .weekly-open-status.above {
-  background: rgba(63, 185, 80, 0.15);
+  background: rgba(63, 185, 80, 0.1);
   color: #3fb950;
 }
 
 #main .weekly-open-status.below {
-  background: rgba(248, 81, 73, 0.15);
+  background: rgba(248, 81, 73, 0.1);
   color: #f85149;
 }
 
 /* Weekly Alerts */
 #main .weekly-alerts {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #30363d;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 #main .weekly-alert {
-  background: #0d1117;
-  border-radius: 6px;
-  padding: 10px 12px;
   display: flex;
-  align-items: flex-start;
   gap: 10px;
-  border-left: 3px solid;
+  background: transparent;
+  border: none;
+  border-left: none;
+  padding: 0;
 }
 
-#main .weekly-alert.info {
-  border-left-color: #58a6ff;
-}
-
-#main .weekly-alert.warning {
-  border-left-color: #d29922;
-}
-
+#main .weekly-alert.info,
+#main .weekly-alert.warning,
 #main .weekly-alert.success {
-  border-left-color: #3fb950;
+  border-left: none;
 }
 
 #main .weekly-alert-icon {
@@ -10509,16 +10503,10 @@ p.ns-mut{margin:6px 0}
   margin-bottom: 2px;
 }
 
-#main .weekly-alert.info .weekly-alert-title {
-  color: #58a6ff;
-}
-
-#main .weekly-alert.warning .weekly-alert-title {
-  color: #d29922;
-}
-
+#main .weekly-alert.info .weekly-alert-title,
+#main .weekly-alert.warning .weekly-alert-title,
 #main .weekly-alert.success .weekly-alert-title {
-  color: #3fb950;
+  color: #c9d1d9;
 }
 
 #main .weekly-alert-msg {
@@ -10532,4 +10520,4 @@ p.ns-mut{margin:6px 0}
 </style>
 
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4fc89bdfb740c19',t:'MTc5Mjg4MjIwMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4fca7f11c6ab343',t:'MTc5Mjg4MzQzOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
