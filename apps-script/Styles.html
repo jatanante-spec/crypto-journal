@@ -10252,7 +10252,284 @@ p.ns-mut{margin:6px 0}
   font-weight: 600;
 }
 
+
+/* WEEKLY-STRUCTURE-1 · Weekly structure panel styles */
+
+#main .weekly-structure-panel {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+
+#main .weekly-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+#main .weekly-panel-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #c9d1d9;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#main .weekly-panel-title .icon {
+  font-size: 16px;
+}
+
+#main .weekly-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#main .weekly-badge.bullish {
+  background: rgba(63, 185, 80, 0.15);
+  color: #3fb950;
+}
+
+#main .weekly-badge.bearish {
+  background: rgba(248, 81, 73, 0.15);
+  color: #f85149;
+}
+
+#main .weekly-badge.neutral {
+  background: rgba(139, 148, 158, 0.15);
+  color: #8b949e;
+}
+
+/* Structure Grid */
+#main .structure-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+#main .structure-item {
+  background: #0d1117;
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+}
+
+#main .structure-item-label {
+  font-size: 10px;
+  color: #8b949e;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+#main .structure-item-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #c9d1d9;
+}
+
+#main .structure-item-value.high {
+  color: #3fb950;
+}
+
+#main .structure-item-value.low {
+  color: #f85149;
+}
+
+#main .structure-item-value.mid {
+  color: #58a6ff;
+}
+
+#main .structure-item-sub {
+  font-size: 10px;
+  color: #8b949e;
+  margin-top: 4px;
+}
+
+/* Price Position Bar */
+#main .price-position-wrapper {
+  margin-bottom: 16px;
+}
+
+#main .price-position-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #8b949e;
+  margin-bottom: 6px;
+}
+
+#main .price-position-bar {
+  height: 10px;
+  background: #21262d;
+  border-radius: 5px;
+  overflow: visible;
+  position: relative;
+}
+
+#main .price-position-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: all 0.3s;
+}
+
+#main .price-position-fill.bullish {
+  background: linear-gradient(90deg, #3fb950, #56d364);
+}
+
+#main .price-position-fill.bearish {
+  background: linear-gradient(90deg, #f85149, #ff7b72);
+}
+
+#main .price-position-fill.neutral {
+  background: #8b949e;
+}
+
+#main .price-position-marker {
+  position: absolute;
+  top: -3px;
+  width: 3px;
+  height: 16px;
+  border-radius: 2px;
+}
+
+#main .price-position-marker.current {
+  background: #fff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+}
+
+#main .price-position-marker.mid {
+  background: #58a6ff;
+}
+
+#main .price-position-marker-label {
+  position: absolute;
+  top: -18px;
+  font-size: 9px;
+  color: #8b949e;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+/* Weekly Open Section */
+#main .weekly-open-section {
+  background: #0d1117;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#main .weekly-open-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#main .weekly-open-label {
+  font-size: 10px;
+  color: #8b949e;
+  text-transform: uppercase;
+}
+
+#main .weekly-open-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: #c9d1d9;
+}
+
+#main .weekly-open-status {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+#main .weekly-open-status.above {
+  background: rgba(63, 185, 80, 0.15);
+  color: #3fb950;
+}
+
+#main .weekly-open-status.below {
+  background: rgba(248, 81, 73, 0.15);
+  color: #f85149;
+}
+
+/* Weekly Alerts */
+#main .weekly-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#main .weekly-alert {
+  background: #0d1117;
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-left: 3px solid;
+}
+
+#main .weekly-alert.info {
+  border-left-color: #58a6ff;
+}
+
+#main .weekly-alert.warning {
+  border-left-color: #d29922;
+}
+
+#main .weekly-alert.success {
+  border-left-color: #3fb950;
+}
+
+#main .weekly-alert-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+#main .weekly-alert-content {
+  flex: 1;
+}
+
+#main .weekly-alert-title {
+  font-weight: 700;
+  font-size: 12px;
+  color: #c9d1d9;
+  margin-bottom: 2px;
+}
+
+#main .weekly-alert.info .weekly-alert-title {
+  color: #58a6ff;
+}
+
+#main .weekly-alert.warning .weekly-alert-title {
+  color: #d29922;
+}
+
+#main .weekly-alert.success .weekly-alert-title {
+  color: #3fb950;
+}
+
+#main .weekly-alert-msg {
+  font-size: 11px;
+  color: #8b949e;
+  line-height: 1.4;
+}
+
+/* /WEEKLY-STRUCTURE-1 */
+
 </style>
 
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4fc37061b87a2cb',t:'MTc5Mjg3ODgxMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4fc89bdfb740c19',t:'MTc5Mjg4MjIwMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
