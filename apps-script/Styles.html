@@ -10517,7 +10517,287 @@ p.ns-mut{margin:6px 0}
 
 /* /WEEKLY-STRUCTURE-1 */
 
+/* DERIVATIVES-1 · Derivatives panel styles */
+
+#main .derivatives-panel {
+  background: #161b22;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border: none;
+}
+
+#main .derivatives-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+#main .derivatives-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #c9d1d9;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#main .derivatives-sentiment {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#main .derivatives-sentiment.bullish {
+  background: rgba(63, 185, 80, 0.15);
+  color: #3fb950;
+}
+
+#main .derivatives-sentiment.bearish {
+  background: rgba(248, 81, 73, 0.15);
+  color: #f85149;
+}
+
+#main .derivatives-sentiment.neutral {
+  background: rgba(139, 148, 158, 0.15);
+  color: #8b949e;
+}
+
+/* Derivatives Grid */
+#main .derivatives-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+#main .derivative-card {
+  background: #0d1117;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+#main .derivative-label {
+  font-size: 10px;
+  color: #8b949e;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+#main .derivative-value {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+#main .derivative-value.positive {
+  color: #f85149;
+}
+
+#main .derivative-value.negative {
+  color: #3fb950;
+}
+
+#main .derivative-value.neutral {
+  color: #c9d1d9;
+}
+
+#main .derivative-sub {
+  font-size: 10px;
+  color: #8b949e;
+}
+
+/* Funding Gauge */
+#main .funding-gauge {
+  margin-bottom: 16px;
+  padding: 14px;
+  background: #0d1117;
+  border-radius: 8px;
+}
+
+#main .funding-gauge-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+#main .funding-gauge-label {
+  font-size: 11px;
+  color: #8b949e;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+#main .funding-gauge-value {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+#main .funding-gauge-bar {
+  height: 10px;
+  background: linear-gradient(90deg, #3fb950 0%, #3fb950 35%, #8b949e 35%, #8b949e 65%, #f85149 65%, #f85149 100%);
+  border-radius: 5px;
+  position: relative;
+  margin-bottom: 8px;
+}
+
+#main .funding-gauge-marker {
+  position: absolute;
+  top: -4px;
+  width: 4px;
+  height: 18px;
+  background: #fff;
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+
+#main .funding-gauge-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #8b949e;
+}
+
+#main .funding-gauge-zones {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  margin-top: 4px;
+}
+
+#main .funding-gauge-zones span {
+  flex: 1;
+  text-align: center;
+}
+
+#main .funding-gauge-zones .shorts {
+  color: #3fb950;
+}
+
+#main .funding-gauge-zones .neutral {
+  color: #8b949e;
+}
+
+#main .funding-gauge-zones .longs {
+  color: #f85149;
+}
+
+/* Liquidation Section */
+#main .liquidation-section {
+  padding: 14px;
+  background: #0d1117;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+#main .liquidation-header {
+  font-size: 11px;
+  color: #8b949e;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+#main .liquidation-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#main .liquidation-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#main .liquidation-bar-label {
+  font-size: 10px;
+  color: #8b949e;
+  min-width: 70px;
+}
+
+#main .liquidation-bar-track {
+  flex: 1;
+  height: 6px;
+  background: #21262d;
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+}
+
+#main .liquidation-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+#main .liquidation-bar-fill.long {
+  background: #f85149;
+}
+
+#main .liquidation-bar-fill.short {
+  background: #3fb950;
+}
+
+#main .liquidation-bar-value {
+  font-size: 10px;
+  font-weight: 600;
+  color: #c9d1d9;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* Combined Signal */
+#main .combined-signal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+#main .signal-box {
+  background: #0d1117;
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+}
+
+#main .signal-box-label {
+  font-size: 10px;
+  color: #8b949e;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+#main .signal-box-value {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+#main .signal-box-value.bullish {
+  color: #3fb950;
+}
+
+#main .signal-box-value.bearish {
+  color: #f85149;
+}
+
+#main .signal-box-value.neutral {
+  color: #8b949e;
+}
+
+#main .signal-box-sub {
+  font-size: 10px;
+  color: #8b949e;
+  margin-top: 4px;
+}
+
+/* /DERIVATIVES-1 */
+
 </style>
 
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4fca7f11c6ab343',t:'MTc5Mjg4MzQzOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4fce54d6890b32e',t:'MTc5Mjg4NTk1MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
