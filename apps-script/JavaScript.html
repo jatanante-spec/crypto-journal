@@ -13806,6 +13806,17 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
   '</div>';
 
 
+  // STRUCTURE-POPUP-1 · Structure broken popup overlay HTML
+  var STRUCTURE_POPUP_HTML = '<div class="structure-popup-overlay" id="structure-popup-overlay">' +
+    '<div class="structure-popup">' +
+      '<div class="structure-popup-header">' +
+        '<div class="structure-popup-title" id="structure-popup-title">⚠ Structure Broken</div>' +
+        '<button class="structure-popup-close">✕</button>' +
+      '</div>' +
+      '<div class="structure-popup-body" id="structure-popup-body"></div>' +
+    '</div>' +
+  '</div>';
+
   // CONFLUENCE-MODAL-1 · Settings modal with algorithm
   var CONFLUENCE_MODAL_HTML = '<div class="conf-modal-overlay" id="conf-modal-overlay">' +
     '<div class="conf-modal">' +
@@ -14006,6 +14017,119 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
       var main = document.getElementById('main');
       if (main) main.appendChild(overlay);
     }
+  }
+
+  /* STRUCTURE-POPUP-1 · Inject structure broken popup overlay */
+  function injectStructurePopup() {
+    if (!document.getElementById('structure-popup-overlay')) {
+      var div = document.createElement('div');
+      div.innerHTML = STRUCTURE_POPUP_HTML;
+      var overlay = div.firstChild;
+
+      overlay.onclick = function(e) {
+        if (e.target === overlay) closeStructurePopup();
+      };
+
+      var popup = overlay.querySelector('.structure-popup');
+      popup.onclick = function(e) {
+        e.stopPropagation();
+      };
+
+      var closeBtn = overlay.querySelector('.structure-popup-close');
+      closeBtn.onclick = function(e) {
+        e.stopPropagation();
+        closeStructurePopup();
+      };
+
+      var main = document.getElementById('main');
+      if (main) main.appendChild(overlay);
+    }
+  }
+
+  /* STRUCTURE-POPUP-1 · Open structure broken popup with coin data */
+  function openStructurePopup(ticker) {
+    var book = state.books && state.books[ticker];
+    if (!book) return;
+
+    var overlay = document.getElementById('structure-popup-overlay');
+    var title = document.getElementById('structure-popup-title');
+    var body = document.getElementById('structure-popup-body');
+    if (!overlay || !body) return;
+
+    // Get structure data from book
+    var price = book.market && book.market.price ? book.market.price : 0;
+    var tape = book.tape || {};
+    var swings = tape.swings || {};
+    var lastSwingLow = swings.lastConfirmedLow || 0;
+    var broken = swings.failedBounce || tape.structureBroken || false;
+
+    // Calculate % below swing low
+    var pctBelow = lastSwingLow > 0 ? ((price / lastSwingLow) - 1) * 100 : 0;
+
+    // Get break timestamp if available
+    var breakTime = swings.breakTime || 'Recent';
+
+    title.textContent = ticker + ' — Structure Broken';
+
+    var html = '<div class="structure-popup-summary">' +
+      '<div class="structure-popup-summary-row">' +
+        '<div class="structure-popup-data-item">' +
+          '<div class="structure-popup-data-label">Current Price</div>' +
+          '<div class="structure-popup-data-value red">' + priceGbp(price, 4) + '</div>' +
+        '</div>' +
+        '<div class="structure-popup-data-item">' +
+          '<div class="structure-popup-data-label">Confirmed Swing Low</div>' +
+          '<div class="structure-popup-data-value">' + (lastSwingLow > 0 ? priceGbp(lastSwingLow, 4) : '—') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="structure-popup-summary-row">' +
+        '<div class="structure-popup-data-item">' +
+          '<div class="structure-popup-data-label">Below By</div>' +
+          '<div class="structure-popup-data-value red">' + (pctBelow !== 0 ? num(pctBelow, 1) + '%' : '—') + '</div>' +
+        '</div>' +
+        '<div class="structure-popup-data-item">' +
+          '<div class="structure-popup-data-label">Break Time</div>' +
+          '<div class="structure-popup-data-value">' + esc(String(breakTime)) + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+    html += '<div class="structure-popup-section-title">What This Means</div>';
+    html += '<div class="structure-popup-explanation">';
+    if (broken) {
+      html += 'Price failed to bounce off the swing low and confirmed a Lower Low. This signals continued selling pressure — buying now is catching a falling knife.';
+    } else {
+      html += 'Price is below the last confirmed swing low. Wait for structure to rebuild before considering entry.';
+    }
+    html += '</div>';
+
+    html += '<div class="structure-popup-section-title">When to Re-evaluate</div>';
+    html += '<div class="structure-popup-reevaluate">';
+    html += '<strong>Look for:</strong> Higher Low forming above ' + (lastSwingLow > 0 ? priceGbp(lastSwingLow, 4) : 'swing low') + ' with completed 1h close above EMA20. Until then, this remains a NO-GO.';
+    html += '</div>';
+
+    html += '<div class="structure-popup-actions">' +
+      '<button class="structure-popup-btn primary" data-action="structure-popup-close">Got It</button>' +
+      '<button class="structure-popup-btn secondary" data-action="structure-popup-close">Dismiss</button>' +
+    '</div>';
+
+    body.innerHTML = html;
+    overlay.classList.add('active');
+
+    // Attach close button handlers
+    var closeBtns = body.querySelectorAll('[data-action="structure-popup-close"]');
+    closeBtns.forEach(function(btn) {
+      btn.onclick = function(e) {
+        e.stopPropagation();
+        closeStructurePopup();
+      };
+    });
+  }
+
+  /* STRUCTURE-POPUP-1 · Close structure broken popup */
+  function closeStructurePopup() {
+    var overlay = document.getElementById('structure-popup-overlay');
+    if (overlay) overlay.classList.remove('active');
   }
 
   function triagePopContent(kind,withDensity){
@@ -14846,6 +14970,16 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
     if(!ticker)return;
     var panel=document.getElementById('pred-'+ticker);
     if(panel)panel.classList.toggle('active');
+  },true);
+  /* STRUCTURE-POPUP-1 · Structure broken popup handler */
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('[data-action="open-structure-popup"]');
+    if(!b)return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    var ticker=b.getAttribute('data-ticker');
+    if(!ticker)return;
+    openStructurePopup(ticker);
   },true);
   /* /PREDICTION-1 */
   /* CONFLUENCE-MODAL-1 · Settings modal action handler */
@@ -17448,6 +17582,7 @@ function triageUnfoldHtml(r, o){
     el.scrollTop=oldScroll;
     attachBadgeClickListeners();
     injectConfluencePopup();
+    injectStructurePopup();
     injectMAPopup();
     injectConfluenceModal();
     var toastEl=document.getElementById('triage-toast');
@@ -18041,10 +18176,20 @@ function triageUnfoldHtml(r, o){
     var regime = detectMarketRegime(book);
     var winRate = getWinRate(ticker, score);
     
+    // Check if structure is broken
+    var tape = book.tape || {};
+    var swings = tape.swings || {};
+    var price = book.market && book.market.price ? book.market.price : 0;
+    var lastSwingLow = swings.lastConfirmedLow || 0;
+    var structureBroken = (swings.failedBounce || tape.structureBroken || (lastSwingLow > 0 && price < lastSwingLow));
+    
     var regimeClass = regime.regime === 'trending' ? '' : regime.regime === 'choppy' ? 'choppy' : 'volatile';
     var regimeIcon = regime.regime === 'trending' ? '' : regime.regime === 'choppy' ? '↔️' : '⚡';
     
-    return '<span class="badge regime ' + regimeClass + '">' + regimeIcon + ' ' + regime.regime + '</span>' +
+    var structureBadge = structureBroken ? '<span class="badge pred-badge structure-broken" data-ticker="' + ticker + '" data-action="open-structure-popup"> Structure Broken</span>' : '';
+    
+    return structureBadge +
+           '<span class="badge regime ' + regimeClass + '">' + regimeIcon + ' ' + regime.regime + '</span>' +
            '<span class="badge pred-badge signal" data-ticker="' + ticker + '" data-action="toggle-prediction">' + score + '% signal</span>' +
            '<span class="badge pred-badge winrate">' + winRate.rate + '% win</span>' +
            '<button class="badge pred-badge expand-btn" data-ticker="' + ticker + '" data-action="toggle-prediction">Predict</button>';
@@ -18359,4 +18504,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4f8c3cb896235e3',t:'MTc5Mjg0MjYzNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4f9fb39a889b131',t:'MTc5Mjg1NTM5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
