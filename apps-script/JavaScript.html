@@ -18186,13 +18186,18 @@ function triageUnfoldHtml(r, o){
     var failedBounce = tape.swingFailedBounce || false;
     var structureBroken = failedBounce || (swingLow > 0 && price < swingLow);
     
-    var regimeClass = regime.regime === 'trending' ? '' : regime.regime === 'choppy' ? 'choppy' : 'volatile';
-    var regimeIcon = regime.regime === 'trending' ? '' : regime.regime === 'choppy' ? '↔️' : '⚡';
+    // Only show regime badge if we have a valid regime
+    var regimeBadge = '';
+    if (regime.regime !== 'unknown') {
+      var regimeClass = regime.regime === 'trending' ? '' : regime.regime === 'choppy' ? 'choppy' : 'volatile';
+      var regimeIcon = regime.regime === 'trending' ? '' : regime.regime === 'choppy' ? '↔️' : '⚡';
+      regimeBadge = '<span class="badge regime ' + regimeClass + '">' + regimeIcon + ' ' + regime.regime + '</span>';
+    }
     
     var structureBadge = structureBroken ? '<span class="badge pred-badge structure-broken" data-ticker="' + ticker + '" data-action="open-structure-popup"> Structure Broken</span>' : '';
     
     return structureBadge +
-           '<span class="badge regime ' + regimeClass + '">' + regimeIcon + ' ' + regime.regime + '</span>' +
+           regimeBadge +
            '<span class="badge pred-badge signal" data-ticker="' + ticker + '" data-action="toggle-prediction">' + score + '% signal</span>' +
            '<span class="badge pred-badge winrate">' + winRate.rate + '% win</span>' +
            '<button class="badge pred-badge expand-btn" data-ticker="' + ticker + '" data-action="toggle-prediction">Predict</button>';
@@ -18507,4 +18512,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4fa5e69af9e0c19',t:'MTc5Mjg1OTQ1NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4fa661ba8d5709a',t:'MTc5Mjg1OTc3MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
