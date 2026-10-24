@@ -17207,17 +17207,18 @@ function triageUnfoldHtml(r, o){
         var sigLine='<div class="uc-l3"><span class="uc-sig"><b>'+esc(trend)+'</b> \u00b7 '+watch+'</span><span class="uc-meta">'+location+' \u00b7 '+esc(triageFreshShort(String(r.fresh&&r.fresh.label||'not checked')))+'</span>'+healthMarkup+'</div>';
         var openPart=whyOpen?whyList+'<div class="uni-actions"><div class="triage-ledger-actions">'+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+name:'Inspect '+name)+'">'+(locked?'Research':'Inspect')+'</button></div></div>':'';
         var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+(dd?'':pfContextBadge(r))+(isResearchMode()?pfTimeframeBadge(r):'')+pfBreakoutBadge(r)+pfRecoveryBadge(r)+pfMAMacdBadge(c.ticker);   // ROW-LAYOUT-E-1 · split head
-        var head2=generateSparkline(c.ticker)+maBadgeHtml(c.ticker)+confluenceBadgeHtml(c.ticker)+'<span class="uc-fill"></span>';   // ROW-LAYOUT-E-1
+        var head2=generateSparkline(c.ticker)+maBadgeHtml(c.ticker)+confluenceBadgeHtml(c.ticker)+predictionBadgesHtml(c.ticker)+'<span class="uc-fill"></span>';   // ROW-LAYOUT-E-1
         var cls='triage-unified-row triage-combined-row uni-card uv2 uv2-'+rowStyle+' verdict-'+vc+(whyOpen?' uv2-open':'')+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+(isBreakoutRow(r)?' breakout-row':'');
         var open='<article class="'+cls+'" data-ticker="'+ticker+'" data-action="scout-why" aria-expanded="'+whyOpen+'">';
         var lockNote=locked?'<div class="uc-lock">'+reason+'</div>':'';
         if(rowStyle==='compact'){
           var notPass=['ticket','timing','account','plan'].filter(function(k){return (g.groups[k]||'none')!=='ok';});
           tiles=notPass.length?notPass.map(function(k){var st=g.groups[k]||'none';return '<span class="uc-light '+gCls[st]+'" title="'+gWords[k]+': '+gMarks[st]+'"><i></i>'+shortW[k]+'</span>';}).join(''):'<span class="uc-light us-pass" title="Ticket, Timing, Account and Plan all pass"><i></i>All 4 pass</span>';
+          var predictionPanel = predictionPanelHtml(c.ticker, g.confluence || calcConfluence(c.ticker));
           return open+
             '<div class="uc-row-inner"><div class="uc-l1">'+(triageEdit?removeAction:'')+head+'</div>'+
             '<div class="uc-l2">'+head2+verdictMiniHtml(vw,vc)+'<span class="uc-reason">'+(teChipsHtml(g)||esc(g.why||'Not evaluated'))+'</span><span class="uc-lights">'+tiles+'</span></div></div>'+
-            (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+(isResearchMode()?pfExitButtonHtml(r):'')+'</article>';   // SCAN-RESEARCH-1
+            (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+(isResearchMode()?pfExitButtonHtml(r):'')+predictionPanel+'</article>';   // SCAN-RESEARCH-1
         }
         return open+
           '<div class="uc-l1">'+verdictMiniHtml(vw,vc)+(triageEdit?removeAction:'')+head+'<span class="why-link">'+(whyOpen?'Close':'Why?')+'</span></div>'+
@@ -17844,6 +17845,201 @@ function triageUnfoldHtml(r, o){
   }
   /* /HOURLY-FALLBACK-1 */
 
+  /* PREDICTION-1 · Enhanced prediction features */
+  
+  /**
+   * Calculate prediction signal strength (0-100)
+   * Weights: Trend 30%, Momentum 25%, Volume 25%, Volatility 20%
+   */
+  function calculatePredictionScore(confluence) {
+    if (!confluence) return 0;
+    
+    var trendPct = (confluence.trend / 5) * 100; // Trend is now 0-5
+    var momentumPct = (confluence.momentum / 3) * 100;
+    var volumePct = (confluence.volume / 2) * 100;
+    var volatilityPct = (confluence.volatility / 2) * 100;
+    
+    var score = (trendPct * 0.30) + (momentumPct * 0.25) + (volumePct * 0.25) + (volatilityPct * 0.20);
+    return Math.round(score);
+  }
+  
+  /**
+   * Detect market regime based on MA alignment and volatility
+   */
+  function detectMarketRegime(book) {
+    if (!book || !book.market) return { regime: 'unknown', confidence: 0 };
+    
+    var ma = book.market.maAlignment;
+    var atr = book.market.atr14;
+    var price = book.market.price;
+    
+    if (!ma || !price) return { regime: 'unknown', confidence: 0 };
+    
+    var upCount = ma.upCount || 0;
+    var atrPct = atr && price ? (atr / price) * 100 : 0;
+    
+    // Trending: all MAs aligned
+    if (upCount === 3 || upCount === 0) {
+      return { regime: 'trending', confidence: 85, direction: upCount === 3 ? 'bull' : 'bear' };
+    }
+    
+    // Volatile: high ATR (>5%)
+    if (atrPct > 5) {
+      return { regime: 'volatile', confidence: 70 };
+    }
+    
+    // Choppy: mixed MAs, low ATR
+    return { regime: 'choppy', confidence: 60 };
+  }
+  
+  /**
+   * Get historical win rate for similar setups
+   */
+  function getWinRate(ticker, score) {
+    var storageKey = 'predictionSignals';
+    var signals = [];
+    try {
+      signals = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    } catch(e) {}
+    
+    // Filter signals for this ticker with similar score (±15)
+    var similar = signals.filter(function(s) {
+      return s.ticker === ticker && Math.abs(s.score - score) <= 15;
+    });
+    
+    if (similar.length < 5) return { rate: 50, count: similar.length }; // Not enough data
+    
+    var wins = similar.filter(function(s) { return s.outcome === 'win'; }).length;
+    var rate = Math.round((wins / similar.length) * 100);
+    
+    return { rate: rate, count: similar.length };
+  }
+  
+  /**
+   * Log a prediction signal
+   */
+  function logPredictionSignal(ticker, score, direction) {
+    var storageKey = 'predictionSignals';
+    var signals = [];
+    try {
+      signals = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    } catch(e) {}
+    
+    signals.push({
+      date: new Date().toISOString(),
+      ticker: ticker,
+      score: score,
+      direction: direction,
+      outcome: null, // Will be updated after 7 days
+      checked: false
+    });
+    
+    // Keep only last 200 signals
+    if (signals.length > 200) signals = signals.slice(-200);
+    
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(signals));
+    } catch(e) {}
+  }
+  
+  /**
+   * Get key support/resistance levels
+   */
+  function getKeyLevels(book) {
+    if (!book || !book.market) return { support: null, resistance: null };
+    
+    var price = book.market.price;
+    var ma200 = book.market.ma200;
+    var atr = book.market.atr14;
+    
+    if (!price) return { support: null, resistance: null };
+    
+    // Support: MA200 or price - 2*ATR
+    var support = ma200 && ma200 < price ? ma200 : price - (atr * 2);
+    
+    // Resistance: price + 2*ATR or recent high
+    var resistance = price + (atr * 2);
+    
+    return {
+      support: Math.round(support * 100) / 100,
+      resistance: Math.round(resistance * 100) / 100
+    };
+  }
+  
+  /**
+   * Generate prediction panel HTML
+   */
+  function predictionPanelHtml(ticker, confluence) {
+    var score = calculatePredictionScore(confluence);
+    var regime = detectMarketRegime(state.books && state.books[ticker]);
+    var winRate = getWinRate(ticker, score);
+    var levels = getKeyLevels(state.books && state.books[ticker]);
+    
+    var signalClass = score >= 70 ? 'strong' : score >= 50 ? 'moderate' : 'weak';
+    
+    var trendPct = Math.round((confluence.trend / 5) * 100);
+    var momentumPct = Math.round((confluence.momentum / 3) * 100);
+    var volumePct = Math.round((confluence.volume / 2) * 100);
+    var volatilityPct = Math.round((confluence.volatility / 2) * 100);
+    
+    return '<div class="prediction-panel" id="pred-' + ticker + '">' +
+      '<div class="signal-meter">' +
+        '<div class="meter-header">' +
+          '<div class="meter-label">Prediction Confidence</div>' +
+          '<div class="meter-value ' + signalClass + '">' + score + '%</div>' +
+        '</div>' +
+        '<div class="meter-bar">' +
+          '<div class="meter-fill ' + signalClass + '" style="width: ' + score + '%"></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="breakdown-grid">' +
+        '<div class="breakdown-item"><div class="breakdown-label">Trend</div><div class="breakdown-value ' + (trendPct >= 70 ? 'high' : trendPct >= 50 ? 'mid' : 'low') + '">' + trendPct + '%</div></div>' +
+        '<div class="breakdown-item"><div class="breakdown-label">Momentum</div><div class="breakdown-value ' + (momentumPct >= 70 ? 'high' : momentumPct >= 50 ? 'mid' : 'low') + '">' + momentumPct + '%</div></div>' +
+        '<div class="breakdown-item"><div class="breakdown-label">Volume</div><div class="breakdown-value ' + (volumePct >= 70 ? 'high' : volumePct >= 50 ? 'mid' : 'low') + '">' + volumePct + '%</div></div>' +
+        '<div class="breakdown-item"><div class="breakdown-label">Volatility</div><div class="breakdown-value ' + (volatilityPct >= 70 ? 'high' : volatilityPct >= 50 ? 'mid' : 'low') + '">' + volatilityPct + '%</div></div>' +
+      '</div>' +
+      '<div class="prediction-stats">' +
+        '<div class="stat-box"><div class="stat-label">Support</div><div class="stat-value up">' + (levels.support ? '£' + levels.support.toLocaleString() : '—') + '</div></div>' +
+        '<div class="stat-box"><div class="stat-label">Resistance</div><div class="stat-value down">' + (levels.resistance ? '£' + levels.resistance.toLocaleString() : '—') + '</div></div>' +
+        '<div class="stat-box"><div class="stat-label">Win Rate (' + winRate.count + ' signals)</div><div class="stat-value">' + winRate.rate + '%</div></div>' +
+        '<div class="stat-box"><div class="stat-label">Regime</div><div class="stat-value">' + regime.regime + '</div></div>' +
+      '</div>' +
+    '</div>';
+  }
+  
+  /**
+   * Toggle prediction panel visibility
+   */
+  function togglePrediction(ticker) {
+    var panel = document.getElementById('pred-' + ticker);
+    if (panel) panel.classList.toggle('active');
+  }
+  
+  /**
+   * Generate prediction badges HTML for coin row
+   */
+  function predictionBadgesHtml(ticker) {
+    var book = state.books && state.books[ticker];
+    if (!book) return '';
+    
+    var confluence = calcConfluence(ticker);
+    if (!confluence) return '';
+    
+    var score = calculatePredictionScore(confluence);
+    var regime = detectMarketRegime(book);
+    var winRate = getWinRate(ticker, score);
+    
+    var regimeClass = regime.regime === 'trending' ? '' : regime.regime === 'choppy' ? 'choppy' : 'volatile';
+    var regimeIcon = regime.regime === 'trending' ? '📈' : regime.regime === 'choppy' ? '↔️' : '⚡';
+    
+    return '<span class="badge regime ' + regimeClass + '">' + regimeIcon + ' ' + regime.regime + '</span>' +
+           '<span class="badge signal" onclick="togglePrediction(\'' + ticker + '\')" style="cursor:pointer;">' + score + '% signal</span>' +
+           '<span class="badge winrate">' + winRate.rate + '% win</span>' +
+           '<button class="expand-btn" onclick="togglePrediction(\'' + ticker + '\')">Predict</button>';
+  }
+  
+  /* /PREDICTION-1 */
+
   /**
    * CONFLUENCE-1 · Multi-indicator agreement scoring
    * Groups: Trend (Ichimoku+SAR+MA20), Momentum (Stoch+RSI+MACD), Volatility (BB+ATR), Volume (MFI+Vol)
@@ -18151,3 +18347,4 @@ function triageProposalOpen(ticker){
 
   
 
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4f8b5d06e07b104',t:'MTc5Mjg0MjA2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

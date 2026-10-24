@@ -9857,7 +9857,49 @@ p.ns-mut{margin:6px 0}
 }
 /* /ROW-LAYOUT-E-1 */
 
+/* PREDICTION-1 · Prediction feature styles */
+#main .badge.regime { background: rgba(63,185,80,0.15); color: #3fb950; }
+#main .badge.regime.choppy { background: rgba(210,153,34,0.15); color: #d29922; }
+#main .badge.regime.volatile { background: rgba(248,81,73,0.15); color: #f85149; }
+#main .badge.signal { background: #21262d; color: #58a6ff; cursor: pointer; }
+#main .badge.signal:hover { background: #30363d; }
+#main .badge.winrate { background: rgba(63,185,80,0.1); color: #3fb950; }
+#main .expand-btn { background: transparent; border: 1px solid #30363d; color: #8b949e; padding: 2px 6px; border-radius: 4px; font-size: 10px; cursor: pointer; }
+#main .expand-btn:hover { border-color: #1d9bf0; color: #1d9bf0; }
+
+#main .prediction-panel { background: #0f1419; border: 1px solid #30363d; border-radius: 6px; padding: 12px; margin-top: 8px; display: none; }
+#main .prediction-panel.active { display: block; }
+
+#main .signal-meter { margin-bottom: 12px; }
+#main .meter-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+#main .meter-label { font-size: 10px; color: #8b949e; text-transform: uppercase; }
+#main .meter-value { font-size: 16px; font-weight: 700; }
+#main .meter-value.strong { color: #3fb950; }
+#main .meter-value.moderate { color: #d29922; }
+#main .meter-value.weak { color: #f85149; }
+#main .meter-bar { height: 6px; background: #21262d; border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+#main .meter-fill { height: 100%; border-radius: 3px; }
+#main .meter-fill.strong { background: linear-gradient(90deg, #3fb950, #56d364); }
+#main .meter-fill.moderate { background: linear-gradient(90deg, #d29922, #e3b341); }
+#main .meter-fill.weak { background: linear-gradient(90deg, #f85149, #ff7b72); }
+
+#main .breakdown-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+#main .breakdown-item { background: #161b22; border-radius: 4px; padding: 6px; text-align: center; }
+#main .breakdown-label { font-size: 9px; color: #8b949e; text-transform: uppercase; margin-bottom: 2px; }
+#main .breakdown-value { font-size: 14px; font-weight: 700; }
+#main .breakdown-value.high { color: #3fb950; }
+#main .breakdown-value.mid { color: #d29922; }
+#main .breakdown-value.low { color: #f85149; }
+
+#main .prediction-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#main .stat-box { background: #161b22; border-radius: 4px; padding: 8px; }
+#main .stat-label { font-size: 9px; color: #8b949e; text-transform: uppercase; margin-bottom: 4px; }
+#main .stat-value { font-size: 13px; font-weight: 700; }
+#main .stat-value.up { color: #3fb950; }
+#main .stat-value.down { color: #f85149; }
+/* /PREDICTION-1 */
+
 </style>
 
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4f39adf59e83c84',t:'MTc5Mjc4ODUzMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4f8b539cd61b104',t:'MTc5Mjg0MjAzOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
