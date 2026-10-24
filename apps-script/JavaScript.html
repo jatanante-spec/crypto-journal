@@ -14057,17 +14057,17 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
     if (!overlay || !body) return;
 
     // Get structure data from book
-    var price = book.market && book.market.price ? book.market.price : 0;
     var tape = book.tape || {};
-    var swings = tape.swings || {};
-    var lastSwingLow = swings.lastConfirmedLow || 0;
-    var broken = swings.failedBounce || tape.structureBroken || false;
+    var price = tape.price || (book.market && book.market.price) || 0;
+    var swingLow = tape.swingLow || 0;
+    var failedBounce = tape.swingFailedBounce || false;
+    var structureLabel = tape.structureLabel || '—';
 
     // Calculate % below swing low
-    var pctBelow = lastSwingLow > 0 ? ((price / lastSwingLow) - 1) * 100 : 0;
+    var pctBelow = swingLow > 0 ? ((price / swingLow) - 1) * 100 : 0;
 
     // Get break timestamp if available
-    var breakTime = swings.breakTime || 'Recent';
+    var breakTime = 'Recent';
 
     title.textContent = ticker + ' — Structure Broken';
 
@@ -14079,7 +14079,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
         '</div>' +
         '<div class="structure-popup-data-item">' +
           '<div class="structure-popup-data-label">Confirmed Swing Low</div>' +
-          '<div class="structure-popup-data-value">' + (lastSwingLow > 0 ? priceGbp(lastSwingLow, 4) : '—') + '</div>' +
+          '<div class="structure-popup-data-value">' + (swingLow > 0 ? priceGbp(swingLow, 4) : '—') + '</div>' +
         '</div>' +
       '</div>' +
       '<div class="structure-popup-summary-row">' +
@@ -14088,15 +14088,15 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
           '<div class="structure-popup-data-value red">' + (pctBelow !== 0 ? num(pctBelow, 1) + '%' : '—') + '</div>' +
         '</div>' +
         '<div class="structure-popup-data-item">' +
-          '<div class="structure-popup-data-label">Break Time</div>' +
-          '<div class="structure-popup-data-value">' + esc(String(breakTime)) + '</div>' +
+          '<div class="structure-popup-data-label">Structure</div>' +
+          '<div class="structure-popup-data-value">' + esc(String(structureLabel)) + '</div>' +
         '</div>' +
       '</div>' +
     '</div>';
 
     html += '<div class="structure-popup-section-title">What This Means</div>';
     html += '<div class="structure-popup-explanation">';
-    if (broken) {
+    if (failedBounce) {
       html += 'Price failed to bounce off the swing low and confirmed a Lower Low. This signals continued selling pressure — buying now is catching a falling knife.';
     } else {
       html += 'Price is below the last confirmed swing low. Wait for structure to rebuild before considering entry.';
@@ -14105,7 +14105,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
 
     html += '<div class="structure-popup-section-title">When to Re-evaluate</div>';
     html += '<div class="structure-popup-reevaluate">';
-    html += '<strong>Look for:</strong> Higher Low forming above ' + (lastSwingLow > 0 ? priceGbp(lastSwingLow, 4) : 'swing low') + ' with completed 1h close above EMA20. Until then, this remains a NO-GO.';
+    html += '<strong>Look for:</strong> Higher Low forming above ' + (swingLow > 0 ? priceGbp(swingLow, 4) : 'swing low') + ' with completed 1h close above EMA20. Until then, this remains a NO-GO.';
     html += '</div>';
 
     html += '<div class="structure-popup-actions">' +
@@ -18014,11 +18014,14 @@ function triageUnfoldHtml(r, o){
    * Detect market regime based on MA alignment and volatility
    */
   function detectMarketRegime(book) {
-    if (!book || !book.market) return { regime: 'unknown', confidence: 0 };
+    if (!book) return { regime: 'unknown', confidence: 0 };
     
-    var ma = book.market.maAlignment;
-    var atr = book.market.atr14;
-    var price = book.market.price;
+    // Get MA alignment from confluence (where it's actually stored)
+    var ticker = book.pair && book.pair.ticker;
+    var conf = ticker ? calcConfluence(ticker) : null;
+    var ma = conf && conf.maAlignment ? conf.maAlignment : null;
+    var price = book.market && book.market.price;
+    var atr = book.market && book.market.atr14;
     
     if (!ma || !price) return { regime: 'unknown', confidence: 0 };
     
@@ -18176,12 +18179,12 @@ function triageUnfoldHtml(r, o){
     var regime = detectMarketRegime(book);
     var winRate = getWinRate(ticker, score);
     
-    // Check if structure is broken
+    // Check if structure is broken using correct tape properties
     var tape = book.tape || {};
-    var swings = tape.swings || {};
-    var price = book.market && book.market.price ? book.market.price : 0;
-    var lastSwingLow = swings.lastConfirmedLow || 0;
-    var structureBroken = (swings.failedBounce || tape.structureBroken || (lastSwingLow > 0 && price < lastSwingLow));
+    var price = tape.price || (book.market && book.market.price) || 0;
+    var swingLow = tape.swingLow || 0;
+    var failedBounce = tape.swingFailedBounce || false;
+    var structureBroken = failedBounce || (swingLow > 0 && price < swingLow);
     
     var regimeClass = regime.regime === 'trending' ? '' : regime.regime === 'choppy' ? 'choppy' : 'volatile';
     var regimeIcon = regime.regime === 'trending' ? '' : regime.regime === 'choppy' ? '↔️' : '⚡';
@@ -18504,4 +18507,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4f9fb39a889b131',t:'MTc5Mjg1NTM5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4fa5e69af9e0c19',t:'MTc5Mjg1OTQ1NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
