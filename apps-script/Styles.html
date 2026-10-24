@@ -10010,7 +10010,225 @@ p.ns-mut{margin:6px 0}
 }
 /* /STRUCTURE-POPUP-1 */
 
+
+/* PROFIT-TARGET-1 · Target reality check & profit protection styles */
+
+/* Target Reality Check */
+#main .target-reality-check {
+  background: rgba(210, 153, 34, 0.08);
+  border: 1px solid rgba(210, 153, 34, 0.3);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+#main .target-reality-check-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+#main .target-reality-check-content {
+  flex: 1;
+}
+#main .target-reality-check-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: #d29922;
+  margin-bottom: 4px;
+}
+#main .target-reality-check-msg {
+  font-size: 12px;
+  color: #8b949e;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+#main .target-reality-check-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+#main .target-reality-check-btn {
+  background: #21262d;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+#main .target-reality-check-btn:hover {
+  background: #30363d;
+}
+#main .target-reality-check-btn.primary {
+  background: #d29922;
+  color: #0d1117;
+  border-color: #d29922;
+  font-weight: 600;
+}
+#main .target-reality-check-btn.primary:hover {
+  background: #e3b341;
+}
+#main .target-rr-comparison {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+#main .target-rr-item {
+  background: rgba(13, 17, 23, 0.6);
+  padding: 8px 10px;
+  border-radius: 4px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+#main .target-rr-label {
+  font-size: 9px;
+  color: #8b949e;
+  text-transform: uppercase;
+}
+#main .target-rr-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #c9d1d9;
+}
+#main .target-rr-value.warning {
+  color: #d29922;
+}
+#main .target-rr-value.good {
+  color: #3fb950;
+}
+
+/* Profit Protection Banner */
+#main .profit-banner {
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid;
+}
+#main .profit-banner-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+#main .profit-banner-content {
+  flex: 1;
+}
+#main .profit-banner-title {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+#main .profit-banner-msg {
+  font-size: 12px;
+  opacity: 0.85;
+}
+#main .profit-banner-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+#main .profit-banner-btn {
+  padding: 7px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+/* Protect variant (green) */
+#main .profit-banner-protect {
+  background: rgba(63, 185, 80, 0.1);
+  border-color: rgba(63, 185, 80, 0.3);
+  border-left: 4px solid #3fb950;
+}
+#main .profit-banner-protect .profit-banner-title {
+  color: #3fb950;
+}
+#main .profit-banner-protect .profit-banner-btn-primary {
+  background: #3fb950;
+  color: #0d1117;
+}
+#main .profit-banner-protect .profit-banner-btn-primary:hover {
+  background: #56d364;
+}
+#main .profit-banner-protect .profit-banner-btn-secondary {
+  background: transparent;
+  color: #3fb950;
+  border: 1px solid #3fb950;
+}
+#main .profit-banner-protect .profit-banner-btn-secondary:hover {
+  background: rgba(63, 185, 80, 0.1);
+}
+
+/* Bank variant (yellow) */
+#main .profit-banner-bank {
+  background: rgba(210, 153, 34, 0.1);
+  border-color: rgba(210, 153, 34, 0.3);
+  border-left: 4px solid #d29922;
+}
+#main .profit-banner-bank .profit-banner-title {
+  color: #d29922;
+}
+#main .profit-banner-bank .profit-banner-btn-warn {
+  background: #d29922;
+  color: #0d1117;
+}
+#main .profit-banner-bank .profit-banner-btn-warn:hover {
+  background: #e3b341;
+}
+#main .profit-banner-bank .profit-banner-btn-secondary {
+  background: transparent;
+  color: #d29922;
+  border: 1px solid #d29922;
+}
+#main .profit-banner-bank .profit-banner-btn-secondary:hover {
+  background: rgba(210, 153, 34, 0.1);
+}
+
+/* Target variant (blue) */
+#main .profit-banner-target {
+  background: rgba(88, 166, 255, 0.1);
+  border-color: rgba(88, 166, 255, 0.3);
+  border-left: 4px solid #58a6ff;
+}
+#main .profit-banner-target .profit-banner-title {
+  color: #58a6ff;
+}
+#main .profit-banner-target .profit-banner-btn-close {
+  background: #58a6ff;
+  color: #0d1117;
+}
+#main .profit-banner-target .profit-banner-btn-close:hover {
+  background: #79c0ff;
+}
+#main .profit-banner-target .profit-banner-btn-secondary {
+  background: transparent;
+  color: #58a6ff;
+  border: 1px solid #58a6ff;
+}
+#main .profit-banner-target .profit-banner-btn-secondary:hover {
+  background: rgba(88, 166, 255, 0.1);
+}
+
+/* Target input warning state */
+#main input[data-bind="sizer.target"].target-warning {
+  border-color: #d29922 !important;
+  background: rgba(210, 153, 34, 0.05);
+}
+
+/* /PROFIT-TARGET-1 */
+
 </style>
 
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4f9b9508f9b2736',t:'MTc5Mjg1MjY5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4fb4b9d7e5b6aae',t:'MTc5Mjg2OTE3MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

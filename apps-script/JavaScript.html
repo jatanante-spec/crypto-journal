@@ -11119,18 +11119,135 @@
       '<button type="button" class="btn'+(blocked?'':' primary')+'" data-action="log-sizer"'+(blocked?' disabled':'')+'>'+
       (blocked?"Don't buy":'Log BUY plan')+'</button></div>';
   }
+
+  /* PROFIT-TARGET-1 · Target reality check & profit protection features */
+
+  /**
+   * Generate target reality check warning HTML
+   */
+  function targetRealityCheckHtml() {
+    var target = Number(state.sizer.target);
+    var entry = Number(state.sizer.entry);
+    var stop = Number(state.sizer.stop);
+    var recentHigh = recentHighPx();
+    
+    if (!(target > 0) || !(recentHigh > 0) || target <= recentHigh * 1.005) return '';
+    
+    var diff = target - recentHigh;
+    var rr = stop > 0 && entry > 0 ? ((target - entry) / (entry - stop)).toFixed(1) : '—';
+    var realisticTarget = recentHigh;
+    var realisticRr = stop > 0 && entry > 0 ? ((realisticTarget - entry) / (entry - stop)).toFixed(1) : '—';
+    
+    return '<div class="target-reality-check" id="target-reality-check">' +
+      '<span class="target-reality-check-icon">&#9888;&#65039;</span>' +
+      '<div class="target-reality-check-content">' +
+        '<div class="target-reality-check-title">Target Above Resistance</div>' +
+        '<div class="target-reality-check-msg">Your target (' + priceGbp(target, 4) + ') is ' + priceGbp(diff, 4) + ' above the 16-day high (' + priceGbp(recentHigh, 4) + '). Price must break major resistance to reach this &mdash; unrealistic without confirmed breakout.</div>' +
+        '<div class="target-reality-check-actions">' +
+          '<button type="button" class="target-reality-check-btn primary" data-action="target-auto-adjust" data-target="' + realisticTarget + '">Auto-Adjust to ' + priceGbp(realisticTarget, 4) + '</button>' +
+          '<button type="button" class="target-reality-check-btn" data-action="target-keep-current">Keep Current Target</button>' +
+        '</div>' +
+        '<div class="target-rr-comparison">' +
+          '<div class="target-rr-item"><span class="target-rr-label">Current R:R</span><span class="target-rr-value warning">' + rr + 'R</span></div>' +
+          '<div class="target-rr-item"><span class="target-rr-label">Realistic R:R</span><span class="target-rr-value good">' + realisticRr + 'R</span></div>' +
+          '<div class="target-rr-item"><span class="target-rr-label">16-Day High</span><span class="target-rr-value">' + priceGbp(recentHigh, 4) + '</span></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  /**
+   * Generate profit protection banner HTML
+   */
+  function profitProtectionBannerHtml() {
+    var openTrade = primaryOpenTrade();
+    if (!openTrade || openTrade.exit != null) return '';
+    
+    var entry = Number(openTrade.entry);
+    var stop = Number(openTrade.stop);
+    var target = Number(openTrade.target);
+    if (!(entry > 0) || !(stop > 0) || !(target > 0)) return '';
+    
+    // Get current price for this coin
+    var ticker = String(openTrade.coin || state.settings.coinTicker).toUpperCase();
+    var book = state.books && state.books[ticker];
+    var price = book && book.market && book.market.price ? book.market.price : (tape && tape.price ? tape.price : 0);
+    if (!(price > 0)) return '';
+    
+    var risk = entry - stop;
+    if (risk <= 0) return '';
+    var r = (price - entry) / risk;
+    var pctToTarget = ((price - entry) / (target - entry)) * 100;
+    
+    // Check thresholds
+    var alertLevel = null;
+    if (r >= 1.5) {
+      alertLevel = 'target';
+    } else if (r >= 1.0) {
+      alertLevel = 'protect';
+    } else if (pctToTarget >= 60) {
+      alertLevel = 'bank';
+    }
+    
+    if (!alertLevel) return '';
+    
+    var tickerEsc = esc(String(openTrade.coin || state.settings.coinTicker).toUpperCase());
+    var priceStr = priceGbp(price, 4);
+    var rStr = num(r, 1);
+    
+    var bannerClass = '';
+    var icon = '';
+    var title = '';
+    var msg = '';
+    var btns = '';
+    
+    if (alertLevel === 'target') {
+      bannerClass = 'profit-banner profit-banner-target';
+      icon = '&#127919;';
+      title = 'TARGET REACHED &middot; +' + rStr + 'R';
+      msg = tickerEsc + ' hit ' + priceStr + ' (+' + rStr + 'R). Close position or trail stop to lock in gains.';
+      btns = '<button type="button" class="profit-banner-btn profit-banner-btn-close" data-action="profit-close-position">Close Position</button>' +
+             '<button type="button" class="profit-banner-btn profit-banner-btn-secondary" data-action="profit-trail-stop">Trail Stop</button>';
+    } else if (alertLevel === 'protect') {
+      bannerClass = 'profit-banner profit-banner-protect';
+      icon = '&#128176;';
+      title = 'PROTECT &middot; ' + tickerEsc + ' at +' + rStr + 'R';
+      msg = 'Move stop to break-even (' + priceGbp(entry, 4) + ') to guarantee no loss on this trade.';
+      btns = '<button type="button" class="profit-banner-btn profit-banner-btn-primary" data-action="profit-move-stop-be">Move Stop to BE</button>' +
+             '<button type="button" class="profit-banner-btn profit-banner-btn-secondary" data-action="profit-dismiss">Keep Current</button>';
+    } else {
+      bannerClass = 'profit-banner profit-banner-bank';
+      icon = '&#9888;&#65039;';
+      title = 'BANK PARTIAL &middot; ' + num(pctToTarget, 0) + '% of Target';
+      msg = 'Price stalling near resistance. Consider banking 50% profit or tightening stop.';
+      btns = '<button type="button" class="profit-banner-btn profit-banner-btn-warn" data-action="profit-bank-50">Bank 50%</button>' +
+             '<button type="button" class="profit-banner-btn profit-banner-btn-secondary" data-action="profit-trail-stop">Trail Stop</button>';
+    }
+    
+    return '<div class="' + bannerClass + '" id="profit-protection-banner">' +
+      '<span class="profit-banner-icon">' + icon + '</span>' +
+      '<div class="profit-banner-content">' +
+        '<div class="profit-banner-title">' + title + '</div>' +
+        '<div class="profit-banner-msg">' + msg + '</div>' +
+      '</div>' +
+      '<div class="profit-banner-actions">' + btns + '</div>' +
+    '</div>';
+  }
+
+  /* /PROFIT-TARGET-1 */
+
   function renderSizer(){
     var f=cdFrame(true),out=f.out,tape=f.t,managing=!!f.inWhy;
     nsLogSizer(f);   // NOSTOP-ABCD-1 B
     var nsC=nsCfg(),nsOn=nsC.style==='nostop'&&!managing,nsP=nsPlanFor(state.settings.coinTicker);
-    var ticket='<section class="cd-card cd-ticket"><header><h3>Your ticket</h3></header><p class="cd-small">Saved draft prices. Entry edits do not update Stop or Target; use a reviewed BP1 proposal or edit them yourself.</p>'+(cdMismatch(f)?'<p class="cd-warning">Draft needs review: entry '+esc(priceGbp(Number(state.sizer.entry),5))+' is more than 15% from the current quote '+esc(priceGbp(tape.price,5))+'. It may be intentional; no prices have been changed.</p>':'')+'<div class="cluster"><div class="cluster-row cols-3">'+field('Entry','sizer.entry',state.sizer.entry,'number','entry')+field('Stop','sizer.stop',state.sizer.stop,'number','stop')+field('Target','sizer.target',state.sizer.target,'number','target')+'</div></div>'+(out.invalid?'':rrTargetRow(state.sizer.entry,state.sizer.stop,state.sizer.target,out.rewardRisk))+'<div class="cd-metrics"><div'+(out.invalid?' class="cd-metric-bad"':'')+'><small>If stop hits</small><b>'+esc(out.invalid?'—':gbp(out.amountAtRisk))+'</b><small>'+esc(num(state.settings.riskPct,2)+'% of capital')+'</small></div><div class="'+(out.invalid||out.rewardRisk==null?'':(out.rewardRisk<(state.settings.minRr||1.5)?'cd-metric-bad':'cd-metric-ok'))+'"><small>Reward / risk</small><b>'+esc(out.rewardRisk==null?'—':num(out.rewardRisk,2)+'R')+'</b><small class="cd-metric-thr">min '+num(state.settings.minRr||1.5,2)+'R</small></div><div><small>Position estimate</small><b>'+esc(out.invalid?'—':gbp(out.positionGbp))+'</b></div></div><p class="cd-small">'+esc(gbp(state.settings.capitalGbp)+' capital · '+(out.invalid?'Review price order':num(out.stopDistancePct,2)+'% entry-to-stop distance')+' · estimates before execution differences')+'</p></section>';
+    var ticket='<section class="cd-card cd-ticket"><header><h3>Your ticket</h3></header><p class="cd-small">Saved draft prices. Entry edits do not update Stop or Target; use a reviewed BP1 proposal or edit them yourself.</p>'+(cdMismatch(f)?'<p class="cd-warning">Draft needs review: entry '+esc(priceGbp(Number(state.sizer.entry),5))+' is more than 15% from the current quote '+esc(priceGbp(tape.price,5))+'. It may be intentional; no prices have been changed.</p>':'')+'<div class="cluster"><div class="cluster-row cols-3">'+field('Entry','sizer.entry',state.sizer.entry,'number','entry')+field('Stop','sizer.stop',state.sizer.stop,'number','stop')+field('Target','sizer.target',state.sizer.target,'number','target')+'</div></div>'+(out.invalid?'':rrTargetRow(state.sizer.entry,state.sizer.stop,state.sizer.target,out.rewardRisk))+targetRealityCheckHtml()+'<div class="cd-metrics"><div'+(out.invalid?' class="cd-metric-bad"':'')+'><small>If stop hits</small><b>'+esc(out.invalid?'—':gbp(out.amountAtRisk))+'</b><small>'+esc(num(state.settings.riskPct,2)+'% of capital')+'</small></div><div class="'+(out.invalid||out.rewardRisk==null?'':(out.rewardRisk<(state.settings.minRr||1.5)?'cd-metric-bad':'cd-metric-ok'))+'"><small>Reward / risk</small><b>'+esc(out.rewardRisk==null?'—':num(out.rewardRisk,2)+'R')+'</b><small class="cd-metric-thr">min '+num(state.settings.minRr||1.5,2)+'R</small></div><div><small>Position estimate</small><b>'+esc(out.invalid?'—':gbp(out.positionGbp))+'</b></div></div><p class="cd-small">'+esc(gbp(state.settings.capitalGbp)+' capital · '+(out.invalid?'Review price order':num(out.stopDistancePct,2)+'% entry-to-stop distance')+' · estimates before execution differences')+'</p></section>';
     var pd=cdPlanGate(f),pst=(f.plan&&f.plan.status)||'';
     var planMeta=pd.ok?'Complete setup':pst==='ENTRY_NEEDED'?'Enter your bid first':pst==='DATA_MISSING'?'Data missing':'No complete setup';
     var plansAll=(state.plans||[]).length,plansMeta=plansAll?plansAll+' saved':'None saved';
     var ctxMeta=f.c.ready?(f.observation.trend+' · Tide '+tape.tide):'Hourly evidence unavailable';
     var toolsMeta=gbp(state.settings.capitalGbp)+' · '+num(state.settings.riskPct,2)+'% risk'+(out.invalid?' · review prices':' · '+num(out.stopDistancePct,2)+'% stop');
     var dataMeta=String((f.fresh&&f.fresh.label)||'Provider');
-    return '<div class="sizer-screen cd-workspace">'+sectionNavHtml('sizer')+cdHeader(f)+scoutHandoffHtml()+teSizerBanner()+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')
+    return '<div class="sizer-screen cd-workspace">'+sectionNavHtml('sizer')+cdHeader(f)+scoutHandoffHtml()+teSizerBanner()+cdDecision(f)+profitProtectionBannerHtml()+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')
       +(nsP?nsPlanBoxHtml(nsP):'')+(managing?'':nsStyleSwitchHtml()+nsOtherPlansHtml(String(state.settings.coinTicker)))+(nsOn?nsCardHtml(f):'')
       +(managing?'<section class="cd-card cd-manage"><h3>Manage existing ticket</h3>'+manageCueHtml(manageAdvice(primaryOpenTrade()))+sizerManagePanel()+'</section><details class="cd-fold" data-cd-fold="new-ticket"><summary>New ticket · Log locked</summary><div>'+ticket+cdPlanHtml(f)+'</div></details>':nsOn?'<details class="cd-fold" data-cd-fold="ns-stop-ticket"><summary>With-stop ticket (not used by the no-stop plan)</summary><div>'+ticket+'</div></details>':ticket)
       +'<div class="cd-more">'
@@ -14982,6 +15099,67 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
     openStructurePopup(ticker);
   },true);
   /* /PREDICTION-1 */
+
+  /* PROFIT-TARGET-1 · Event handlers for target reality check and profit protection */
+  document.addEventListener('click', function(e) {
+    var b = e.target.closest('[data-action]');
+    if (!b) return;
+    var a = b.getAttribute('data-action');
+
+    // Target auto-adjust
+    if (a === 'target-auto-adjust') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var newTarget = Number(b.getAttribute('data-target'));
+      if (newTarget > 0) {
+        state.sizer.target = newTarget;
+        save();
+        render();
+      }
+    }
+    // Target keep current
+    else if (a === 'target-keep-current') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var el = document.getElementById('target-reality-check');
+      if (el) el.style.display = 'none';
+    }
+    // Profit protection actions
+    else if (a === 'profit-move-stop-be') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var openTrade = primaryOpenTrade();
+      if (openTrade) {
+        openTrade.stop = openTrade.entry;
+        save();
+        render();
+        watchlistToast = 'Stop moved to break-even (' + priceGbp(Number(openTrade.entry), 4) + ')';
+      }
+    }
+    else if (a === 'profit-bank-50') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      watchlistToast = 'Open Journal and manually record 50% partial close. This app does not place orders.';
+    }
+    else if (a === 'profit-trail-stop') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      watchlistToast = 'Trail stop: manually raise stop in Journal. This app does not place orders.';
+    }
+    else if (a === 'profit-close-position') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      watchlistToast = 'Open Journal to record the close. This app does not place orders.';
+    }
+    else if (a === 'profit-dismiss') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var el = document.getElementById('profit-protection-banner');
+      if (el) el.style.display = 'none';
+    }
+  }, true);
+  /* /PROFIT-TARGET-1 */
+
   /* CONFLUENCE-MODAL-1 · Settings modal action handler */
   document.addEventListener('click',function(e){
     var b=e.target.closest('[data-action]');if(!b)return;
@@ -16525,7 +16703,68 @@ function triageUnfoldHtml(r, o){
       if (vw === 'BUY' || vw === 'TURN BUY') buys++;
       else if (vw === 'NO-GO' || vw === 'BANK') nogos++;
       else waits++;
-      /* CONFLUENCE-MODAL-1 · Count confluence pass/fail */
+    
+  /* PROFIT-TARGET-1 · Event handlers for target reality check and profit protection */
+  document.addEventListener('click', function(e) {
+    var b = e.target.closest('[data-action]');
+    if (!b) return;
+    var a = b.getAttribute('data-action');
+
+    // Target auto-adjust
+    if (a === 'target-auto-adjust') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var newTarget = Number(b.getAttribute('data-target'));
+      if (newTarget > 0) {
+        state.sizer.target = newTarget;
+        save();
+        render();
+      }
+    }
+    // Target keep current
+    else if (a === 'target-keep-current') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var el = document.getElementById('target-reality-check');
+      if (el) el.style.display = 'none';
+    }
+    // Profit protection actions
+    else if (a === 'profit-move-stop-be') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var openTrade = primaryOpenTrade();
+      if (openTrade) {
+        openTrade.stop = openTrade.entry;
+        save();
+        render();
+        watchlistToast = 'Stop moved to break-even (' + priceGbp(Number(openTrade.entry), 4) + ')';
+      }
+    }
+    else if (a === 'profit-bank-50') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      watchlistToast = 'Open Journal and manually record 50% partial close. This app does not place orders.';
+    }
+    else if (a === 'profit-trail-stop') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      watchlistToast = 'Trail stop: manually raise stop in Journal. This app does not place orders.';
+    }
+    else if (a === 'profit-close-position') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      watchlistToast = 'Open Journal to record the close. This app does not place orders.';
+    }
+    else if (a === 'profit-dismiss') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var el = document.getElementById('profit-protection-banner');
+      if (el) el.style.display = 'none';
+    }
+  }, true);
+  /* /PROFIT-TARGET-1 */
+
+  /* CONFLUENCE-MODAL-1 · Count confluence pass/fail */
       var conf = (g && g.confluence) ? g.confluence : (calcConfluence ? calcConfluence(r.pair.ticker) : null);
       if (conf && conf.total >= threshold) confPass++;
       /* Count gate blockers for non-BUY verdicts */
@@ -16555,7 +16794,68 @@ function triageUnfoldHtml(r, o){
         gateSummary += '<span class="pf-gate-blocker"><span class="pf-gate-label">' + gateLabels[gate] + '</span><span class="pf-gate-count">' + gateBlocks[gate] + '</span></span>';
       }
     });
-    /* CONFLUENCE-MODAL-1 · Add confluence pass count */
+  
+  /* PROFIT-TARGET-1 · Event handlers for target reality check and profit protection */
+  document.addEventListener('click', function(e) {
+    var b = e.target.closest('[data-action]');
+    if (!b) return;
+    var a = b.getAttribute('data-action');
+
+    // Target auto-adjust
+    if (a === 'target-auto-adjust') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var newTarget = Number(b.getAttribute('data-target'));
+      if (newTarget > 0) {
+        state.sizer.target = newTarget;
+        save();
+        render();
+      }
+    }
+    // Target keep current
+    else if (a === 'target-keep-current') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var el = document.getElementById('target-reality-check');
+      if (el) el.style.display = 'none';
+    }
+    // Profit protection actions
+    else if (a === 'profit-move-stop-be') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var openTrade = primaryOpenTrade();
+      if (openTrade) {
+        openTrade.stop = openTrade.entry;
+        save();
+        render();
+        watchlistToast = 'Stop moved to break-even (' + priceGbp(Number(openTrade.entry), 4) + ')';
+      }
+    }
+    else if (a === 'profit-bank-50') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      watchlistToast = 'Open Journal and manually record 50% partial close. This app does not place orders.';
+    }
+    else if (a === 'profit-trail-stop') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      watchlistToast = 'Trail stop: manually raise stop in Journal. This app does not place orders.';
+    }
+    else if (a === 'profit-close-position') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      watchlistToast = 'Open Journal to record the close. This app does not place orders.';
+    }
+    else if (a === 'profit-dismiss') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var el = document.getElementById('profit-protection-banner');
+      if (el) el.style.display = 'none';
+    }
+  }, true);
+  /* /PROFIT-TARGET-1 */
+
+  /* CONFLUENCE-MODAL-1 · Add confluence pass count */
     var confSummary = confPass > 0 ? '<span class="pf-conf-pass">' + confPass + ' pass conf</span>' : '';
     return '<div class="pf-health-bar"><span class="pf-dot buy"></span><span class="pf-count">' + buys + ' BUY</span>' +
       (waits ? '<span class="pf-dot wait"></span><span class="pf-count">' + waits + ' WAIT</span>' : '') +
@@ -18427,7 +18727,68 @@ function triageUnfoldHtml(r, o){
   function confluenceBadgeHtml(coin) {
     var conf = calcConfluence(coin);
     if (!conf) return '';
-    /* CONFLUENCE-MODAL-1 · Use threshold from settings for pass/fail color */
+  
+  /* PROFIT-TARGET-1 · Event handlers for target reality check and profit protection */
+  document.addEventListener('click', function(e) {
+    var b = e.target.closest('[data-action]');
+    if (!b) return;
+    var a = b.getAttribute('data-action');
+
+    // Target auto-adjust
+    if (a === 'target-auto-adjust') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var newTarget = Number(b.getAttribute('data-target'));
+      if (newTarget > 0) {
+        state.sizer.target = newTarget;
+        save();
+        render();
+      }
+    }
+    // Target keep current
+    else if (a === 'target-keep-current') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var el = document.getElementById('target-reality-check');
+      if (el) el.style.display = 'none';
+    }
+    // Profit protection actions
+    else if (a === 'profit-move-stop-be') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var openTrade = primaryOpenTrade();
+      if (openTrade) {
+        openTrade.stop = openTrade.entry;
+        save();
+        render();
+        watchlistToast = 'Stop moved to break-even (' + priceGbp(Number(openTrade.entry), 4) + ')';
+      }
+    }
+    else if (a === 'profit-bank-50') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      watchlistToast = 'Open Journal and manually record 50% partial close. This app does not place orders.';
+    }
+    else if (a === 'profit-trail-stop') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      watchlistToast = 'Trail stop: manually raise stop in Journal. This app does not place orders.';
+    }
+    else if (a === 'profit-close-position') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      watchlistToast = 'Open Journal to record the close. This app does not place orders.';
+    }
+    else if (a === 'profit-dismiss') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var el = document.getElementById('profit-protection-banner');
+      if (el) el.style.display = 'none';
+    }
+  }, true);
+  /* /PROFIT-TARGET-1 */
+
+  /* CONFLUENCE-MODAL-1 · Use threshold from settings for pass/fail color */
     var threshold = (confluenceThresholds && confluenceThresholds.buy) ? confluenceThresholds.buy : 6;
     var passes = conf.total >= threshold;
     var scoreClass = passes ? 'high' : conf.total >= 4 ? 'mid' : 'low';
@@ -18530,4 +18891,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4fa8452dabb075d',t:'MTc5Mjg2MTAwNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4fb4bff58926aae',t:'MTc5Mjg2OTE4Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
