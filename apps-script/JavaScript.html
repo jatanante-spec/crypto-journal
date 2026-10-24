@@ -18185,12 +18185,24 @@ function triageUnfoldHtml(r, o){
     var swingLow = tape.swingLow || 0;
     var failedBounce = tape.swingFailedBounce || false;
     var structureLabel = tape.structureLabel || '';
-    // Structure is broken if: failed bounce, price below swing low, or structure label indicates weakness
+    
+    // Also check observation trend from triageCache (scout row record)
+    var observationTrend = '';
+    if (typeof triageCache !== 'undefined' && triageCache) {
+      var scoutRow = triageCache.filter(function(r) { return r.pair && r.pair.ticker === ticker; })[0];
+      if (scoutRow && scoutRow.observation) {
+        observationTrend = scoutRow.observation.trend || '';
+      }
+    }
+    
+    // Structure is broken if: failed bounce, price below swing low, structure label indicates weakness, or observation shows weakening
     var structureBroken = failedBounce || 
                           (swingLow > 0 && price < swingLow) ||
-                          structureLabel.indexOf('weakened') >= 0 ||
-                          structureLabel.indexOf('No reclaim') >= 0 ||
-                          structureLabel === 'Broken';
+                          structureLabel === 'No reclaim' ||
+                          structureLabel === 'Broken' ||
+                          observationTrend.indexOf('weakened') >= 0 ||
+                          observationTrend.indexOf('Structure broken') >= 0 ||
+                          observationTrend.indexOf('INVALIDATED') >= 0;
     
     // Only show regime badge if we have a valid regime
     var regimeBadge = '';
@@ -18518,4 +18530,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4fa7b7b7d46709a',t:'MTc5Mjg2MDY0NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4fa8452dabb075d',t:'MTc5Mjg2MTAwNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
