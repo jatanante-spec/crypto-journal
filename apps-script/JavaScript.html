@@ -11944,29 +11944,12 @@ function derivativesPanelHtml() {
     var stats = calculateMfeMaeStats();
     
     if (!stats || stats.trades.length === 0) {
-      // Show sample data if no real trades yet
-      var sampleStats = {
-        count: 5,
-        avgMfe: 2.4,
-        avgMae: -0.8,
-        avgCapture: 62,
-        avgStopEff: 85,
-        trades: [
-          {
-            trade: { coin: 'SOL', date: '2026-10-20' },
-            mfeMae: { mfe: 3.6, mae: -0.7, captureRate: 67, estimated: true }
-          },
-          {
-            trade: { coin: 'BTC', date: '2026-10-18' },
-            mfeMae: { mfe: 2.1, mae: -0.5, captureRate: 85, estimated: true }
-          },
-          {
-            trade: { coin: 'ETH', date: '2026-10-15' },
-            mfeMae: { mfe: 1.8, mae: -0.6, captureRate: 72, estimated: true }
-          }
-        ]
-      };
-      stats = sampleStats;
+      return '<section class="mfe-mae-panel">' +
+        '<div class="mfe-header">' +
+          '<div class="mfe-title"> MFE & MAE Analytics</div>' +
+        '</div>' +
+        '<p style="color:#8b949e;font-size:12px;">No closed trades yet. Log and close some trades to see MFE/MAE insights.</p>' +
+      '</section>';
     }
     
     // Recent trades with MFE/MAE
@@ -31509,29 +31492,12 @@ function derivativesPanelHtml() {
     var stats = calculateMfeMaeStats();
     
     if (!stats || stats.trades.length === 0) {
-      // Show sample data if no real trades yet
-      var sampleStats = {
-        count: 5,
-        avgMfe: 2.4,
-        avgMae: -0.8,
-        avgCapture: 62,
-        avgStopEff: 85,
-        trades: [
-          {
-            trade: { coin: 'SOL', date: '2026-10-20' },
-            mfeMae: { mfe: 3.6, mae: -0.7, captureRate: 67, estimated: true }
-          },
-          {
-            trade: { coin: 'BTC', date: '2026-10-18' },
-            mfeMae: { mfe: 2.1, mae: -0.5, captureRate: 85, estimated: true }
-          },
-          {
-            trade: { coin: 'ETH', date: '2026-10-15' },
-            mfeMae: { mfe: 1.8, mae: -0.6, captureRate: 72, estimated: true }
-          }
-        ]
-      };
-      stats = sampleStats;
+      return '<section class="mfe-mae-panel">' +
+        '<div class="mfe-header">' +
+          '<div class="mfe-title"> MFE & MAE Analytics</div>' +
+        '</div>' +
+        '<p style="color:#8b949e;font-size:12px;">No closed trades yet. Log and close some trades to see MFE/MAE insights.</p>' +
+      '</section>';
     }
     
     // Recent trades with MFE/MAE
@@ -39132,4 +39098,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a505ea8119a4b361',t:'MTc5Mjk4MDUzNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a50600093fe4d834',t:'MTc5Mjk4MTQxOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
