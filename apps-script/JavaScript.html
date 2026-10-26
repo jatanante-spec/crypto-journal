@@ -8087,6 +8087,11 @@
     var aria = trainingOn()
       ? ("Show on board: " + p1ChipLabel(label) + ". Double-tap for tip.")
       : ("Show on board: " + p1ChipLabel(label));
+    var normLabel = pillNorm(label);
+    if (normLabel === "fetch first") {
+      return '<button type="button" class="pill-tip ' + cls +
+        '" onclick="try{runLiveFetch();}catch(e){}" style="cursor:pointer;">' + esc(p1ChipLabel(label)) + "</button>";
+    }
     return '<button type="button" class="pill-tip ' + cls +
       '" data-action="board-link" data-pill="' + esc(label) + '"' + boardAttr +
       ' aria-label="' + esc(aria) + '">' + esc(p1ChipLabel(label)) + "</button>";
@@ -17142,6 +17147,8 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
      sideways on a phone, and the section you are standing in is exactly the one that can be off the
      edge. The fade class is set from the measurement rather than assumed, so it never dims a rail
      that has nothing past its right edge to dim. */
+  window.runLiveFetch = runLiveFetch;
+
   function moreRailAfterRender() {
     var rail = document.querySelector(".more-filter-rail");
     if (rail) {
@@ -27858,6 +27865,11 @@ function triageProposalOpen(ticker){
     var aria = trainingOn()
       ? ("Show on board: " + p1ChipLabel(label) + ". Double-tap for tip.")
       : ("Show on board: " + p1ChipLabel(label));
+    var normLabel = pillNorm(label);
+    if (normLabel === "fetch first") {
+      return '<button type="button" class="pill-tip ' + cls +
+        '" onclick="try{runLiveFetch();}catch(e){}" style="cursor:pointer;">' + esc(p1ChipLabel(label)) + "</button>";
+    }
     return '<button type="button" class="pill-tip ' + cls +
       '" data-action="board-link" data-pill="' + esc(label) + '"' + boardAttr +
       ' aria-label="' + esc(aria) + '">' + esc(p1ChipLabel(label)) + "</button>";
@@ -39358,4 +39370,3 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a50bbbd91c050c19',t:'MTc5MzA0MTU0MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
