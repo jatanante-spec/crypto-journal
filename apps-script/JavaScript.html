@@ -13854,7 +13854,8 @@ function derivativesPanelHtml() {
       var mine=e.k==='mine'?'<b>You bought at '+scoutPx(e.px)+(e.amt>0?' \u00b7 '+gbp(e.amt):'')+(e.soldPx>0?' \u00b7 sold '+nsWhen(e.soldAt)+' at '+scoutPx(e.soldPx)+' ('+nsPct((e.soldPx/(e.avg||e.px)-1)*100)+(e.avg&&e.avg!==e.px?' on your average':'')+')':'')+'</b><br>':'';
       return '<details class="ns-log-e"><summary><div class="ns-l1"><b>'+esc(e.t)+'</b> '+scoutPx(e.px)+' <span class="ns-mut">'+nsWhen(e.at)+'</span><span class="ns-pill '+(e.v==='BUY'?'buy':e.v==='TURN BUY'?'tb':'wait')+'">'+pill+'</span></div>'+
         '<div class="ns-l2">'+esc(e.why||'')+'</div><div class="ns-lights">'+nsLightsHtml(e.g)+'</div><div class="ns-l2">'+since+old+'</div></summary>'+
-        '<div class="ns-more">'+mine+'Plan at the time: '+esc(e.plan||'none')+(e.note?'<br>'+esc(e.note):'')+'<br><span class="ns-mut">Recorded by '+esc(e.src||'app')+(e.nostop?' \u00b7 no-stop plan':'')+'</span></div></details>';
+        '<div class="ns-more">'+mine+'Plan at the time: '+esc(e.plan||'none')+(e.note?'<br>'+esc(e.note):'')+'<br><span class="ns-mut">Recorded by '+esc(e.src||'app')+(e.nostop?' \u00b7 no-stop plan':'')+'</span>'+
+        '<div class="ns-actions"><button class="btn primary" data-action="ns-log-complete" data-id="'+esc(e.id)+'">Complete trade</button><button class="btn danger" data-action="ns-log-delete" data-id="'+esc(e.id)+'">Delete</button></div></div></details>';
     }).join('');
     return '<details class="ns-logbox" data-details-id="ns-logbox"' + (nsLogOpen ? ' open' : '') + '><summary><b>BUY log</b><span class="ns-mut">'+(l.length?l.length+' saved \u00b7 every app BUY and every \u201cI bought\u201d, with what the lights said':'empty \u00b7 every app BUY and every \u201cI bought\u201d will be saved here')+'</span></summary>'+
       (l.length?'<div class="ns-chips">'+chips.map(function(c){return '<span role="button" tabindex="0" class="ns-chip'+(nsLogFilter===c[0]?' on':'')+'" data-action="ns-log-filter" data-v="'+esc(c[0])+'">'+esc(c[1])+'</span>';}).join('')+'</div>'+(list||'<p class="ns-mut">Nothing for this filter.</p>'):'<p class="ns-mut">Scout and Sizer add a row when a coin turns BUY. \u201cI bought\u201d adds your real buy. Each row then shows how the price moved over the next 14 days.</p>')+'</details>';
@@ -14069,6 +14070,31 @@ function derivativesPanelHtml() {
     if(action==='ns-style'){state.settings.planStyle=btn.getAttribute('data-v')==='nostop'?'nostop':'stop';nsBoughtOpen=false;save();render();return true;}
     if(action==='ns-parts'){state.settings.nsParts=Number(btn.getAttribute('data-v'))||2;save();render();return true;}
     if(action==='ns-log-filter'){nsLogFilter=btn.getAttribute('data-v')||'all';render();return true;}
+    if(action==='ns-log-delete'){
+      var id=btn.getAttribute('data-id');
+      var log=nsLog();
+      var idx=log.findIndex(function(e){return e.id===id;});
+      if(idx>=0){log.splice(idx,1);save();render();}
+      return true;
+    }
+    if(action==='ns-log-complete'){
+      var id=btn.getAttribute('data-id');
+      var log=nsLog();
+      var entry=log.find(function(e){return e.id===id;});
+      if(entry){
+        page='journal';
+        render();
+        setTimeout(function(){
+          var form=document.querySelector('.add-trade');
+          if(form&&!form.open)form.open=true;
+          var coinInput=document.querySelector('input[name="coin"]');
+          var entryInput=document.querySelector('input[name="entry"]');
+          if(coinInput)coinInput.value=entry.t;
+          if(entryInput)entryInput.value=entry.px;
+        },100);
+      }
+      return true;
+    }
     if(action==='ns-open'){var t=btn.getAttribute('data-ticker');if(t){if(scoutLockFor(t))applyPair(t);else scoutOpenInSizer(t);alOpen.strip=false;page='sizer';save();render();}return true;}
     if(action==='ns-ev-ack'){if(p){(p.ev||[]).forEach(function(x){if(x.id===btn.getAttribute('data-ev'))x.ack=true;});nsTouch(p);save();}try{document.title=scoutBaseTitle;}catch(x){}scoutAlertPaint();return true;}
     if(action==='ns-start'||action==='ns-bought-save'){
@@ -33402,7 +33428,8 @@ function derivativesPanelHtml() {
       var mine=e.k==='mine'?'<b>You bought at '+scoutPx(e.px)+(e.amt>0?' \u00b7 '+gbp(e.amt):'')+(e.soldPx>0?' \u00b7 sold '+nsWhen(e.soldAt)+' at '+scoutPx(e.soldPx)+' ('+nsPct((e.soldPx/(e.avg||e.px)-1)*100)+(e.avg&&e.avg!==e.px?' on your average':'')+')':'')+'</b><br>':'';
       return '<details class="ns-log-e"><summary><div class="ns-l1"><b>'+esc(e.t)+'</b> '+scoutPx(e.px)+' <span class="ns-mut">'+nsWhen(e.at)+'</span><span class="ns-pill '+(e.v==='BUY'?'buy':e.v==='TURN BUY'?'tb':'wait')+'">'+pill+'</span></div>'+
         '<div class="ns-l2">'+esc(e.why||'')+'</div><div class="ns-lights">'+nsLightsHtml(e.g)+'</div><div class="ns-l2">'+since+old+'</div></summary>'+
-        '<div class="ns-more">'+mine+'Plan at the time: '+esc(e.plan||'none')+(e.note?'<br>'+esc(e.note):'')+'<br><span class="ns-mut">Recorded by '+esc(e.src||'app')+(e.nostop?' \u00b7 no-stop plan':'')+'</span></div></details>';
+        '<div class="ns-more">'+mine+'Plan at the time: '+esc(e.plan||'none')+(e.note?'<br>'+esc(e.note):'')+'<br><span class="ns-mut">Recorded by '+esc(e.src||'app')+(e.nostop?' \u00b7 no-stop plan':'')+'</span>'+
+        '<div class="ns-actions"><button class="btn primary" data-action="ns-log-complete" data-id="'+esc(e.id)+'">Complete trade</button><button class="btn danger" data-action="ns-log-delete" data-id="'+esc(e.id)+'">Delete</button></div></div></details>';
     }).join('');
     return '<details class="ns-logbox" data-details-id="ns-logbox"' + (nsLogOpen ? ' open' : '') + '><summary><b>BUY log</b><span class="ns-mut">'+(l.length?l.length+' saved \u00b7 every app BUY and every \u201cI bought\u201d, with what the lights said':'empty \u00b7 every app BUY and every \u201cI bought\u201d will be saved here')+'</span></summary>'+
       (l.length?'<div class="ns-chips">'+chips.map(function(c){return '<span role="button" tabindex="0" class="ns-chip'+(nsLogFilter===c[0]?' on':'')+'" data-action="ns-log-filter" data-v="'+esc(c[0])+'">'+esc(c[1])+'</span>';}).join('')+'</div>'+(list||'<p class="ns-mut">Nothing for this filter.</p>'):'<p class="ns-mut">Scout and Sizer add a row when a coin turns BUY. \u201cI bought\u201d adds your real buy. Each row then shows how the price moved over the next 14 days.</p>')+'</details>';
@@ -33617,6 +33644,31 @@ function derivativesPanelHtml() {
     if(action==='ns-style'){state.settings.planStyle=btn.getAttribute('data-v')==='nostop'?'nostop':'stop';nsBoughtOpen=false;save();render();return true;}
     if(action==='ns-parts'){state.settings.nsParts=Number(btn.getAttribute('data-v'))||2;save();render();return true;}
     if(action==='ns-log-filter'){nsLogFilter=btn.getAttribute('data-v')||'all';render();return true;}
+    if(action==='ns-log-delete'){
+      var id=btn.getAttribute('data-id');
+      var log=nsLog();
+      var idx=log.findIndex(function(e){return e.id===id;});
+      if(idx>=0){log.splice(idx,1);save();render();}
+      return true;
+    }
+    if(action==='ns-log-complete'){
+      var id=btn.getAttribute('data-id');
+      var log=nsLog();
+      var entry=log.find(function(e){return e.id===id;});
+      if(entry){
+        page='journal';
+        render();
+        setTimeout(function(){
+          var form=document.querySelector('.add-trade');
+          if(form&&!form.open)form.open=true;
+          var coinInput=document.querySelector('input[name="coin"]');
+          var entryInput=document.querySelector('input[name="entry"]');
+          if(coinInput)coinInput.value=entry.t;
+          if(entryInput)entryInput.value=entry.px;
+        },100);
+      }
+      return true;
+    }
     if(action==='ns-open'){var t=btn.getAttribute('data-ticker');if(t){if(scoutLockFor(t))applyPair(t);else scoutOpenInSizer(t);alOpen.strip=false;page='sizer';save();render();}return true;}
     if(action==='ns-ev-ack'){if(p){(p.ev||[]).forEach(function(x){if(x.id===btn.getAttribute('data-ev'))x.ack=true;});nsTouch(p);save();}try{document.title=scoutBaseTitle;}catch(x){}scoutAlertPaint();return true;}
     if(action==='ns-start'||action==='ns-bought-save'){
@@ -39098,4 +39150,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a50600093fe4d834',t:'MTc5Mjk4MTQxOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a50614634f32cca1',t:'MTc5Mjk4MjI1Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
