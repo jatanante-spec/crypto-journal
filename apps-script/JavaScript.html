@@ -1,7 +1,9 @@
 <script>
 (function () {
   var KEY = "crypto-scalping-journal-v1";
-  var addTradeDetailsOpen = false;  // MFE-MAE-1: Preserve add-trade details state
+  var addTradeDetailsOpen = false;
+  var openDetailsIds = new Set();  // MFE-MAE-1: Track open details elements
+  // MFE-MAE-1: Preserve add-trade details state
   /* BACKEND-WORDING-1 · this file is shared by the Apps Script app (Google Sheet storage) and the Supabase
      site. dev/supabase_runtime.js sets window.CJ_BACKEND = "supabase"; without it the sheet wording stays. */
   function storeText(sheetText, accountText){return typeof window!=="undefined"&&window.CJ_BACKEND==="supabase"?accountText:sheetText;}
@@ -4408,10 +4410,20 @@
   }
   function closeTrendDialog(){document.getElementById('trend-dialog-root').hidden=true;trendDialogMode='';document.body.style.overflow=trendOldOverflow;trendInert.forEach(function(x){x.el.inert=x.value;});trendInert=[];if(trendReturnFocus&&trendReturnFocus.isConnected)trendReturnFocus.focus();}
   
-  // MFE-MAE-1: Preserve add-trade details open state across re-renders
+  // MFE-MAE-1: Preserve details open state across re-renders
   document.addEventListener('toggle', function(e) {
-    if (e.target.classList.contains('add-trade')) {
-      addTradeDetailsOpen = e.target.open;
+    if (e.target.tagName === 'DETAILS') {
+      var id = e.target.dataset.detailsId;
+      if (id) {
+        if (e.target.open) {
+          openDetailsIds.add(id);
+        } else {
+          openDetailsIds.delete(id);
+        }
+      }
+      if (e.target.classList.contains('add-trade')) {
+        addTradeDetailsOpen = e.target.open;
+      }
     }
   }, true);
   
@@ -11346,11 +11358,11 @@
           openMeter(t) +
           openTweak(t) +
           (st === "sell" ? closeRow(t) : '<p class="muted coin-hint">No exit yet — limit not filled. When Revolut buys, tap Waiting sell.</p>') +
-          '<details class="trade-more"><summary>Details</summary>' + detail + "</details>" +
+          '<details class="trade-more" data-details-id="open-' + esc(t.id) + '"' + (openDetailsIds.has('open-' + t.id) ? ' open' : '') + '><summary>Details</summary>' + detail + "</details>" +
         "</article>", true));
       } else {
         closedCards.push(
-          teach("jcard", '<details class="trade-card">' +
+          teach("jcard", '<details class="trade-card" data-details-id="trade-' + esc(t.id) + '"' + (openDetailsIds.has('trade-' + t.id) ? ' open' : '') + '>' +
             '<summary class="trade-head">' + head + "</summary>" +
             detail +
           "</details>", true)
@@ -11411,7 +11423,7 @@
         (errorMsg ? '<p class="toast-error">' + esc(errorMsg) + "</p>" : "") +
         listHtml +
         (function(){try{return mfeMaePanelHtml();}catch(e){return '';}}()) +
-        '<details class="sizer-vol add-trade"' + (addTradeDetailsOpen ? ' open' : '') + '><summary>Add trade</summary>' +
+        '<details class="sizer-vol add-trade" data-details-id="add-trade"' + (addTradeDetailsOpen || openDetailsIds.has('add-trade') ? ' open' : '') + '><summary>Add trade</summary>' +
           tradeForm("draft", draft, "Add trade") +
         "</details>" +
         '<details class="help"><summary>How P/L is calculated</summary><p>Gross P/L = (exit - entry) x units. Cards and Closed stats use net after round-trip fees (maker/taker x 2). Waiting buy = not filled. Waiting sell marks to Fetch until you close. Expectancy = (win% × avg win) − (loss% × avg loss) on closed trades only.</p></details>' +
@@ -19552,4 +19564,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a505c1675b50a2cb',t:'MTc5Mjk3ODg1Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a505c768dbebb31a',t:'MTc5Mjk3OTA5OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
