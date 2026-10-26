@@ -10669,11 +10669,12 @@
       var scratchAnti = (nDo === "scratch?" || nDo === "scratch then rebuy?")
         ? '<p class="manage-anti">Optional exit. Same price again ≈ same ticket — usually skip. New buy only after flat if climate still GO.</p>'
         : "";
+      var fetchBtn = (nDo === "fetch first") ? '<button class="btn glow-act" data-action="fetch-market" style="margin-top:8px;">Fetch now</button>' : "";
       doHtml = '<div class="manage-do ' + esc(kind) + '">' +
         '<div class="manage-do-label">Do now</div>' +
         '<div class="signal-chips manage-do-chips">' +
           renderChip(advice.doNow.w, advice.doNow.t) +
-        "</div>" + scratchAnti +
+        "</div>" + fetchBtn + scratchAnti +
         manageExitBtnHtml(advice) +
         "</div>";
     }
@@ -30439,11 +30440,12 @@ function triageProposalOpen(ticker){
       var scratchAnti = (nDo === "scratch?" || nDo === "scratch then rebuy?")
         ? '<p class="manage-anti">Optional exit. Same price again ≈ same ticket — usually skip. New buy only after flat if climate still GO.</p>'
         : "";
+      var fetchBtn = (nDo === "fetch first") ? '<button class="btn glow-act" data-action="fetch-market" style="margin-top:8px;">Fetch now</button>' : "";
       doHtml = '<div class="manage-do ' + esc(kind) + '">' +
         '<div class="manage-do-label">Do now</div>' +
         '<div class="signal-chips manage-do-chips">' +
           renderChip(advice.doNow.w, advice.doNow.t) +
-        "</div>" + scratchAnti +
+        "</div>" + fetchBtn + scratchAnti +
         manageExitBtnHtml(advice) +
         "</div>";
     }
@@ -39356,4 +39358,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a508c666885db111',t:'MTc5MzAxMDUxNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a50b8886cb23db38',t:'MTc5MzAzOTQzNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
