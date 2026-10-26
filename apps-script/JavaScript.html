@@ -11401,6 +11401,7 @@
           " · filters list + Closed stats</p>" +
         (errorMsg ? '<p class="toast-error">' + esc(errorMsg) + "</p>" : "") +
         listHtml +
+        (function(){try{return mfeMaePanelHtml();}catch(e){return '';}}()) +
         '<details class="sizer-vol add-trade"><summary>Add trade</summary>' +
           tradeForm("draft", draft, "Add trade") +
         "</details>" +
@@ -11790,6 +11791,206 @@ function derivativesPanelHtml() {
     '</div>' +
   '</section>';
 }
+
+  /* MFE-MAE-1 · Maximum Favorable/Adverse Excursion tracking */
+
+  /**
+   * Calculate MFE and MAE for a closed trade
+   * MFE = maximum favorable excursion (best price during trade)
+   * MAE = maximum adverse excursion (worst price during trade)
+   */
+  function calculateMfeMae(trade) {
+    if (!trade || trade.exit == null) return null;
+    
+    var coin = trade.coin || state.settings.coinTicker;
+    var entry = parseFloat(trade.entry);
+    var exit = parseFloat(trade.exit);
+    var stop = parseFloat(trade.stop);
+    var side = trade.side || 'long';
+    
+    if (!entry || !exit || !stop) return null;
+    
+    // Get hourly data to find MFE/MAE during trade duration
+    var hourly = state.hourly || [];
+    if (hourly.length === 0) return null;
+    
+    var tradeDate = new Date(trade.date);
+    var exitDate = trade.exitDate ? new Date(trade.exitDate) : new Date();
+    
+    // Find hourly bars during trade
+    var tradeBars = hourly.filter(function(bar) {
+      var barDate = new Date(bar.time || bar[0]);
+      return barDate >= tradeDate && barDate <= exitDate;
+    });
+    
+    if (tradeBars.length === 0) return null;
+    
+    var highs = tradeBars.map(function(b) { return parseFloat(b.high || b[2]); });
+    var lows = tradeBars.map(function(b) { return parseFloat(b.low || b[3]); });
+    
+    var peakPrice = Math.max.apply(null, highs);
+    var troughPrice = Math.min.apply(null, lows);
+    
+    var mfe, mae;
+    if (side === 'long') {
+      mfe = ((peakPrice - entry) / entry) * 100;
+      mae = ((troughPrice - entry) / entry) * 100;
+    } else {
+      mfe = ((entry - troughPrice) / entry) * 100;
+      mae = ((entry - peakPrice) / entry) * 100;
+    }
+    
+    var stopDist = Math.abs(entry - stop);
+    var stopPct = (stopDist / entry) * 100;
+    
+    return {
+      mfe: mfe,
+      mae: mae,
+      mfePrice: peakPrice,
+      maePrice: troughPrice,
+      stopPct: stopPct,
+      captureRate: mfe > 0 ? (Math.abs(exit - entry) / entry * 100) / mfe * 100 : 0,
+      stopEfficiency: stopPct > 0 ? Math.abs(mae) / stopPct * 100 : 0
+    };
+  }
+
+  /**
+   * Calculate aggregate MFE/MAE stats across all closed trades
+   */
+  function calculateMfeMaeStats() {
+    var closed = (state.trades || []).filter(function(t) { return t.exit != null; });
+    var tradesWithData = [];
+    
+    closed.forEach(function(t) {
+      var mfeMae = calculateMfeMae(t);
+      if (mfeMae) {
+        tradesWithData.push({
+          trade: t,
+          mfeMae: mfeMae
+        });
+      }
+    });
+    
+    if (tradesWithData.length === 0) return null;
+    
+    var avgMfe = tradesWithData.reduce(function(sum, d) { return sum + d.mfeMae.mfe; }, 0) / tradesWithData.length;
+    var avgMae = tradesWithData.reduce(function(sum, d) { return sum + d.mfeMae.mae; }, 0) / tradesWithData.length;
+    var avgCapture = tradesWithData.reduce(function(sum, d) { return sum + d.mfeMae.captureRate; }, 0) / tradesWithData.length;
+    var avgStopEff = tradesWithData.reduce(function(sum, d) { return sum + d.mfeMae.stopEfficiency; }, 0) / tradesWithData.length;
+    
+    return {
+      count: tradesWithData.length,
+      avgMfe: avgMfe,
+      avgMae: avgMae,
+      avgCapture: avgCapture,
+      avgStopEff: avgStopEff,
+      trades: tradesWithData
+    };
+  }
+
+  /**
+   * Render MFE/MAE performance panel
+   */
+  function mfeMaePanelHtml() {
+    var stats = calculateMfeMaeStats();
+    
+    if (!stats) {
+      return '<section class="mfe-mae-panel">' +
+        '<div class="mfe-header">' +
+          '<div class="mfe-title">📊 MFE & MAE Analytics</div>' +
+        '</div>' +
+        '<p style="color:#8b949e;font-size:12px;">No completed trades with hourly data yet. Log more trades to see MFE/MAE insights.</p>' +
+      '</section>';
+    }
+    
+    // Recent trades with MFE/MAE
+    var recentHtml = '';
+    stats.trades.slice(-5).reverse().forEach(function(d) {
+      var t = d.trade;
+      var m = d.mfeMae;
+      var plClass = m.mfe > 0 ? 'win' : 'loss';
+      var captureWarning = m.captureRate < 60 ? ' ⚠️ Left ' + Math.round(100 - m.captureRate) + '% on table' : ' ✅ Good capture';
+      
+      recentHtml += '<div class="mfe-trade ' + plClass + '">' +
+        '<div class="mfe-trade-info">' +
+          '<div class="mfe-trade-label">' + esc(t.coin || 'SOL') + ' · ' + esc(t.date) + '</div>' +
+          '<div class="mfe-trade-values">' +
+            '<span>MFE: <strong style="color:#3fb950;">+' + num(m.mfe, 2) + '%</strong></span>' +
+            '<span>MAE: <strong style="color:#f85149;">' + num(m.mae, 2) + '%</strong></span>' +
+            '<span>Capture: <strong>' + num(m.captureRate, 0) + '%</strong></span>' +
+          '</div>' +
+          '<div class="mfe-trade-insight">' + captureWarning + '</div>' +
+        '</div>' +
+      '</div>';
+    });
+    
+    // Insights
+    var insights = [];
+    if (stats.avgCapture < 60) {
+      insights.push({
+        icon: '🎯',
+        text: 'Your targets are too conservative — capturing only ' + num(stats.avgCapture, 0) + '% of MFE',
+        action: 'Consider trailing stops or scaling out to capture more upside'
+      });
+    }
+    if (stats.avgStopEff < 50) {
+      insights.push({
+        icon: '🛡️',
+        text: 'Excellent stop placement — MAE uses only ' + num(stats.avgStopEff, 0) + '% of stop distance',
+        action: 'Continue current stop placement strategy'
+      });
+    }
+    if (stats.avgMfe > 3 && stats.avgCapture < 50) {
+      insights.push({
+        icon: '📈',
+        text: 'Big moves (>3% MFE) have low capture (' + num(stats.avgCapture, 0) + '%)',
+        action: 'For big moves, take 50% profit early and trail the rest'
+      });
+    }
+    
+    var insightsHtml = insights.map(function(ins) {
+      return '<div class="mfe-insight">' +
+        '<div class="mfe-insight-icon">' + ins.icon + '</div>' +
+        '<div class="mfe-insight-text">' +
+          '<div>' + ins.text + '</div>' +
+          '<div class="mfe-insight-action">' + ins.action + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    
+    return '<section class="mfe-mae-panel">' +
+      '<div class="mfe-header">' +
+        '<div class="mfe-title">📊 MFE & MAE Analytics</div>' +
+        '<span class="mfe-count">' + stats.count + ' trades</span>' +
+      '</div>' +
+      '<div class="mfe-metrics">' +
+        '<div class="mfe-metric">' +
+          '<div class="mfe-metric-label">Avg MFE</div>' +
+          '<div class="mfe-metric-value" style="color:#3fb950;">+' + num(stats.avgMfe, 2) + '%</div>' +
+          '<div class="mfe-metric-sub">Best move during trade</div>' +
+        '</div>' +
+        '<div class="mfe-metric">' +
+          '<div class="mfe-metric-label">Avg MAE</div>' +
+          '<div class="mfe-metric-value" style="color:#f85149;">' + num(stats.avgMae, 2) + '%</div>' +
+          '<div class="mfe-metric-sub">Worst drawdown</div>' +
+        '</div>' +
+        '<div class="mfe-metric">' +
+          '<div class="mfe-metric-label">Capture Rate</div>' +
+          '<div class="mfe-metric-value" style="color:' + (stats.avgCapture > 70 ? '#3fb950' : stats.avgCapture > 50 ? '#f0c000' : '#f85149') + ';">' + num(stats.avgCapture, 0) + '%</div>' +
+          '<div class="mfe-metric-sub">Actual profit / MFE</div>' +
+        '</div>' +
+        '<div class="mfe-metric">' +
+          '<div class="mfe-metric-label">Stop Efficiency</div>' +
+          '<div class="mfe-metric-value" style="color:' + (stats.avgStopEff < 50 ? '#3fb950' : stats.avgStopEff < 75 ? '#f0c000' : '#f85149') + ';">' + num(stats.avgStopEff, 0) + '%</div>' +
+          '<div class="mfe-metric-sub">MAE / Stop distance</div>' +
+        '</div>' +
+      '</div>' +
+      (insights.length > 0 ? '<div class="mfe-insights">' + insightsHtml + '</div>' : '') +
+      (recentHtml ? '<div class="mfe-recent"><div class="mfe-recent-header">Recent Trades</div>' + recentHtml + '</div>' : '') +
+    '</section>';
+  }
+  /* /MFE-MAE-1 */
+
   function renderMarket(){
     var f=cdFrame(true),t=f.t,known=f.fresh.kind!=='sample'&&!f.fresh.stale,exit=exitClimate(t,openDirection(primaryOpenTrade()||{coin:state.settings.coinTicker}));
     return '<div class="market-screen cd-workspace">'+sectionNavHtml('market')+cdHeader(f)+weeklyStructureHtml()+(function(){try{return derivativesPanelHtml();}catch(e){return '<section class="derivatives-panel"><div class="derivatives-header"><div class="derivatives-title">📊 Derivatives & Sentiment</div></div><p style="color:#8b949e;font-size:12px;">Panel unavailable</p></section>';}}())+marketClimateHtml(f)+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')+'<section class="cd-card"><header><h3>'+esc(f.c.title)+'</h3><button type="button" class="text-link" data-action="cd-learn">Learn</button></header>'+crLeadHtml(f)+cdChartHtml(f)+cdVolumeEvidenceHtml(f)+pcSummary(f)+cdTimeframes(f)+(known&&t.high>t.low?'<div class="range-meter"><div class="track"><i class="dot" style="left:'+clamp(t.locPct,0,100)+'%"></i></div><div class="cap"><span>'+esc(priceGbp(t.low,5))+'</span><span>'+esc(num(t.locPct,1)+'% · '+t.locLabel)+'</span><span>'+esc(priceGbp(t.high,5))+'</span></div></div>':'<p class="cd-small">Fresh provider range unavailable.</p>')+'<div class="cd-watch"><div><small>Continuation · observation only</small><b>'+esc(contLabel(f.continuation.code))+'</b></div><button type="button" class="text-link" data-action="cd-deck" data-cue="Continuation">Details</button></div><button type="button" class="btn secondary" data-page="sizer">Review ticket in Sizer →</button></section><details class="cd-fold" data-cd-fold="market-indicators"><summary>Evidence & indicators<small>Full cue deck · structure · market readings</small></summary><div><button type="button" class="btn secondary" data-action="cd-deck">All 24 instruments</button>'+contextWhyHtml()+'<p>'+esc('Daily RSI '+(t.rsi==null?'unknown':num(t.rsi,1))+' · hourly RSI '+(t.hourRsi==null?'unknown':num(t.hourRsi,1))+' · composite '+num(t.composite,1))+'</p></div></details>'+cdDataHtml(f)+'<details class="cd-fold" data-cd-fold="backdrop"><summary>Longer-term backdrop & exit climate<small>Month / week / day · separate legacy swing map</small></summary><div>'+horizonsBlockHtml(t)+'<p class="cd-small">Legacy prominence-ranked hourly swing map: comparison only, not the P1 proposal source.</p>'+swingMapLineHtml(t)+'<details class="cd-fold" data-cd-fold="legacy-chart"><summary>Legacy swing chart</summary><div>'+swingSparkSvg(state.hourly,t.swingLowIdx,t.swingHighIdx,640,180,'Legacy hourly map',t.swingMicroPivots,seriesBarAts(state.hourly,true),{})+'</div></details><p><b>Exit lens · if already long: '+esc(exit.stance)+'</b></p><p>'+esc(exit.say)+'</p><small>Not a short entry or buying approval.</small></div></details>'+cdMarketAdjust(t)+'<details class="cd-fold" data-cd-fold="legacy-send"><summary>Manual quote-based ticket tool</summary><div><p>This existing tool overwrites the draft using the current quote, manual stop percentage and 2R target. It is separate from P1 and does not approve a buy or change an open order.</p><button type="button" class="btn secondary" data-action="use-sizer"'+(!known||busy?' disabled':'')+'>Overwrite draft and open Sizer</button></div></details><div class="cd-actions"><button type="button" class="btn secondary" data-action="cd-learn">Learn this screen</button><button type="button" class="text-link" data-page="manual">Open the manual</button></div></div>';
@@ -19300,4 +19501,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a50575930872b3ae',t:'MTc5Mjk3NTc0Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a505a6f7b94fb0f8',t:'MTc5Mjk3Nzc3MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
