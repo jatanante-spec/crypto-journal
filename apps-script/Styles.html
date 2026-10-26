@@ -10517,7 +10517,7 @@ p.ns-mut{margin:6px 0}
 
 /* /WEEKLY-STRUCTURE-1 */
 
-/* DERIVATIVES-1 · Derivatives panel styles */
+/* DERIVATIVES-1 · Derivatives panel styles - Design A (matches Weekly Structure) */
 
 #main .derivatives-panel {
   background: #161b22;
@@ -10527,14 +10527,14 @@ p.ns-mut{margin:6px 0}
   border: none;
 }
 
-#main .derivatives-header {
+#main .deriv-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
 }
 
-#main .derivatives-title {
+#main .deriv-title {
   font-size: 15px;
   font-weight: 700;
   color: #c9d1d9;
@@ -10543,7 +10543,7 @@ p.ns-mut{margin:6px 0}
   gap: 8px;
 }
 
-#main .derivatives-sentiment {
+#main .deriv-sentiment {
   font-size: 10px;
   font-weight: 700;
   padding: 3px 10px;
@@ -10552,150 +10552,123 @@ p.ns-mut{margin:6px 0}
   letter-spacing: 0.5px;
 }
 
-#main .derivatives-sentiment.bullish {
+#main .deriv-sentiment.bullish {
   background: rgba(63, 185, 80, 0.15);
   color: #3fb950;
 }
 
-#main .derivatives-sentiment.bearish {
+#main .deriv-sentiment.bearish {
   background: rgba(248, 81, 73, 0.15);
   color: #f85149;
 }
 
-#main .derivatives-sentiment.neutral {
+#main .deriv-sentiment.neutral {
   background: rgba(139, 148, 158, 0.15);
   color: #8b949e;
 }
 
-/* Derivatives Grid */
-#main .derivatives-grid {
+/* Metrics Grid */
+#main .deriv-metrics {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 16px;
   margin-bottom: 16px;
 }
 
-#main .derivative-card {
-  background: #0d1117;
-  border-radius: 8px;
-  padding: 14px;
+#main .deriv-metric {
+  text-align: center;
 }
 
-#main .derivative-label {
+#main .deriv-metric-label {
   font-size: 10px;
   color: #8b949e;
   text-transform: uppercase;
-  margin-bottom: 6px;
-}
-
-#main .derivative-value {
-  font-size: 20px;
-  font-weight: 700;
   margin-bottom: 4px;
+  letter-spacing: 0.5px;
 }
 
-#main .derivative-value.positive {
-  color: #f85149;
-}
-
-#main .derivative-value.negative {
-  color: #3fb950;
-}
-
-#main .derivative-value.neutral {
+#main .deriv-metric-value {
+  font-size: 18px;
+  font-weight: 700;
   color: #c9d1d9;
 }
 
-#main .derivative-sub {
+#main .deriv-metric-value.positive {
+  color: #f85149;
+}
+
+#main .deriv-metric-value.negative {
+  color: #3fb950;
+}
+
+#main .deriv-metric-value.neutral {
+  color: #c9d1d9;
+}
+
+#main .deriv-metric-sub {
   font-size: 10px;
   color: #8b949e;
+  margin-top: 4px;
 }
 
 /* Funding Gauge */
-#main .funding-gauge {
+#main .deriv-gauge {
+  padding: 14px 0;
+  border-top: 1px solid #30363d;
+  border-bottom: 1px solid #30363d;
   margin-bottom: 16px;
-  padding: 14px;
-  background: #0d1117;
-  border-radius: 8px;
 }
 
-#main .funding-gauge-header {
+#main .deriv-gauge-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
 }
 
-#main .funding-gauge-label {
+#main .deriv-gauge-label {
   font-size: 11px;
   color: #8b949e;
   text-transform: uppercase;
   font-weight: 600;
 }
 
-#main .funding-gauge-value {
+#main .deriv-gauge-value {
   font-size: 16px;
   font-weight: 700;
 }
 
-#main .funding-gauge-bar {
-  height: 10px;
+#main .deriv-gauge-bar {
+  height: 8px;
   background: linear-gradient(90deg, #3fb950 0%, #3fb950 35%, #8b949e 35%, #8b949e 65%, #f85149 65%, #f85149 100%);
-  border-radius: 5px;
+  border-radius: 4px;
   position: relative;
   margin-bottom: 8px;
 }
 
-#main .funding-gauge-marker {
+#main .deriv-gauge-marker {
   position: absolute;
   top: -4px;
   width: 4px;
-  height: 18px;
+  height: 16px;
   background: #fff;
   border-radius: 2px;
   box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
 }
 
-#main .funding-gauge-labels {
+#main .deriv-gauge-labels {
   display: flex;
   justify-content: space-between;
   font-size: 9px;
   color: #8b949e;
-}
-
-#main .funding-gauge-zones {
-  display: flex;
-  justify-content: space-between;
-  font-size: 9px;
-  margin-top: 4px;
-}
-
-#main .funding-gauge-zones span {
-  flex: 1;
-  text-align: center;
-}
-
-#main .funding-gauge-zones .shorts {
-  color: #3fb950;
-}
-
-#main .funding-gauge-zones .neutral {
-  color: #8b949e;
-}
-
-#main .funding-gauge-zones .longs {
-  color: #f85149;
 }
 
 /* Liquidation Section */
-#main .liquidation-section {
-  padding: 14px;
-  background: #0d1117;
-  border-radius: 8px;
+#main .deriv-liq {
   margin-bottom: 16px;
 }
 
-#main .liquidation-header {
+#main .deriv-liq-header {
   font-size: 11px;
   color: #8b949e;
   text-transform: uppercase;
@@ -10703,25 +10676,20 @@ p.ns-mut{margin:6px 0}
   margin-bottom: 10px;
 }
 
-#main .liquidation-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-#main .liquidation-bar {
+#main .deriv-liq-bar {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-bottom: 6px;
 }
 
-#main .liquidation-bar-label {
+#main .deriv-liq-label {
   font-size: 10px;
   color: #8b949e;
-  min-width: 70px;
+  min-width: 110px;
 }
 
-#main .liquidation-bar-track {
+#main .deriv-liq-track {
   flex: 1;
   height: 6px;
   background: #21262d;
@@ -10730,20 +10698,20 @@ p.ns-mut{margin:6px 0}
   overflow: hidden;
 }
 
-#main .liquidation-bar-fill {
+#main .deriv-liq-fill {
   height: 100%;
   border-radius: 3px;
 }
 
-#main .liquidation-bar-fill.long {
+#main .deriv-liq-fill.long {
   background: #f85149;
 }
 
-#main .liquidation-bar-fill.short {
+#main .deriv-liq-fill.short {
   background: #3fb950;
 }
 
-#main .liquidation-bar-value {
+#main .deriv-liq-value {
   font-size: 10px;
   font-weight: 600;
   color: #c9d1d9;
@@ -10751,45 +10719,44 @@ p.ns-mut{margin:6px 0}
   text-align: right;
 }
 
-/* Combined Signal */
-#main .combined-signal {
+/* Combined Signals */
+#main .deriv-signals {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #30363d;
 }
 
-#main .signal-box {
-  background: #0d1117;
-  border-radius: 8px;
-  padding: 14px;
+#main .deriv-signal {
   text-align: center;
 }
 
-#main .signal-box-label {
+#main .deriv-signal-label {
   font-size: 10px;
   color: #8b949e;
   text-transform: uppercase;
   margin-bottom: 6px;
 }
 
-#main .signal-box-value {
+#main .deriv-signal-value {
   font-size: 16px;
   font-weight: 700;
 }
 
-#main .signal-box-value.bullish {
+#main .deriv-signal-value.bullish {
   color: #3fb950;
 }
 
-#main .signal-box-value.bearish {
+#main .deriv-signal-value.bearish {
   color: #f85149;
 }
 
-#main .signal-box-value.neutral {
+#main .deriv-signal-value.neutral {
   color: #8b949e;
 }
 
-#main .signal-box-sub {
+#main .deriv-signal-sub {
   font-size: 10px;
   color: #8b949e;
   margin-top: 4px;
@@ -10800,4 +10767,4 @@ p.ns-mut{margin:6px 0}
 </style>
 
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4fce54d6890b32e',t:'MTc5Mjg4NTk1MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a50575138d5f8ad8',t:'MTc5Mjk3NTcyNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

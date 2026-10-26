@@ -11687,14 +11687,13 @@ function calculateDerivativesSentiment(derivData) {
  * Generate derivatives panel HTML
  */
 function derivativesPanelHtml() {
-  // Always generate data directly - don't rely on state.derivatives
+  // Generate data directly - Design A style
   var coin = state.settings.coinTicker;
   var book = state.books && state.books[coin];
   var price = book && book.market && book.market.price ? book.market.price : 0;
   var ws = getWeeklyStructure();
   var posPct = ws && ws.high > ws.low ? (price - ws.low) / (ws.high - ws.low) : 0.5;
   
-  // Use state.derivatives if available, otherwise generate fallback
   var derivData = state.derivatives || {
     fundingRate: posPct > 0.6 ? 0.0005 : posPct < 0.4 ? -0.0005 : 0.0001,
     openInterest: 1000000,
@@ -11716,6 +11715,7 @@ function derivativesPanelHtml() {
   var lsRatio = derivData.longShortRatio || 1;
   var gaugePct = Math.max(0, Math.min(100, ((funding + 0.0010) / 0.0020) * 100));
   
+  // Liquidation bars
   var liqHtml = '';
   if (derivData.liquidations && derivData.liquidations.length > 0) {
     var maxAmount = Math.max.apply(null, derivData.liquidations.map(function(l) { return Math.max(l.long, l.short); }));
@@ -11723,13 +11723,13 @@ function derivativesPanelHtml() {
       var longPct = maxAmount > 0 ? (level.long / maxAmount) * 100 : 0;
       var shortPct = maxAmount > 0 ? (level.short / maxAmount) * 100 : 0;
       var totalAmount = level.long + level.short;
-      liqHtml += '<div class="liquidation-bar">' +
-        '<span class="liquidation-bar-label">£' + level.price.toLocaleString() + '</span>' +
-        '<div class="liquidation-bar-track">' +
-          (longPct > 0 ? '<div class="liquidation-bar-fill long" style="width: ' + longPct + '%;"></div>' : '') +
-          (shortPct > 0 ? '<div class="liquidation-bar-fill short" style="width: ' + shortPct + '%;"></div>' : '') +
+      var side = level.long > level.short ? 'long' : 'short';
+      liqHtml += '<div class="deriv-liq-bar">' +
+        '<span class="deriv-liq-label">' + (side === 'long' ? 'Longs' : 'Shorts') + ' ' + priceGbp(level.price, 4) + '</span>' +
+        '<div class="deriv-liq-track">' +
+          '<div class="deriv-liq-fill ' + side + '" style="width: ' + Math.max(longPct, shortPct) + '%;"></div>' +
         '</div>' +
-        '<span class="liquidation-bar-value">£' + (totalAmount / 1000000).toFixed(1) + 'M</span>' +
+        '<span class="deriv-liq-value">' + priceGbp(totalAmount, 0) + '</span>' +
       '</div>';
     });
   } else {
@@ -11739,63 +11739,57 @@ function derivativesPanelHtml() {
   var weeklyBias = ws ? (ws.price > ws.mid ? 'bullish' : ws.price < ws.mid ? 'bearish' : 'neutral') : 'neutral';
   
   return '<section class="derivatives-panel">' +
-    '<div class="derivatives-header">' +
-      '<div class="derivatives-title"> Derivatives & Sentiment</div>' +
-      '<div class="derivatives-sentiment ' + sentiment.bias + '">' + sentiment.bias.charAt(0).toUpperCase() + sentiment.bias.slice(1) + ' Sentiment</div>' +
+    '<div class="deriv-header">' +
+      '<div class="deriv-title"> Derivatives & Sentiment</div>' +
+      '<span class="deriv-sentiment ' + sentiment.bias + '">' + sentiment.bias.charAt(0).toUpperCase() + sentiment.bias.slice(1) + '</span>' +
     '</div>' +
-    '<div class="derivatives-grid">' +
-      '<div class="derivative-card">' +
-        '<div class="derivative-label">Funding Rate</div>' +
-        '<div class="derivative-value ' + (funding > 0.0003 ? 'positive' : funding < -0.0003 ? 'negative' : 'neutral') + '">' + fundingSign + fundingPct + '%</div>' +
-        '<div class="derivative-sub">' + (funding > 0.0003 ? 'Longs paying shorts' : funding < -0.0003 ? 'Shorts paying longs' : 'Neutral') + '</div>' +
+    '<div class="deriv-metrics">' +
+      '<div class="deriv-metric">' +
+        '<div class="deriv-metric-label">Funding Rate</div>' +
+        '<div class="deriv-metric-value ' + (funding > 0.0003 ? 'positive' : funding < -0.0003 ? 'negative' : 'neutral') + '">' + fundingSign + fundingPct + '%</div>' +
+        '<div class="deriv-metric-sub">' + (funding > 0.0003 ? 'Longs paying shorts' : funding < -0.0003 ? 'Shorts paying longs' : 'Neutral') + '</div>' +
       '</div>' +
-      '<div class="derivative-card">' +
-        '<div class="derivative-label">Open Interest</div>' +
-        '<div class="derivative-value neutral">' + (oi / 1000000).toFixed(1) + 'M</div>' +
-        '<div class="derivative-sub">Total contracts</div>' +
+      '<div class="deriv-metric">' +
+        '<div class="deriv-metric-label">Open Interest</div>' +
+        '<div class="deriv-metric-value neutral">' + (oi / 1000000).toFixed(1) + 'M</div>' +
+        '<div class="deriv-metric-sub">Total contracts</div>' +
       '</div>' +
-      '<div class="derivative-card">' +
-        '<div class="derivative-label">Long/Short Ratio</div>' +
-        '<div class="derivative-value ' + (lsRatio > 1.2 ? 'positive' : lsRatio < 0.8 ? 'negative' : 'neutral') + '">' + lsRatio.toFixed(2) + '</div>' +
-        '<div class="derivative-sub">' + (lsRatio > 1.2 ? 'More longs' : lsRatio < 0.8 ? 'More shorts' : 'Balanced') + '</div>' +
+      '<div class="deriv-metric">' +
+        '<div class="deriv-metric-label">Long/Short Ratio</div>' +
+        '<div class="deriv-metric-value ' + (lsRatio > 1.2 ? 'positive' : lsRatio < 0.8 ? 'negative' : 'neutral') + '">' + lsRatio.toFixed(2) + '</div>' +
+        '<div class="deriv-metric-sub">' + (lsRatio > 1.2 ? 'More longs' : lsRatio < 0.8 ? 'More shorts' : 'Balanced') + '</div>' +
       '</div>' +
     '</div>' +
-    '<div class="funding-gauge">' +
-      '<div class="funding-gauge-header">' +
-        '<span class="funding-gauge-label">Funding Rate Position</span>' +
-        '<span class="funding-gauge-value" style="color: ' + (funding > 0.0003 ? '#f85149' : funding < -0.0003 ? '#3fb950' : '#c9d1d9') + ';">' + fundingSign + fundingPct + '%</span>' +
+    '<div class="deriv-gauge">' +
+      '<div class="deriv-gauge-header">' +
+        '<span class="deriv-gauge-label">Funding Rate Position</span>' +
+        '<span class="deriv-gauge-value" style="color: ' + (funding > 0.0003 ? '#f85149' : funding < -0.0003 ? '#3fb950' : '#c9d1d9') + ';">' + fundingSign + fundingPct + '%</span>' +
       '</div>' +
-      '<div class="funding-gauge-bar">' +
-        '<div class="funding-gauge-marker" style="left: ' + gaugePct + '%;"></div>' +
+      '<div class="deriv-gauge-bar">' +
+        '<div class="deriv-gauge-marker" style="left: ' + gaugePct + '%;"></div>' +
       '</div>' +
-      '<div class="funding-gauge-labels">' +
+      '<div class="deriv-gauge-labels">' +
         '<span>-0.10%</span><span>0.00%</span><span>+0.10%</span>' +
       '</div>' +
-      '<div class="funding-gauge-zones">' +
-        '<span class="shorts">Shorts Pay<br>(Bullish)</span>' +
-        '<span class="neutral">Neutral</span>' +
-        '<span class="longs">Longs Pay<br>(Bearish)</span>' +
-      '</div>' +
     '</div>' +
-    '<div class="liquidation-section">' +
-      '<div class="liquidation-header">Liquidation Clusters</div>' +
-      '<div class="liquidation-bars">' + liqHtml + '</div>' +
+    '<div class="deriv-liq">' +
+      '<div class="deriv-liq-header">Liquidation Clusters</div>' +
+      liqHtml +
     '</div>' +
-    '<div class="combined-signal">' +
-      '<div class="signal-box">' +
-        '<div class="signal-box-label">Weekly Structure</div>' +
-        '<div class="signal-box-value ' + weeklyBias + '">' + weeklyBias.charAt(0).toUpperCase() + weeklyBias.slice(1) + '</div>' +
-        '<div class="signal-box-sub">Price vs midpoint</div>' +
+    '<div class="deriv-signals">' +
+      '<div class="deriv-signal">' +
+        '<div class="deriv-signal-label">Weekly Structure</div>' +
+        '<div class="deriv-signal-value ' + weeklyBias + '">' + weeklyBias.charAt(0).toUpperCase() + weeklyBias.slice(1) + '</div>' +
+        '<div class="deriv-signal-sub">Price vs midpoint</div>' +
       '</div>' +
-      '<div class="signal-box">' +
-        '<div class="signal-box-label">Derivatives</div>' +
-        '<div class="signal-box-value ' + sentiment.bias + '">' + sentiment.bias.charAt(0).toUpperCase() + sentiment.bias.slice(1) + '</div>' +
-        '<div class="signal-box-sub">' + sentiment.sub + '</div>' +
+      '<div class="deriv-signal">' +
+        '<div class="deriv-signal-label">Derivatives</div>' +
+        '<div class="deriv-signal-value ' + sentiment.bias + '">' + sentiment.bias.charAt(0).toUpperCase() + sentiment.bias.slice(1) + '</div>' +
+        '<div class="deriv-signal-sub">' + sentiment.sub + '</div>' +
       '</div>' +
     '</div>' +
   '</section>';
 }
-
   function renderMarket(){
     var f=cdFrame(true),t=f.t,known=f.fresh.kind!=='sample'&&!f.fresh.stale,exit=exitClimate(t,openDirection(primaryOpenTrade()||{coin:state.settings.coinTicker}));
     return '<div class="market-screen cd-workspace">'+sectionNavHtml('market')+cdHeader(f)+weeklyStructureHtml()+(function(){try{return derivativesPanelHtml();}catch(e){return '<section class="derivatives-panel"><div class="derivatives-header"><div class="derivatives-title">📊 Derivatives & Sentiment</div></div><p style="color:#8b949e;font-size:12px;">Panel unavailable</p></section>';}}())+marketClimateHtml(f)+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')+'<section class="cd-card"><header><h3>'+esc(f.c.title)+'</h3><button type="button" class="text-link" data-action="cd-learn">Learn</button></header>'+crLeadHtml(f)+cdChartHtml(f)+cdVolumeEvidenceHtml(f)+pcSummary(f)+cdTimeframes(f)+(known&&t.high>t.low?'<div class="range-meter"><div class="track"><i class="dot" style="left:'+clamp(t.locPct,0,100)+'%"></i></div><div class="cap"><span>'+esc(priceGbp(t.low,5))+'</span><span>'+esc(num(t.locPct,1)+'% · '+t.locLabel)+'</span><span>'+esc(priceGbp(t.high,5))+'</span></div></div>':'<p class="cd-small">Fresh provider range unavailable.</p>')+'<div class="cd-watch"><div><small>Continuation · observation only</small><b>'+esc(contLabel(f.continuation.code))+'</b></div><button type="button" class="text-link" data-action="cd-deck" data-cue="Continuation">Details</button></div><button type="button" class="btn secondary" data-page="sizer">Review ticket in Sizer →</button></section><details class="cd-fold" data-cd-fold="market-indicators"><summary>Evidence & indicators<small>Full cue deck · structure · market readings</small></summary><div><button type="button" class="btn secondary" data-action="cd-deck">All 24 instruments</button>'+contextWhyHtml()+'<p>'+esc('Daily RSI '+(t.rsi==null?'unknown':num(t.rsi,1))+' · hourly RSI '+(t.hourRsi==null?'unknown':num(t.hourRsi,1))+' · composite '+num(t.composite,1))+'</p></div></details>'+cdDataHtml(f)+'<details class="cd-fold" data-cd-fold="backdrop"><summary>Longer-term backdrop & exit climate<small>Month / week / day · separate legacy swing map</small></summary><div>'+horizonsBlockHtml(t)+'<p class="cd-small">Legacy prominence-ranked hourly swing map: comparison only, not the P1 proposal source.</p>'+swingMapLineHtml(t)+'<details class="cd-fold" data-cd-fold="legacy-chart"><summary>Legacy swing chart</summary><div>'+swingSparkSvg(state.hourly,t.swingLowIdx,t.swingHighIdx,640,180,'Legacy hourly map',t.swingMicroPivots,seriesBarAts(state.hourly,true),{})+'</div></details><p><b>Exit lens · if already long: '+esc(exit.stance)+'</b></p><p>'+esc(exit.say)+'</p><small>Not a short entry or buying approval.</small></div></details>'+cdMarketAdjust(t)+'<details class="cd-fold" data-cd-fold="legacy-send"><summary>Manual quote-based ticket tool</summary><div><p>This existing tool overwrites the draft using the current quote, manual stop percentage and 2R target. It is separate from P1 and does not approve a buy or change an open order.</p><button type="button" class="btn secondary" data-action="use-sizer"'+(!known||busy?' disabled':'')+'>Overwrite draft and open Sizer</button></div></details><div class="cd-actions"><button type="button" class="btn secondary" data-action="cd-learn">Learn this screen</button><button type="button" class="text-link" data-page="manual">Open the manual</button></div></div>';
@@ -19306,4 +19300,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5047c79580f4f47',t:'MTc5Mjk2NTU0Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a50575930872b3ae',t:'MTc5Mjk3NTc0Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
