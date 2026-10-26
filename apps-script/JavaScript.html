@@ -1,6 +1,7 @@
 <script>
 (function () {
   var KEY = "crypto-scalping-journal-v1";
+  var addTradeDetailsOpen = false;  // MFE-MAE-1: Preserve add-trade details state
   /* BACKEND-WORDING-1 · this file is shared by the Apps Script app (Google Sheet storage) and the Supabase
      site. dev/supabase_runtime.js sets window.CJ_BACKEND = "supabase"; without it the sheet wording stays. */
   function storeText(sheetText, accountText){return typeof window!=="undefined"&&window.CJ_BACKEND==="supabase"?accountText:sheetText;}
@@ -4406,6 +4407,14 @@
     trendRenderDialog();trendCleanGuidance(document.getElementById('trend-dialog-body'));document.getElementById('trend-dialog-close').focus();
   }
   function closeTrendDialog(){document.getElementById('trend-dialog-root').hidden=true;trendDialogMode='';document.body.style.overflow=trendOldOverflow;trendInert.forEach(function(x){x.el.inert=x.value;});trendInert=[];if(trendReturnFocus&&trendReturnFocus.isConnected)trendReturnFocus.focus();}
+  
+  // MFE-MAE-1: Preserve add-trade details open state across re-renders
+  document.addEventListener('toggle', function(e) {
+    if (e.target.classList.contains('add-trade')) {
+      addTradeDetailsOpen = e.target.open;
+    }
+  }, true);
+  
   document.addEventListener('click',function(e){var b=e.target.closest('[data-action]');if(!b)return;var a=b.getAttribute('data-action');if(a.indexOf('trend-')!==0)return;e.preventDefault();e.stopImmediatePropagation();
     if(a==='trend-history')openTrendDialog('history');else if(a==='trend-export')openTrendDialog('export');else if(a==='trend-close')closeTrendDialog();
     else if(a==='trend-download'){var include=document.getElementById('trend-include-draft');downloadText('coin-'+String(state.settings.coinTicker).replace(/[^a-z0-9_-]/gi,'')+'-diagnostics-T1.json',JSON.stringify(trendExportPayload(!!(include&&include.checked)),null,2),'application/json');}
@@ -11402,7 +11411,7 @@
         (errorMsg ? '<p class="toast-error">' + esc(errorMsg) + "</p>" : "") +
         listHtml +
         (function(){try{return mfeMaePanelHtml();}catch(e){return '';}}()) +
-        '<details class="sizer-vol add-trade"><summary>Add trade</summary>' +
+        '<details class="sizer-vol add-trade"' + (addTradeDetailsOpen ? ' open' : '') + '><summary>Add trade</summary>' +
           tradeForm("draft", draft, "Add trade") +
         "</details>" +
         '<details class="help"><summary>How P/L is calculated</summary><p>Gross P/L = (exit - entry) x units. Cards and Closed stats use net after round-trip fees (maker/taker x 2). Waiting buy = not filled. Waiting sell marks to Fetch until you close. Expectancy = (win% × avg win) − (loss% × avg loss) on closed trades only.</p></details>' +
@@ -19543,4 +19552,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a505ba431f970ac3',t:'MTc5Mjk3ODU2MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a505c1675b50a2cb',t:'MTc5Mjk3ODg1Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
