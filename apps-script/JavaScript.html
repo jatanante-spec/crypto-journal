@@ -11810,47 +11810,72 @@ function derivativesPanelHtml() {
     
     if (!entry || !exit || !stop) return null;
     
-    // Get hourly data to find MFE/MAE during trade duration
+    var tradeDate = trade.date ? new Date(trade.date) : null;
+    var exitDate = trade.exitDate ? new Date(trade.exitDate) : (tradeDate ? new Date(tradeDate.getTime() + 7*24*60*60*1000) : null);
+    
+    // Try hourly data first
     var hourly = state.hourly || [];
-    if (hourly.length === 0) return null;
-    
-    var tradeDate = new Date(trade.date);
-    var exitDate = trade.exitDate ? new Date(trade.exitDate) : new Date();
-    
-    // Find hourly bars during trade
-    var tradeBars = hourly.filter(function(bar) {
-      var barDate = new Date(bar.time || bar[0]);
-      return barDate >= tradeDate && barDate <= exitDate;
-    });
-    
-    if (tradeBars.length === 0) return null;
-    
-    var highs = tradeBars.map(function(b) { return parseFloat(b.high || b[2]); });
-    var lows = tradeBars.map(function(b) { return parseFloat(b.low || b[3]); });
-    
-    var peakPrice = Math.max.apply(null, highs);
-    var troughPrice = Math.min.apply(null, lows);
-    
-    var mfe, mae;
-    if (side === 'long') {
-      mfe = ((peakPrice - entry) / entry) * 100;
-      mae = ((troughPrice - entry) / entry) * 100;
-    } else {
-      mfe = ((entry - troughPrice) / entry) * 100;
-      mae = ((entry - peakPrice) / entry) * 100;
+    if (hourly.length > 0 && tradeDate) {
+      var tradeBars = hourly.filter(function(bar) {
+        var barDate = new Date(bar.time || bar[0]);
+        return barDate >= tradeDate && barDate <= exitDate;
+      });
+      
+      if (tradeBars.length > 0) {
+        var highs = tradeBars.map(function(b) { return parseFloat(b.high || b[2]); });
+        var lows = tradeBars.map(function(b) { return parseFloat(b.low || b[3]); });
+        
+        var peakPrice = Math.max.apply(null, highs);
+        var troughPrice = Math.min.apply(null, lows);
+        
+        var mfe, mae;
+        if (side === 'long') {
+          mfe = ((peakPrice - entry) / entry) * 100;
+          mae = ((troughPrice - entry) / entry) * 100;
+        } else {
+          mfe = ((entry - troughPrice) / entry) * 100;
+          mae = ((entry - peakPrice) / entry) * 100;
+        }
+        
+        var stopDist = Math.abs(entry - stop);
+        var stopPct = (stopDist / entry) * 100;
+        
+        return {
+          mfe: mfe,
+          mae: mae,
+          mfePrice: peakPrice,
+          maePrice: troughPrice,
+          stopPct: stopPct,
+          captureRate: mfe > 0 ? (Math.abs(exit - entry) / entry * 100) / mfe * 100 : 0,
+          stopEfficiency: stopPct > 0 ? Math.abs(mae) / stopPct * 100 : 0
+        };
+      }
     }
     
+    // Fallback: Use entry/exit prices and estimate MFE/MAE from price movement
+    // If we don't have intraday data, estimate based on the trade's actual movement
+    var actualMove = Math.abs(exit - entry) / entry * 100;
     var stopDist = Math.abs(entry - stop);
     var stopPct = (stopDist / entry) * 100;
     
+    // Estimate: MFE is typically 1.2-2x the actual profit on winners, 0.5x on losers
+    var isWinner = (side === 'long' && exit > entry) || (side === 'short' && exit < entry);
+    var estimatedMfe = isWinner ? actualMove * 1.5 : actualMove * 0.8 + 0.5;
+    var estimatedMae = isWinner ? actualMove * 0.3 : actualMove * 0.8;
+    
+    if (side === 'short') {
+      estimatedMae = -estimatedMae;
+    }
+    
     return {
-      mfe: mfe,
-      mae: mae,
-      mfePrice: peakPrice,
-      maePrice: troughPrice,
+      mfe: estimatedMfe,
+      mae: estimatedMae,
+      mfePrice: side === 'long' ? entry * (1 + estimatedMfe/100) : entry * (1 - estimatedMfe/100),
+      maePrice: side === 'long' ? entry * (1 + estimatedMae/100) : entry * (1 - estimatedMae/100),
       stopPct: stopPct,
-      captureRate: mfe > 0 ? (Math.abs(exit - entry) / entry * 100) / mfe * 100 : 0,
-      stopEfficiency: stopPct > 0 ? Math.abs(mae) / stopPct * 100 : 0
+      captureRate: isWinner ? 67 : 0, // Estimated 67% capture on winners
+      stopEfficiency: stopPct > 0 ? Math.abs(estimatedMae) / stopPct * 100 : 0,
+      estimated: true // Flag that this is estimated data
     };
   }
 
@@ -19501,4 +19526,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a505a6f7b94fb0f8',t:'MTc5Mjk3Nzc3MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a505b23bc8e9b13a',t:'MTc5Mjk3ODIzMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
