@@ -9245,7 +9245,7 @@
       return teach("closedstats",
         '<section class="closed-stats empty">' +
           "<b>Closed stats</b>" +
-          '<p class="muted">No closed trades in this filter yet. Open rows do not count here.</p></section>');
+          '<p class="muted" style="font-size:11px;">No closed trades in this filter yet. Open rows do not count here.</p></section>');
     }
     var netTone = stats.netPl > 0 ? "up" : stats.netPl < 0 ? "down" : "flat";
     var thin = stats.closed < STAT_MIN;
@@ -10846,7 +10846,16 @@
     if (advice.needFetch && advice.stage !== "buy") {
       return teach("tweak",
         '<div class="open-tweak">' + manageCueHtml(advice) +
-          "<p>" + esc(advice.say) + "</p></div>");
+          "<p>" + esc(advice.say) + "</p>" +
+          '<button class="btn glow-act" data-action="fetch-market">Fetch now</button>' +
+        "</div>");
+    }
+    if (advice.stage === "buy" && advice.chips && advice.chips[0] && advice.chips[0].w === "Check if filled") {
+      return teach("tweak",
+        '<div class="open-tweak">' + manageCueHtml(advice) +
+          "<p>" + esc(advice.say) + "</p>" +
+          '<button class="btn glow-bank" data-action="set-stage" data-stage="sell" data-id="' + esc(t.id) + '">Mark as filled (Waiting sell)</button>' +
+        "</div>");
     }
     var fixBtn = "";
     if (advice.stage === "sell" && advice.showFix && advice.path &&
@@ -29006,7 +29015,7 @@ function triageProposalOpen(ticker){
       return teach("closedstats",
         '<section class="closed-stats empty">' +
           "<b>Closed stats</b>" +
-          '<p class="muted">No closed trades in this filter yet. Open rows do not count here.</p></section>');
+          '<p class="muted" style="font-size:11px;">No closed trades in this filter yet. Open rows do not count here.</p></section>');
     }
     var netTone = stats.netPl > 0 ? "up" : stats.netPl < 0 ? "down" : "flat";
     var thin = stats.closed < STAT_MIN;
@@ -30607,7 +30616,16 @@ function triageProposalOpen(ticker){
     if (advice.needFetch && advice.stage !== "buy") {
       return teach("tweak",
         '<div class="open-tweak">' + manageCueHtml(advice) +
-          "<p>" + esc(advice.say) + "</p></div>");
+          "<p>" + esc(advice.say) + "</p>" +
+          '<button class="btn glow-act" data-action="fetch-market">Fetch now</button>' +
+        "</div>");
+    }
+    if (advice.stage === "buy" && advice.chips && advice.chips[0] && advice.chips[0].w === "Check if filled") {
+      return teach("tweak",
+        '<div class="open-tweak">' + manageCueHtml(advice) +
+          "<p>" + esc(advice.say) + "</p>" +
+          '<button class="btn glow-bank" data-action="set-stage" data-stage="sell" data-id="' + esc(t.id) + '">Mark as filled (Waiting sell)</button>' +
+        "</div>");
     }
     var fixBtn = "";
     if (advice.stage === "sell" && advice.showFix && advice.path &&
@@ -39338,4 +39356,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a50627166cb68ad8',t:'MTc5Mjk4MzAxNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a508c666885db111',t:'MTc5MzAxMDUxNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
