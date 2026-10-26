@@ -11425,6 +11425,7 @@
           " · filters list + Closed stats</p>" +
         (errorMsg ? '<p class="toast-error">' + esc(errorMsg) + "</p>" : "") +
         listHtml +
+        (function(){try{return liveMfeMaePanelHtml();}catch(e){return '';}}()) +
         (function(){try{return mfeMaePanelHtml();}catch(e){return '';}}()) +
         '<details class="sizer-vol add-trade" data-details-id="add-trade"' + (addTradeDetailsOpen || openDetailsIds.has('add-trade') ? ' open' : '') + '><summary>Add trade</summary>' +
           tradeForm("draft", draft, "Add trade") +
@@ -11940,6 +11941,192 @@ function derivativesPanelHtml() {
   /**
    * Render MFE/MAE performance panel
    */
+  /**
+   * Calculate live MFE and MAE for an open trade
+   * Shows how the trade is performing in real-time
+   */
+  function calculateLiveMfeMae(trade) {
+    if (!trade || trade.exit != null) return null;  // Only for open trades
+    
+    var coin = trade.coin || state.settings.coinTicker;
+    var entry = parseFloat(trade.entry);
+    var stop = parseFloat(trade.stop);
+    var side = trade.side || 'long';
+    
+    if (!entry || !stop) return null;
+    
+    // Get current price
+    var book = state.books && state.books[coin];
+    var currentPrice = book && book.market && book.market.price ? book.market.price : null;
+    
+    if (!currentPrice) return null;
+    
+    // Calculate current P/L
+    var currentPl = side === 'long' 
+      ? ((currentPrice - entry) / entry) * 100 
+      : ((entry - currentPrice) / entry) * 100;
+    
+    // Get hourly data to find MFE/MAE during trade duration
+    var hourly = state.hourly || [];
+    var tradeDate = trade.date ? new Date(trade.date) : null;
+    
+    if (hourly.length > 0 && tradeDate) {
+      var now = new Date();
+      var tradeBars = hourly.filter(function(bar) {
+        var barDate = new Date(bar.time || bar[0]);
+        return barDate >= tradeDate && barDate <= now;
+      });
+      
+      if (tradeBars.length > 0) {
+        var highs = tradeBars.map(function(b) { return parseFloat(b.high || b[2]); });
+        var lows = tradeBars.map(function(b) { return parseFloat(b.low || b[3]); });
+        
+        var peakPrice = Math.max.apply(null, highs);
+        var troughPrice = Math.min.apply(null, lows);
+        
+        var mfe, mae;
+        if (side === 'long') {
+          mfe = ((peakPrice - entry) / entry) * 100;
+          mae = ((troughPrice - entry) / entry) * 100;
+        } else {
+          mfe = ((entry - troughPrice) / entry) * 100;
+          mae = ((entry - peakPrice) / entry) * 100;
+        }
+        
+        var stopDist = Math.abs(entry - stop);
+        var stopPct = (stopDist / entry) * 100;
+        
+        return {
+          mfe: mfe,
+          mae: mae,
+          currentPl: currentPl,
+          currentPrice: currentPrice,
+          mfePrice: peakPrice,
+          maePrice: troughPrice,
+          stopPct: stopPct,
+          mfeRatio: mfe > 0 ? Math.abs(currentPl) / mfe : 0,
+          stopEfficiency: stopPct > 0 ? Math.abs(mae) / stopPct * 100 : 0
+        };
+      }
+    }
+    
+    // Fallback: estimate from current price only
+    var stopDist = Math.abs(entry - stop);
+    var stopPct = (stopDist / entry) * 100;
+    
+    return {
+      mfe: Math.max(0, currentPl),
+      mae: Math.min(0, currentPl),
+      currentPl: currentPl,
+      currentPrice: currentPrice,
+      mfePrice: side === 'long' ? Math.max(entry, currentPrice) : Math.min(entry, currentPrice),
+      maePrice: side === 'long' ? Math.min(entry, currentPrice) : Math.max(entry, currentPrice),
+      stopPct: stopPct,
+      mfeRatio: currentPl > 0 ? 1 : 0,
+      stopEfficiency: stopPct > 0 ? (Math.abs(Math.min(0, currentPl)) / stopPct * 100) : 0,
+      estimated: true
+    };
+  }
+
+  /**
+   * Calculate aggregate live MFE/MAE stats for all open trades
+   */
+  function calculateLiveMfeMaeStats() {
+    var open = (state.trades || []).filter(function(t) { return t.exit == null; });
+    var tradesWithData = [];
+    
+    open.forEach(function(t) {
+      var mfeMae = calculateLiveMfeMae(t);
+      if (mfeMae) {
+        tradesWithData.push({
+          trade: t,
+          mfeMae: mfeMae
+        });
+      }
+    });
+    
+    if (tradesWithData.length === 0) return null;
+    
+    var avgMfe = tradesWithData.reduce(function(sum, d) { return sum + d.mfeMae.mfe; }, 0) / tradesWithData.length;
+    var avgMae = tradesWithData.reduce(function(sum, d) { return sum + d.mfeMae.mae; }, 0) / tradesWithData.length;
+    var avgPl = tradesWithData.reduce(function(sum, d) { return sum + d.mfeMae.currentPl; }, 0) / tradesWithData.length;
+    var avgStopEff = tradesWithData.reduce(function(sum, d) { return sum + d.mfeMae.stopEfficiency; }, 0) / tradesWithData.length;
+    
+    return {
+      count: tradesWithData.length,
+      avgMfe: avgMfe,
+      avgMae: avgMae,
+      avgPl: avgPl,
+      avgStopEff: avgStopEff,
+      trades: tradesWithData
+    };
+  }
+
+  /**
+   * Render live MFE/MAE panel for open trades
+   */
+  function liveMfeMaePanelHtml() {
+    var stats = calculateLiveMfeMaeStats();
+    
+    if (!stats || stats.trades.length === 0) {
+      return '';
+    }
+    
+    // Summary metrics
+    var metricsHtml = 
+      '<div class="mfe-metrics">' +
+        '<div class="mfe-metric">' +
+          '<div class="mfe-metric-label">Avg MFE</div>' +
+          '<div class="mfe-metric-value" style="color:#3fb950;">+' + num(stats.avgMfe, 2) + '%</div>' +
+          '<div class="mfe-metric-sub">Best move seen</div>' +
+        '</div>' +
+        '<div class="mfe-metric">' +
+          '<div class="mfe-metric-label">Avg MAE</div>' +
+          '<div class="mfe-metric-value" style="color:#f85149;">' + num(stats.avgMae, 2) + '%</div>' +
+          '<div class="mfe-metric-sub">Worst drawdown</div>' +
+        '</div>' +
+        '<div class="mfe-metric">' +
+          '<div class="mfe-metric-label">Avg P/L</div>' +
+          '<div class="mfe-metric-value" style="color:' + (stats.avgPl > 0 ? '#3fb950' : stats.avgPl < 0 ? '#f85149' : '#8b949e') + ';">' + (stats.avgPl > 0 ? '+' : '') + num(stats.avgPl, 2) + '%</div>' +
+          '<div class="mfe-metric-sub">Current position</div>' +
+        '</div>' +
+        '<div class="mfe-metric">' +
+          '<div class="mfe-metric-label">Stop Efficiency</div>' +
+          '<div class="mfe-metric-value" style="color:' + (stats.avgStopEff < 50 ? '#3fb950' : stats.avgStopEff < 75 ? '#f0c000' : '#f85149') + ';">' + num(stats.avgStopEff, 0) + '%</div>' +
+          '<div class="mfe-metric-sub">MAE / Stop distance</div>' +
+        '</div>' +
+      '</div>';
+    
+    // Individual trades
+    var tradesHtml = stats.trades.map(function(d) {
+      var t = d.trade;
+      var m = d.mfeMae;
+      var plClass = m.currentPl > 0 ? 'win' : m.currentPl < 0 ? 'loss' : 'flat';
+      var plIcon = m.currentPl > 0 ? '' : m.currentPl < 0 ? '🔴' : '⚪';
+      
+      return '<div class="mfe-trade ' + plClass + '">' +
+        '<div class="mfe-trade-info">' +
+          '<div class="mfe-trade-label">' + esc(t.coin || 'SOL') + ' · Entry ' + priceNum(t.entry, 3) + '</div>' +
+          '<div class="mfe-trade-values">' +
+            '<span>MFE: <strong style="color:#3fb950;">+' + num(m.mfe, 2) + '%</strong></span>' +
+            '<span>MAE: <strong style="color:#f85149;">' + num(m.mae, 2) + '%</strong></span>' +
+            '<span>Now: <strong style="color:' + (m.currentPl > 0 ? '#3fb950' : m.currentPl < 0 ? '#f85149' : '#8b949e') + ';">' + (m.currentPl > 0 ? '+' : '') + num(m.currentPl, 2) + '%</strong></span>' +
+          '</div>' +
+          '<div class="mfe-trade-insight">' + plIcon + ' ' + (m.currentPl > 0 ? 'In profit' : m.currentPl < 0 ? 'In drawdown' : 'At entry') + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    
+    return '<section class="mfe-mae-panel">' +
+      '<div class="mfe-header">' +
+        '<div class="mfe-title">📊 Live MFE & MAE · Open Trades</div>' +
+        '<span class="mfe-count">' + stats.count + ' open</span>' +
+      '</div>' +
+      metricsHtml +
+      '<div class="mfe-recent"><div class="mfe-recent-header">Open Positions</div>' + tradesHtml + '</div>' +
+    '</section>';
+  }
+
   function mfeMaePanelHtml() {
     var stats = calculateMfeMaeStats();
     
@@ -30999,6 +31186,7 @@ function triageProposalOpen(ticker){
           " · filters list + Closed stats</p>" +
         (errorMsg ? '<p class="toast-error">' + esc(errorMsg) + "</p>" : "") +
         listHtml +
+        (function(){try{return liveMfeMaePanelHtml();}catch(e){return '';}}()) +
         (function(){try{return mfeMaePanelHtml();}catch(e){return '';}}()) +
         '<details class="sizer-vol add-trade" data-details-id="add-trade"' + (addTradeDetailsOpen || openDetailsIds.has('add-trade') ? ' open' : '') + '><summary>Add trade</summary>' +
           tradeForm("draft", draft, "Add trade") +
@@ -39150,4 +39338,4 @@ function triageProposalOpen(ticker){
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5061b8f5d39f44b',t:'MTc5Mjk4MjU0NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a50627166cb68ad8',t:'MTc5Mjk4MzAxNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
