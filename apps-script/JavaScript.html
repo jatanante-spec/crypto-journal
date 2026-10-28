@@ -11294,7 +11294,7 @@
     var ctxMeta=f.c.ready?(f.observation.trend+' · Tide '+tape.tide):'Hourly evidence unavailable';
     var toolsMeta=gbp(state.settings.capitalGbp)+' · '+num(state.settings.riskPct,2)+'% risk'+(out.invalid?' · review prices':' · '+num(out.stopDistancePct,2)+'% stop');
     var dataMeta=String((f.fresh&&f.fresh.label)||'Provider');
-    return '<div class="sizer-screen cd-workspace">'+sectionNavHtml('sizer')+cdHeader(f)+scoutHandoffHtml()+teSizerBanner()+cdDecision(f)+profitProtectionBannerHtml()+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')
+    return '<div class="sizer-screen cd-workspace">'+sectionNavHtml('sizer')+cdHeader(f)+scoutHandoffHtml()+teSizerBanner()+cdDecision(f)+(function(){try{return setupScorePanelHtml();}catch(e){return '';}}())+profitProtectionBannerHtml()+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')
       +(nsP?nsPlanBoxHtml(nsP):'')+(managing?'':nsStyleSwitchHtml()+nsOtherPlansHtml(String(state.settings.coinTicker)))+(nsOn?nsCardHtml(f):'')
       +(managing?'<section class="cd-card cd-manage"><h3>Manage existing ticket</h3>'+manageCueHtml(manageAdvice(primaryOpenTrade()))+sizerManagePanel()+'</section><details class="cd-fold" data-cd-fold="new-ticket"><summary>New ticket · Log locked</summary><div>'+ticket+cdPlanHtml(f)+'</div></details>':nsOn?'<details class="cd-fold" data-cd-fold="ns-stop-ticket"><summary>With-stop ticket (not used by the no-stop plan)</summary><div>'+ticket+'</div></details>':ticket)
       +'<div class="cd-more">'
@@ -11442,6 +11442,7 @@
         listHtml +
         (function(){try{return liveMfeMaePanelHtml();}catch(e){return '';}}()) +
         (function(){try{return mfeMaePanelHtml();}catch(e){return '';}}()) +
+        (function(){try{return smartInsightsPanelHtml();}catch(e){return '';}}()) +
         '<details class="sizer-vol add-trade" data-details-id="add-trade"' + (addTradeDetailsOpen || openDetailsIds.has('add-trade') ? ' open' : '') + '><summary>Add trade</summary>' +
           tradeForm("draft", draft, "Add trade") +
         "</details>" +
@@ -12139,6 +12140,240 @@ function derivativesPanelHtml() {
       '</div>' +
       metricsHtml +
       '<div class="mfe-recent"><div class="mfe-recent-header">Open Positions</div>' + tradesHtml + '</div>' +
+    '</section>';
+  }
+
+
+  /**
+   * Generate Smart Insights based on MFE/MAE data and market conditions
+   * Only shows after 20+ closed trades for statistical significance
+   */
+  function smartInsightsPanelHtml() {
+    var stats = calculateMfeMaeStats();
+    if (!stats || stats.trades.length < 20) return '';
+    
+    var insights = [];
+    
+    // Insight 1: Capture Rate Analysis
+    if (stats.avgCapture < 60) {
+      insights.push({
+        icon: '🎯',
+        title: 'Your targets are too conservative',
+        text: 'You\'re capturing only ' + num(stats.avgCapture, 0) + '% of MFE on average, meaning you\'re consistently exiting before the move is done.',
+        action: '→ Consider trailing stops or scaling out to capture more upside'
+      });
+    } else if (stats.avgCapture > 80) {
+      insights.push({
+        icon: '🎯',
+        title: 'Excellent target capture',
+        text: 'You\'re capturing ' + num(stats.avgCapture, 0) + '% of MFE — your exit strategy is working well.',
+        action: '→ Continue current target placement strategy'
+      });
+    }
+    
+    // Insight 2: Stop Efficiency
+    if (stats.avgStopEff < 30) {
+      insights.push({
+        icon: '🛡️',
+        title: 'Stops may be too wide',
+        text: 'MAE uses only ' + num(stats.avgStopEff, 0) + '% of stop distance — you\'re risking more than needed.',
+        action: '→ Consider tightening stops to improve R:R ratio'
+      });
+    } else if (stats.avgStopEff > 70) {
+      insights.push({
+        icon: '🛡️',
+        title: 'Stops may be too tight',
+        text: 'MAE uses ' + num(stats.avgStopEff, 0) + '% of stop distance — price often tests your stops.',
+        action: '→ Consider widening stops slightly to avoid premature stop-outs'
+      });
+    } else {
+      insights.push({
+        icon: '🛡️',
+        title: 'Excellent stop placement',
+        text: 'MAE uses only ' + num(stats.avgStopEff, 0) + '% of stop distance — your entries are well-timed.',
+        action: '→ Continue current stop placement strategy'
+      });
+    }
+    
+    // Insight 3: Big Move Capture
+    var bigMoves = stats.trades.filter(function(d) { return d.mfeMae.mfe > 3; });
+    if (bigMoves.length >= 3) {
+      var bigMoveCapture = bigMoves.reduce(function(sum, d) { return sum + d.mfeMae.captureRate; }, 0) / bigMoves.length;
+      if (bigMoveCapture < 50) {
+        insights.push({
+          icon: '📈',
+          title: 'Big moves have low capture',
+          text: 'When MFE exceeds 3%, your capture rate drops to ' + num(bigMoveCapture, 0) + '%.',
+          action: '→ For big moves, take 50% profit early and trail the rest'
+        });
+      }
+    }
+    
+    // Insight 4: Market Condition Performance (if we have weekly structure data)
+    // This would require storing market conditions with each trade
+    // For now, show a generic insight about data collection
+    if (stats.trades.length >= 30) {
+      insights.push({
+        icon: '📊',
+        title: 'Track market conditions for better insights',
+        text: 'With ' + stats.trades.length + ' trades, you have enough data to analyze performance by market condition.',
+        action: '→ Future update: correlate MFE/MAE with Weekly Structure and Derivatives'
+      });
+    }
+    
+    // Build HTML
+    var insightsHtml = insights.map(function(ins) {
+      return '<div class="insight-box">' +
+        '<div class="insight-icon">' + ins.icon + '</div>' +
+        '<div class="insight-content">' +
+          '<div><strong>' + ins.title + '</strong><br>' + ins.text + '</div>' +
+          '<div class="insight-action">' + ins.action + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    
+    return '<section class="mfe-mae-panel smart-insights">' +
+      '<div class="mfe-header">' +
+        '<div class="mfe-title">🧠 Smart Insights</div>' +
+        '<span class="mfe-count">Based on ' + stats.trades.length + ' trades</span>' +
+      '</div>' +
+      insightsHtml +
+    '</section>';
+  }
+
+
+  /**
+   * Calculate Setup Score for Sizer page
+   * Combines Weekly Structure + Derivatives + Climate + User's historical edge
+   */
+  function calculateSetupScore() {
+    var score = 50; // Base score
+    var factors = [];
+    
+    // Factor 1: Weekly Structure
+    var ws = getWeeklyStructure();
+    if (ws) {
+      var wsBias = ws.price > ws.mid ? 'bullish' : ws.price < ws.mid ? 'bearish' : 'neutral';
+      if (wsBias === 'bullish') {
+        score += 15;
+        factors.push({ icon: '✅', text: 'Weekly Structure: Bullish', pass: true });
+      } else if (wsBias === 'bearish') {
+        score -= 15;
+        factors.push({ icon: '❌', text: 'Weekly Structure: Bearish', pass: false });
+      } else {
+        factors.push({ icon: '⚪', text: 'Weekly Structure: Neutral', pass: null });
+      }
+    } else {
+      factors.push({ icon: '⚪', text: 'Weekly Structure: No data', pass: null });
+    }
+    
+    // Factor 2: Derivatives Sentiment
+    var deriv = state.derivatives;
+    if (deriv) {
+      var derivBias = deriv.bias || 'neutral';
+      if (derivBias === 'bullish') {
+        score += 15;
+        factors.push({ icon: '✅', text: 'Derivatives: Bullish', pass: true });
+      } else if (derivBias === 'bearish') {
+        score -= 15;
+        factors.push({ icon: '❌', text: 'Derivatives: Bearish', pass: false });
+      } else {
+        factors.push({ icon: '⚪', text: 'Derivatives: Neutral', pass: null });
+      }
+    } else {
+      factors.push({ icon: '⚪', text: 'Derivatives: No data', pass: null });
+    }
+    
+    // Factor 3: Market Climate
+    var f = cdFrame(true);
+    if (f && f.c) {
+      var climate = f.c.continuation || f.c.code;
+      if (climate === 'CONTINUATION' || climate === 'GO') {
+        score += 10;
+        factors.push({ icon: '✅', text: 'Climate: Continuation', pass: true });
+      } else if (climate === 'BLOCKED' || climate === 'NO-GO') {
+        score -= 10;
+        factors.push({ icon: '❌', text: 'Climate: Blocked', pass: false });
+      } else {
+        factors.push({ icon: '⚪', text: 'Climate: Observation', pass: null });
+      }
+    } else {
+      factors.push({ icon: '⚪', text: 'Climate: No data', pass: null });
+    }
+    
+    // Factor 4: User's Historical Edge
+    var stats = calculateMfeMaeStats();
+    if (stats && stats.trades.length >= 10) {
+      var winRate = stats.trades.filter(function(d) { 
+        var t = d.trade;
+        return t.exit && t.exit > t.entry;
+      }).length / stats.trades.length * 100;
+      
+      if (winRate >= 65) {
+        score += 10;
+        factors.push({ icon: '✅', text: 'Your Edge: High (' + num(winRate, 0) + '%)', pass: true });
+      } else if (winRate >= 50) {
+        factors.push({ icon: '️', text: 'Your Edge: Medium (' + num(winRate, 0) + '%)', pass: null });
+      } else {
+        score -= 10;
+        factors.push({ icon: '❌', text: 'Your Edge: Low (' + num(winRate, 0) + '%)', pass: false });
+      }
+    } else {
+      factors.push({ icon: '⚪', text: 'Your Edge: Not enough data', pass: null });
+    }
+    
+    // Clamp score between 20 and 90
+    score = Math.max(20, Math.min(90, score));
+    
+    // Generate recommendation
+    var rec, recClass;
+    if (score >= 70) {
+      rec = '✓ Strong setup — Take trade with standard position size';
+      recClass = 'strong';
+    } else if (score >= 55) {
+      rec = ' Moderate setup — Consider reducing position size';
+      recClass = 'moderate';
+    } else {
+      rec = '✗ Weak setup — Wait for better conditions or skip';
+      recClass = 'weak';
+    }
+    
+    return {
+      score: score,
+      factors: factors,
+      recommendation: rec,
+      recClass: recClass
+    };
+  }
+  
+  /**
+   * Render Setup Score panel for Sizer page
+   */
+  function setupScorePanelHtml() {
+    var setup = calculateSetupScore();
+    
+    var factorsHtml = setup.factors.map(function(f) {
+      var cls = f.pass === true ? 'pass' : f.pass === false ? 'fail' : '';
+      return '<div class="setup-factor">' +
+        '<div class="setup-factor-icon">' + f.icon + '</div>' +
+        '<div class="setup-factor-text ' + cls + '">' + f.text + '</div>' +
+      '</div>';
+    }).join('');
+    
+    return '<section class="setup-score-panel">' +
+      '<div class="setup-score-header">' +
+        '<div class="setup-score-title">📊 Setup Score</div>' +
+        '<div class="setup-score-value">' + setup.score + '%</div>' +
+      '</div>' +
+      '<div class="setup-score-bar">' +
+        '<div class="setup-score-fill" style="width: ' + setup.score + '%;"></div>' +
+      '</div>' +
+      '<div class="setup-factors">' +
+        factorsHtml +
+      '</div>' +
+      '<div class="setup-recommendation ' + setup.recClass + '">' +
+        setup.recommendation +
+      '</div>' +
     '</section>';
   }
 
@@ -31072,7 +31307,7 @@ function triageProposalOpen(ticker){
     var ctxMeta=f.c.ready?(f.observation.trend+' · Tide '+tape.tide):'Hourly evidence unavailable';
     var toolsMeta=gbp(state.settings.capitalGbp)+' · '+num(state.settings.riskPct,2)+'% risk'+(out.invalid?' · review prices':' · '+num(out.stopDistancePct,2)+'% stop');
     var dataMeta=String((f.fresh&&f.fresh.label)||'Provider');
-    return '<div class="sizer-screen cd-workspace">'+sectionNavHtml('sizer')+cdHeader(f)+scoutHandoffHtml()+teSizerBanner()+cdDecision(f)+profitProtectionBannerHtml()+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')
+    return '<div class="sizer-screen cd-workspace">'+sectionNavHtml('sizer')+cdHeader(f)+scoutHandoffHtml()+teSizerBanner()+cdDecision(f)+(function(){try{return setupScorePanelHtml();}catch(e){return '';}}())+profitProtectionBannerHtml()+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')
       +(nsP?nsPlanBoxHtml(nsP):'')+(managing?'':nsStyleSwitchHtml()+nsOtherPlansHtml(String(state.settings.coinTicker)))+(nsOn?nsCardHtml(f):'')
       +(managing?'<section class="cd-card cd-manage"><h3>Manage existing ticket</h3>'+manageCueHtml(manageAdvice(primaryOpenTrade()))+sizerManagePanel()+'</section><details class="cd-fold" data-cd-fold="new-ticket"><summary>New ticket · Log locked</summary><div>'+ticket+cdPlanHtml(f)+'</div></details>':nsOn?'<details class="cd-fold" data-cd-fold="ns-stop-ticket"><summary>With-stop ticket (not used by the no-stop plan)</summary><div>'+ticket+'</div></details>':ticket)
       +'<div class="cd-more">'
@@ -31220,6 +31455,7 @@ function triageProposalOpen(ticker){
         listHtml +
         (function(){try{return liveMfeMaePanelHtml();}catch(e){return '';}}()) +
         (function(){try{return mfeMaePanelHtml();}catch(e){return '';}}()) +
+        (function(){try{return smartInsightsPanelHtml();}catch(e){return '';}}()) +
         '<details class="sizer-vol add-trade" data-details-id="add-trade"' + (addTradeDetailsOpen || openDetailsIds.has('add-trade') ? ' open' : '') + '><summary>Add trade</summary>' +
           tradeForm("draft", draft, "Add trade") +
         "</details>" +
@@ -39370,3 +39606,4 @@ function triageProposalOpen(ticker){
 
   
 
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a515f6008f4bb376',t:'MTc5MzE0ODc3OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
