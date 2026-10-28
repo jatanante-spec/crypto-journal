@@ -11065,7 +11065,192 @@ p.ns-mut{margin:6px 0}
   color: #f85149;
 }
 
+
+
+/* CHART-PATTERNS-1 · Chart Pattern Panel Styles */
+
+#main .pattern-library-panel,
+#main .pattern-scanner-panel,
+#main .pattern-correlation-panel {
+  background: #161b22;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+#main .pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+#main .pattern-card {
+  background: #0d1117;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  border: 2px solid transparent;
+  border-left: 3px solid #30363d;
+  transition: all 0.2s;
+}
+
+#main .pattern-card:hover {
+  border-color: #30363d;
+  background: #161b22;
+  transform: translateY(-2px);
+}
+
+#main .pattern-card.bullish { border-left-color: #3fb950; }
+#main .pattern-card.bearish { border-left-color: #f85149; }
+#main .pattern-card.neutral { border-left-color: #8b949e; }
+
+#main .pattern-icon {
+  font-size: 24px;
+  margin-bottom: 6px;
+}
+
+#main .pattern-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #c9d1d9;
+  margin-bottom: 2px;
+}
+
+#main .pattern-type {
+  font-size: 9px;
+  color: #8b949e;
+  text-transform: uppercase;
+}
+
+#main .filter-chips {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+#main .filter-chip {
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: #0d1117;
+  color: #8b949e;
+  cursor: pointer;
+  border: 1px solid #30363d;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+#main .filter-chip:hover {
+  background: #161b22;
+  border-color: #8b949e;
+}
+
+#main .filter-chip.active {
+  background: rgba(63, 185, 80, 0.15);
+  color: #3fb950;
+  border-color: rgba(63, 185, 80, 0.3);
+}
+
+#main .scanner-result {
+  background: #0d1117;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-left: 3px solid #3fb950;
+}
+
+#main .scanner-result.bearish { border-left-color: #f85149; }
+#main .scanner-result.neutral { border-left-color: #8b949e; }
+
+#main .scanner-pattern {
+  font-size: 24px;
+}
+
+#main .scanner-info {
+  flex: 1;
+}
+
+#main .scanner-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f0f6fc;
+}
+
+#main .scanner-desc {
+  font-size: 11px;
+  color: #8b949e;
+  margin-top: 2px;
+}
+
+#main .scanner-confidence {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+#main .pattern-filter-select {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+#main .correlation-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: #0d1117;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+#main .correlation-pattern {
+  font-size: 20px;
+  width: 30px;
+  text-align: center;
+}
+
+#main .correlation-name {
+  font-size: 11px;
+  color: #c9d1d9;
+  width: 100px;
+}
+
+#main .correlation-bar-track {
+  flex: 1;
+  height: 8px;
+  background: #21262d;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+#main .correlation-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+#main .correlation-value {
+  font-size: 11px;
+  font-weight: 600;
+  width: 50px;
+  text-align: right;
+}
+
+#main .setup-score-panel.enhanced {
+  border: 1px solid rgba(63, 185, 80, 0.4);
+  box-shadow: 0 0 20px rgba(63, 185, 80, 0.1);
+}
+
 </style>
 
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a515f5530954b376',t:'MTc5MzE0ODc1MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a51b272b8f634afb',t:'MTc5MzIwMzIyMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
