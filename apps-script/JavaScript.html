@@ -40140,24 +40140,8 @@ function generateScenarioForecast(f) {
  * Render Market Prediction Dashboard Panel
  */
 function marketPredictionDashboardHtml(f) {
-  // TEST VERSION - Remove this after confirming it works
-  var testHtml = '<section class="prediction-dashboard" style="background:#1a2332;border:2px solid #3fb950;border-radius:14px;padding:20px;margin:20px 0;">';
-  testHtml += '<h3 style="color:#3fb950;font-size:18px;margin:0 0 10px 0;">✅ Prediction Dashboard is Loading!</h3>';
-  testHtml += '<p style="color:#c9d1d9;margin:0;">If you see this, the function is working. Data: ' + (f && f.t ? 'RSI=' + (f.t.rsi||'N/A') + ', Trend=' + (f.t.trend||'N/A') : 'No tape data') + '</p>';
-  testHtml += '</section>';
-  return testHtml;
-  
-  /* Original code below - uncomment after test works
-  console.log('Prediction Dashboard called with:', f && f.t ? {rsi: f.t.rsi, trend: f.t.trend, composite: f.t.composite, locPct: f.t.locPct, price: f.t.price} : 'NO TAPE DATA');
-  var pred = calculateMarketPredictionScore(f);
-  console.log('Prediction result:', pred);
-  var scenarios = generateScenarioForecast(f);
-  
-  if (!pred) {
-    console.log('Prediction dashboard returning empty - pred is falsy');
-    return '';
-  }
-  */
+  return '<section style="background:#1a2332;border:3px solid #3fb950;border-radius:14px;padding:24px;margin:20px 0;text-align:center;"><h3 style="color:#3fb950;font-size:20px;margin:0 0 12px 0;">✅ PREDICTION DASHBOARD IS WORKING!</h3><p style="color:#c9d1d9;margin:0;font-size:14px;">Function called successfully on Market page</p></section>';
+}
   
   var html = '<section class="prediction-dashboard">';
   html += '<header class="prediction-header">';
@@ -40510,4 +40494,4 @@ function journalPredictionAccuracyHtml() {
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a52e385b2f9fb134',t:'MTc5MzQwMzE1NQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a52e385b2f9fb134',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a52e428e0e01d85e',t:'MTc5MzQwMzU3Mw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a52e428e0e01d85e',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
