@@ -11444,6 +11444,7 @@
         (function(){try{return mfeMaePanelHtml();}catch(e){return '';}}()) +
         (function(){try{return smartInsightsPanelHtml();}catch(e){return '';}}()) +
         (function(){try{return patternCorrelationPanelHtml();}catch(e){return '';}}()) +
+        (function(){try{return journalPredictionAccuracyHtml();}catch(e){return '';}}()) +
         '<details class="sizer-vol add-trade" data-details-id="add-trade"' + (addTradeDetailsOpen || openDetailsIds.has('add-trade') ? ' open' : '') + '><summary>Add trade</summary>' +
           tradeForm("draft", draft, "Add trade") +
         "</details>" +
@@ -12803,7 +12804,7 @@ function derivativesPanelHtml() {
 
   function renderMarket(){
     var f=cdFrame(true),t=f.t,known=f.fresh.kind!=='sample'&&!f.fresh.stale,exit=exitClimate(t,openDirection(primaryOpenTrade()||{coin:state.settings.coinTicker}));
-    return '<div class="market-screen cd-workspace">'+sectionNavHtml('market')+cdHeader(f)+weeklyStructureHtml()+(function(){try{return derivativesPanelHtml();}catch(e){return '<section class="derivatives-panel"><div class="derivatives-header"><div class="derivatives-title">📊 Derivatives & Sentiment</div></div><p style="color:#8b949e;font-size:12px;">Panel unavailable</p></section>';}}())+marketClimateHtml(f)+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')+'<section class="cd-card"><header><h3>'+esc(f.c.title)+'</h3><button type="button" class="text-link" data-action="cd-learn">Learn</button></header>'+crLeadHtml(f)+cdChartHtml(f)+cdVolumeEvidenceHtml(f)+pcSummary(f)+cdTimeframes(f)+(known&&t.high>t.low?'<div class="range-meter"><div class="track"><i class="dot" style="left:'+clamp(t.locPct,0,100)+'%"></i></div><div class="cap"><span>'+esc(priceGbp(t.low,5))+'</span><span>'+esc(num(t.locPct,1)+'% · '+t.locLabel)+'</span><span>'+esc(priceGbp(t.high,5))+'</span></div></div>':'<p class="cd-small">Fresh provider range unavailable.</p>')+'<div class="cd-watch"><div><small>Continuation · observation only</small><b>'+esc(contLabel(f.continuation.code))+'</b></div><button type="button" class="text-link" data-action="cd-deck" data-cue="Continuation">Details</button></div><button type="button" class="btn secondary" data-page="sizer">Review ticket in Sizer →</button></section><details class="cd-fold" data-cd-fold="market-indicators"><summary>Evidence & indicators<small>Full cue deck · structure · market readings</small></summary><div><button type="button" class="btn secondary" data-action="cd-deck">All 24 instruments</button>'+contextWhyHtml()+'<p>'+esc('Daily RSI '+(t.rsi==null?'unknown':num(t.rsi,1))+' · hourly RSI '+(t.hourRsi==null?'unknown':num(t.hourRsi,1))+' · composite '+num(t.composite,1))+'</p></div></details>'+cdDataHtml(f)+'<details class="cd-fold" data-cd-fold="backdrop"><summary>Longer-term backdrop & exit climate<small>Month / week / day · separate legacy swing map</small></summary><div>'+horizonsBlockHtml(t)+'<p class="cd-small">Legacy prominence-ranked hourly swing map: comparison only, not the P1 proposal source.</p>'+swingMapLineHtml(t)+'<details class="cd-fold" data-cd-fold="legacy-chart"><summary>Legacy swing chart</summary><div>'+swingSparkSvg(state.hourly,t.swingLowIdx,t.swingHighIdx,640,180,'Legacy hourly map',t.swingMicroPivots,seriesBarAts(state.hourly,true),{})+'</div></details><p><b>Exit lens · if already long: '+esc(exit.stance)+'</b></p><p>'+esc(exit.say)+'</p><small>Not a short entry or buying approval.</small></div></details>'+cdMarketAdjust(t)+'<details class="cd-fold" data-cd-fold="legacy-send"><summary>Manual quote-based ticket tool</summary><div><p>This existing tool overwrites the draft using the current quote, manual stop percentage and 2R target. It is separate from P1 and does not approve a buy or change an open order.</p><button type="button" class="btn secondary" data-action="use-sizer"'+(!known||busy?' disabled':'')+'>Overwrite draft and open Sizer</button></div></details><div class="cd-actions"><button type="button" class="btn secondary" data-action="cd-learn">Learn this screen</button><button type="button" class="text-link" data-page="manual">Open the manual</button></div></div>';
+    return '<div class="market-screen cd-workspace">'+sectionNavHtml('market')+cdHeader(f)+weeklyStructureHtml()+(function(){try{return derivativesPanelHtml();}catch(e){return '<section class="derivatives-panel"><div class="derivatives-header"><div class="derivatives-title">📊 Derivatives & Sentiment</div></div><p style="color:#8b949e;font-size:12px;">Panel unavailable</p></section>';}}())+(function(){try{return marketPredictionDashboardHtml(f);}catch(e){return "";}}())+marketClimateHtml(f)+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')+'<section class="cd-card"><header><h3>'+esc(f.c.title)+'</h3><button type="button" class="text-link" data-action="cd-learn">Learn</button></header>'+crLeadHtml(f)+cdChartHtml(f)+cdVolumeEvidenceHtml(f)+pcSummary(f)+cdTimeframes(f)+(known&&t.high>t.low?'<div class="range-meter"><div class="track"><i class="dot" style="left:'+clamp(t.locPct,0,100)+'%"></i></div><div class="cap"><span>'+esc(priceGbp(t.low,5))+'</span><span>'+esc(num(t.locPct,1)+'% · '+t.locLabel)+'</span><span>'+esc(priceGbp(t.high,5))+'</span></div></div>':'<p class="cd-small">Fresh provider range unavailable.</p>')+'<div class="cd-watch"><div><small>Continuation · observation only</small><b>'+esc(contLabel(f.continuation.code))+'</b></div><button type="button" class="text-link" data-action="cd-deck" data-cue="Continuation">Details</button></div><button type="button" class="btn secondary" data-page="sizer">Review ticket in Sizer →</button></section><details class="cd-fold" data-cd-fold="market-indicators"><summary>Evidence & indicators<small>Full cue deck · structure · market readings</small></summary><div><button type="button" class="btn secondary" data-action="cd-deck">All 24 instruments</button>'+contextWhyHtml()+'<p>'+esc('Daily RSI '+(t.rsi==null?'unknown':num(t.rsi,1))+' · hourly RSI '+(t.hourRsi==null?'unknown':num(t.hourRsi,1))+' · composite '+num(t.composite,1))+'</p></div></details>'+cdDataHtml(f)+'<details class="cd-fold" data-cd-fold="backdrop"><summary>Longer-term backdrop & exit climate<small>Month / week / day · separate legacy swing map</small></summary><div>'+horizonsBlockHtml(t)+'<p class="cd-small">Legacy prominence-ranked hourly swing map: comparison only, not the P1 proposal source.</p>'+swingMapLineHtml(t)+'<details class="cd-fold" data-cd-fold="legacy-chart"><summary>Legacy swing chart</summary><div>'+swingSparkSvg(state.hourly,t.swingLowIdx,t.swingHighIdx,640,180,'Legacy hourly map',t.swingMicroPivots,seriesBarAts(state.hourly,true),{})+'</div></details><p><b>Exit lens · if already long: '+esc(exit.stance)+'</b></p><p>'+esc(exit.say)+'</p><small>Not a short entry or buying approval.</small></div></details>'+cdMarketAdjust(t)+'<details class="cd-fold" data-cd-fold="legacy-send"><summary>Manual quote-based ticket tool</summary><div><p>This existing tool overwrites the draft using the current quote, manual stop percentage and 2R target. It is separate from P1 and does not approve a buy or change an open order.</p><button type="button" class="btn secondary" data-action="use-sizer"'+(!known||busy?' disabled':'')+'>Overwrite draft and open Sizer</button></div></details><div class="cd-actions"><button type="button" class="btn secondary" data-action="cd-learn">Learn this screen</button><button type="button" class="text-link" data-page="manual">Open the manual</button></div></div>';
   }
 
   function renderTrend() {
@@ -31631,7 +31632,7 @@ function triageProposalOpen(ticker){
     var ctxMeta=f.c.ready?(f.observation.trend+' · Tide '+tape.tide):'Hourly evidence unavailable';
     var toolsMeta=gbp(state.settings.capitalGbp)+' · '+num(state.settings.riskPct,2)+'% risk'+(out.invalid?' · review prices':' · '+num(out.stopDistancePct,2)+'% stop');
     var dataMeta=String((f.fresh&&f.fresh.label)||'Provider');
-    return '<div class="sizer-screen cd-workspace">'+sectionNavHtml('sizer')+cdHeader(f)+scoutHandoffHtml()+teSizerBanner()+cdDecision(f)+(function(){try{return setupScorePanelHtml();}catch(e){return '';}}())+profitProtectionBannerHtml()+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')
+    return '<div class="sizer-screen cd-workspace">'+sectionNavHtml('sizer')+cdHeader(f)+scoutHandoffHtml()+teSizerBanner()+cdDecision(f)+(function(){try{return sizerPredictionWidgetHtml(f);}catch(e){return "";}}())+(function(){try{return setupScorePanelHtml();}catch(e){return '';}}())+profitProtectionBannerHtml()+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')
       +(nsP?nsPlanBoxHtml(nsP):'')+(managing?'':nsStyleSwitchHtml()+nsOtherPlansHtml(String(state.settings.coinTicker)))+(nsOn?nsCardHtml(f):'')
       +(managing?'<section class="cd-card cd-manage"><h3>Manage existing ticket</h3>'+manageCueHtml(manageAdvice(primaryOpenTrade()))+sizerManagePanel()+'</section><details class="cd-fold" data-cd-fold="new-ticket"><summary>New ticket · Log locked</summary><div>'+ticket+cdPlanHtml(f)+'</div></details>':nsOn?'<details class="cd-fold" data-cd-fold="ns-stop-ticket"><summary>With-stop ticket (not used by the no-stop plan)</summary><div>'+ticket+'</div></details>':ticket)
       +'<div class="cd-more">'
@@ -39980,7 +39981,7 @@ function calculateMarketPredictionScore(f) {
   var t = f.t;
   var signals = [];
   
-  // 1. Technical Analysis (30%)
+  // 1. Technical Analysis (30%) - Uses RSI, trend, composite
   var techScore = 0;
   if (t.rsi != null) {
     if (t.rsi < 30) techScore += 40; // Oversold = bullish
@@ -39989,51 +39990,68 @@ function calculateMarketPredictionScore(f) {
   }
   if (t.trend === 'UP') techScore += 30;
   else if (t.trend === 'DOWN') techScore -= 30;
-  if (t.maAlignment) {
-    if (t.maAlignment === 'STRONG_UP') techScore += 30;
-    else if (t.maAlignment === 'STRONG_DOWN') techScore -= 30;
+  if (t.composite != null) {
+    if (t.composite >= 70) techScore += 20;
+    else if (t.composite <= 30) techScore -= 10;
   }
   techScore = Math.max(0, Math.min(100, techScore));
   signals.push({ category: 'Technical', score: techScore, weight: 30 });
   
-  // 2. On-Chain Analytics (25%) - Simplified proxy using available data
+  // 2. On-Chain Analytics (25%) - Uses price position as proxy
   var onchainScore = 50; // Neutral baseline
-  // Use volume as proxy for on-chain activity
-  if (t.volume && t.avgVolume) {
-    var volRatio = t.volume / t.avgVolume;
-    if (volRatio > 1.5) onchainScore += 25; // High volume = accumulation
-    else if (volRatio < 0.5) onchainScore -= 20; // Low volume = distribution
-  }
-  // Use price position in range as proxy for MVRV
   if (t.locPct != null) {
-    if (t.locPct < 30) onchainScore += 25; // Near lows = value zone
-    else if (t.locPct > 80) onchainScore -= 15; // Near highs = overextended
+    if (t.locPct < 30) onchainScore += 30; // Near lows = value zone
+    else if (t.locPct > 80) onchainScore -= 20; // Near highs = overextended
+    else onchainScore += 10;
   }
   onchainScore = Math.max(0, Math.min(100, onchainScore));
   signals.push({ category: 'On-Chain', score: onchainScore, weight: 25 });
   
-  // 3. Sentiment Analysis (20%) - Simplified using available data
+  // 3. Sentiment Analysis (20%) - Uses RSI extremes as proxy
   var sentimentScore = 50; // Neutral baseline
-  // Use funding rate if available (via derivatives data)
-  if (f.fundingRate != null) {
-    if (f.fundingRate > 0.01) sentimentScore -= 20; // High funding = overleveraged
-    else if (f.fundingRate < -0.005) sentimentScore += 20; // Negative funding = contrarian bullish
-    else sentimentScore += 10;
-  }
-  // Use RSI extremes as sentiment proxy
   if (t.rsi != null) {
-    if (t.rsi < 30) sentimentScore += 25; // Fear = contrarian bullish
-    else if (t.rsi > 70) sentimentScore -= 25; // Greed = contrarian bearish
+    if (t.rsi < 30) sentimentScore += 30; // Fear = contrarian bullish
+    else if (t.rsi > 70) sentimentScore -= 30; // Greed = contrarian bearish
+    else sentimentScore += 10;
   }
   sentimentScore = Math.max(0, Math.min(100, sentimentScore));
   signals.push({ category: 'Sentiment', score: sentimentScore, weight: 20 });
   
-  // 4. Fundamental Analysis (15%) - Simplified using longer-term trend
+  // 4. Fundamental Analysis (15%) - Uses daily trend as proxy
   var fundamentalScore = 50; // Neutral baseline
-  if (t.weeklyTrend === 'UP') fundamentalScore += 35;
-  else if (t.weeklyTrend === 'DOWN') fundamentalScore -= 25;
-  if (t.monthlyTrend === 'UP') fundamentalScore += 15;
+  if (t.trend === 'UP') fundamentalScore += 30;
+  else if (t.trend === 'DOWN') fundamentalScore -= 20;
   fundamentalScore = Math.max(0, Math.min(100, fundamentalScore));
+  signals.push({ category: 'Fundamental', score: fundamentalScore, weight: 15 });
+  
+  // 5. Derivatives (10%) - Uses hourly RSI as proxy
+  var derivativesScore = 50;
+  if (t.hourRsi != null) {
+    if (t.hourRsi < 40) derivativesScore += 30;
+    else if (t.hourRsi > 60) derivativesScore -= 20;
+    else derivativesScore += 10;
+  }
+  derivativesScore = Math.max(0, Math.min(100, derivativesScore));
+  signals.push({ category: 'Derivatives', score: derivativesScore, weight: 10 });
+  
+  // Calculate weighted average
+  var totalScore = 0;
+  var totalWeight = 0;
+  signals.forEach(function(s) {
+    totalScore += s.score * (s.weight / 100);
+    totalWeight += s.weight;
+  });
+  totalScore = Math.round(totalScore);
+  
+  var direction = totalScore >= 65 ? 'bullish' : totalScore <= 35 ? 'bearish' : 'neutral';
+  
+  return {
+    score: totalScore,
+    direction: direction,
+    signals: signals,
+    confidence: calculateConfidence(signals)
+  };
+}
   signals.push({ category: 'Fundamental', score: fundamentalScore, weight: 15 });
   
   // 5. Derivatives (10%) - Already in existing system
@@ -40122,10 +40140,15 @@ function generateScenarioForecast(f) {
  * Render Market Prediction Dashboard Panel
  */
 function marketPredictionDashboardHtml(f) {
+  console.log('Prediction Dashboard called with:', f && f.t ? {rsi: f.t.rsi, trend: f.t.trend, composite: f.t.composite, locPct: f.t.locPct, price: f.t.price} : 'NO TAPE DATA');
   var pred = calculateMarketPredictionScore(f);
+  console.log('Prediction result:', pred);
   var scenarios = generateScenarioForecast(f);
   
-  if (!pred) return '';
+  if (!pred) {
+    console.log('Prediction dashboard returning empty - pred is falsy');
+    return '';
+  }
   
   var html = '<section class="prediction-dashboard">';
   html += '<header class="prediction-header">';
@@ -40156,31 +40179,31 @@ function marketPredictionDashboardHtml(f) {
   html += '<div class="prediction-metrics-grid">';
   
   if (f.t) {
-    var volRatio = f.t.volume && f.t.avgVolume ? (f.t.volume / f.t.avgVolume).toFixed(2) : '—';
     var pricePosition = f.t.locPct != null ? f.t.locPct.toFixed(0) + '%' : '—';
+    var locClass = f.t.locPct != null ? (f.t.locPct < 30 ? 'bullish' : f.t.locPct > 80 ? 'bearish' : 'neutral') : 'neutral';
     
-    html += '<div class="prediction-metric-card bullish">';
-    html += '<div class="metric-label">Volume Ratio</div>';
-    html += '<div class="metric-value" style="color:' + (onchainScore.score >= 60 ? '#3fb950' : '#f0c000') + '">' + volRatio + 'x</div>';
-    html += '<div class="metric-sub">vs 20D average</div>';
-    html += '</div>';
-    
-    html += '<div class="prediction-metric-card ' + (f.t.locPct < 30 ? 'bullish' : f.t.locPct > 80 ? 'bearish' : 'neutral') + '">';
+    html += '<div class="prediction-metric-card ' + locClass + '">';
     html += '<div class="metric-label">Price Position</div>';
     html += '<div class="metric-value">' + pricePosition + '</div>';
     html += '<div class="metric-sub">in 16D range</div>';
     html += '</div>';
     
     html += '<div class="prediction-metric-card ' + (f.t.trend === 'UP' ? 'bullish' : 'bearish') + '">';
-    html += '<div class="metric-label">Activity Trend</div>';
+    html += '<div class="metric-label">Trend</div>';
     html += '<div class="metric-value" style="color:' + (f.t.trend === 'UP' ? '#3fb950' : '#f85149') + '">' + (f.t.trend || '—') + '</div>';
-    html += '<div class="metric-sub">Growing adoption</div>';
+    html += '<div class="metric-sub">Daily direction</div>';
+    html += '</div>';
+    
+    html += '<div class="prediction-metric-card ' + (f.t.composite >= 60 ? 'bullish' : f.t.composite <= 40 ? 'bearish' : 'neutral') + '">';
+    html += '<div class="metric-label">Composite Score</div>';
+    html += '<div class="metric-value">' + (f.t.composite != null ? f.t.composite.toFixed(0) : '—') + '</div>';
+    html += '<div class="metric-sub">Context indicator</div>';
     html += '</div>';
     
     html += '<div class="prediction-metric-card neutral">';
-    html += '<div class="metric-label">Whale Activity</div>';
-    html += '<div class="metric-value" style="color:#f0c000">Mixed</div>';
-    html += '<div class="metric-sub">Proxy: volume spikes</div>';
+    html += '<div class="metric-label">Volatility</div>';
+    html += '<div class="metric-value">' + (f.t.atr14 != null ? '£' + f.t.atr14.toFixed(0) : '—') + '</div>';
+    html += '<div class="metric-sub">ATR 14D</div>';
     html += '</div>';
   }
   
@@ -40192,27 +40215,29 @@ function marketPredictionDashboardHtml(f) {
   html += '<div class="prediction-metrics-grid">';
   
   if (f.t) {
-    var maStatus = f.t.above50ma && f.t.above200ma ? 'Golden Cross' : (!f.t.above50ma && !f.t.above200ma ? 'Death Cross' : 'Mixed');
-    var maColor = maStatus === 'Golden Cross' ? '#3fb950' : maStatus === 'Death Cross' ? '#f85149' : '#f0c000';
+    var trendColor = f.t.trend === 'UP' ? '#3fb950' : f.t.trend === 'DOWN' ? '#f85149' : '#f0c000';
+    var rsiColor = f.t.rsi >= 70 ? '#f85149' : f.t.rsi <= 30 ? '#3fb950' : '#f0c000';
+    var compScore = f.t.composite != null ? f.t.composite.toFixed(0) : '—';
+    var compColor = f.t.composite >= 70 ? '#3fb950' : f.t.composite <= 30 ? '#f85149' : '#f0c000';
     
     html += '<div class="prediction-metric-box">';
-    html += '<div class="metric-label">50/200 MA</div>';
-    html += '<div class="metric-value" style="color:' + maColor + '">' + maStatus + '</div>';
+    html += '<div class="metric-label">Trend</div>';
+    html += '<div class="metric-value" style="color:' + trendColor + '">' + (f.t.trend || '—') + '</div>';
     html += '</div>';
     
     html += '<div class="prediction-metric-box">';
     html += '<div class="metric-label">RSI (14)</div>';
-    html += '<div class="metric-value" style="color:' + (f.t.rsi >= 70 ? '#f85149' : f.t.rsi <= 30 ? '#3fb950' : '#f0c000') + '">' + (f.t.rsi ? f.t.rsi.toFixed(0) : '—') + '</div>';
+    html += '<div class="metric-value" style="color:' + rsiColor + '">' + (f.t.rsi != null ? f.t.rsi.toFixed(0) : '—') + '</div>';
     html += '</div>';
     
     html += '<div class="prediction-metric-box">';
-    html += '<div class="metric-label">MACD</div>';
-    html += '<div class="metric-value" style="color:' + (f.t.macdBullish ? '#3fb950' : '#f85149') + '">' + (f.t.macdBullish ? 'Bullish' : 'Bearish') + '</div>';
+    html += '<div class="metric-label">Composite</div>';
+    html += '<div class="metric-value" style="color:' + compColor + '">' + compScore + '</div>';
     html += '</div>';
     
     html += '<div class="prediction-metric-box">';
-    html += '<div class="metric-label">Trend</div>';
-    html += '<div class="metric-value" style="color:' + (f.t.trend === 'UP' ? '#3fb950' : '#f85149') + '">' + (f.t.trend || '—') + '</div>';
+    html += '<div class="metric-label">Hour RSI</div>';
+    html += '<div class="metric-value" style="color:' + (f.t.hourRsi >= 70 ? '#f85149' : f.t.hourRsi <= 30 ? '#3fb950' : '#f0c000') + '">' + (f.t.hourRsi != null ? f.t.hourRsi.toFixed(0) : '—') + '</div>';
     html += '</div>';
   }
   
@@ -40231,24 +40256,22 @@ function marketPredictionDashboardHtml(f) {
   html += '<div class="metric-sub">' + (sentimentScore.score >= 60 ? 'Greed' : sentimentScore.score <= 40 ? 'Fear' : 'Neutral') + '</div>';
   html += '</div>';
   
-  if (f.fundingRate != null) {
-    html += '<div class="prediction-metric-box">';
-    html += '<div class="metric-label">Funding Rate</div>';
-    html += '<div class="metric-value" style="color:' + (f.fundingRate > 0 ? '#3fb950' : '#f85149') + '">' + (f.fundingRate * 100).toFixed(3) + '%</div>';
-    html += '<div class="metric-sub">' + (f.fundingRate > 0 ? 'Bullish' : 'Bearish') + '</div>';
-    html += '</div>';
-  }
-  
   html += '<div class="prediction-metric-box">';
-  html += '<div class="metric-label">Open Interest</div>';
-  html += '<div class="metric-value" style="color:#f0c000">—</div>';
-  html += '<div class="metric-sub">Requires API</div>';
+  html += '<div class="metric-label">RSI Sentiment</div>';
+  html += '<div class="metric-value" style="color:' + (f.t.rsi <= 30 ? '#3fb950' : f.t.rsi >= 70 ? '#f85149' : '#f0c000') + '">' + (f.t.rsi <= 30 ? 'Fear' : f.t.rsi >= 70 ? 'Greed' : 'Neutral') + '</div>';
+  html += '<div class="metric-sub">Contrarian view</div>';
   html += '</div>';
   
   html += '<div class="prediction-metric-box">';
-  html += '<div class="metric-label">Social Volume</div>';
-  html += '<div class="metric-value" style="color:#f0c000">—</div>';
-  html += '<div class="metric-sub">Requires API</div>';
+  html += '<div class="metric-label">Hour Momentum</div>';
+  html += '<div class="metric-value" style="color:' + (f.t.hourRsi >= 60 ? '#3fb950' : f.t.hourRsi <= 40 ? '#f85149' : '#f0c000') + '">' + (f.t.hourRsi != null ? f.t.hourRsi.toFixed(0) : '—') + '</div>';
+  html += '<div class="metric-sub">Hourly RSI</div>';
+  html += '</div>';
+  
+  html += '<div class="prediction-metric-box">';
+  html += '<div class="metric-label">Location</div>';
+  html += '<div class="metric-value" style="color:#f0c000">' + (f.t.locPct != null ? f.t.locPct.toFixed(0) + '%' : '—') + '</div>';
+  html += '<div class="metric-sub">Range position</div>';
   html += '</div>';
   
   html += '</div></div>';
@@ -40478,4 +40501,4 @@ function journalPredictionAccuracyHtml() {
 
   
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a52cbce94dcb1118',t:'MTc5MzM4NzYxMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a52cbce94dcb1118',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a52df3f1ac55b337',t:'MTc5MzQwMDM1Mw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a52df3f1ac55b337',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
