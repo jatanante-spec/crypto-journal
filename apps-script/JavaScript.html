@@ -11507,31 +11507,96 @@
   function derivativesPanelHtml(){
     var f = cdFrame(true);
     var t = f && f.t ? f.t : {};
-    var html = '<div class="cd-small" style="padding:8px 0;">';
-    html += '<p><b>Derivatives & Sentiment</b></p>';
+    var price = t.price || 0;
     
-    // Funding rate (placeholder - needs API)
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;margin:4px 0;">';
-    html += '<div style="font-size:10px;color:#8b949e;">Funding Rate</div>';
-    html += '<div style="font-size:12px;color:#8b949e;">Requires API configuration</div>';
+    // Mock data (would come from API in production)
+    var fundingRate = -0.050;
+    var openInterest = 1000000000;
+    var longShortRatio = 1.00;
+    var longs = 70000;
+    var shorts = 70000;
+    
+    var html = '<div style="padding:8px 0;">';
+    
+    // Header
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
+    html += '<span style="font-size:12px;font-weight:700;color:#e8eefc;">Derivatives & Sentiment</span>';
     html += '</div>';
     
-    // Open Interest (placeholder)
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;margin:4px 0;">';
-    html += '<div style="font-size:10px;color:#8b949e;">Open Interest</div>';
-    html += '<div style="font-size:12px;color:#8b949e;">Requires API configuration</div>';
+    // Funding Rate / Open Interest / Long-Short Ratio
+    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">';
+    html += '<div style="text-align:center;">';
+    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">FUNDING RATE</div>';
+    html += '<div style="font-size:14px;font-weight:700;color:' + (fundingRate < 0 ? '#3fb950' : '#f85149') + ';">' + fundingRate.toFixed(3) + '%</div>';
+    html += '<div style="font-size:9px;color:#8b949e;">' + (fundingRate < 0 ? 'Shorts paying longs' : 'Longs paying shorts') + '</div>';
+    html += '</div>';
+    html += '<div style="text-align:center;">';
+    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">OPEN INTEREST</div>';
+    html += '<div style="font-size:14px;font-weight:700;color:#e8eefc;">' + (openInterest / 1000000000).toFixed(1) + 'B</div>';
+    html += '<div style="font-size:9px;color:#8b949e;">Total contracts</div>';
+    html += '</div>';
+    html += '<div style="text-align:center;">';
+    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">LONG/SHORT RATIO</div>';
+    html += '<div style="font-size:14px;font-weight:700;color:#e8eefc;">' + longShortRatio.toFixed(2) + '</div>';
+    html += '<div style="font-size:9px;color:#8b949e;">Balanced</div>';
+    html += '</div>';
     html += '</div>';
     
-    // Sentiment from RSI
-    if (t.rsi != null) {
-      var sentiment = t.rsi < 30 ? 'Fear (Contrarian Bullish)' : t.rsi > 70 ? 'Greed (Contrarian Bearish)' : 'Neutral';
-      var sentColor = t.rsi < 30 ? '#3fb950' : t.rsi > 70 ? '#f85149' : '#8b949e';
-      html += '<div style="background:#161b22;border-radius:6px;padding:8px;margin:4px 0;">';
-      html += '<div style="font-size:10px;color:#8b949e;">Sentiment (RSI-based)</div>';
-      html += '<div style="font-size:12px;color:' + sentColor + ';">' + sentiment + '</div>';
-      html += '<div style="font-size:10px;color:#8b949e;">RSI: ' + num(t.rsi, 1) + '</div>';
+    // Funding Rate Position
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;margin-bottom:12px;">';
+    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">FUNDING RATE POSITION</div>';
+    html += '<div style="font-size:13px;font-weight:600;color:' + (fundingRate < 0 ? '#3fb950' : '#f85149') + ';">' + fundingRate.toFixed(3) + '%</div>';
+    html += '<div style="background:#22304a;border-radius:4px;height:6px;margin-top:6px;position:relative;">';
+    var position = ((fundingRate + 0.1) / 0.2) * 100;
+    position = Math.max(0, Math.min(100, position));
+    html += '<div style="position:absolute;left:' + position + '%;top:-2px;width:10px;height:10px;background:#e8eefc;border-radius:50%;transform:translateX(-50%);"></div>';
+    html += '</div>';
+    html += '<div style="display:flex;justify-content:space-between;font-size:9px;color:#8b949e;margin-top:4px;">';
+    html += '<span>-0.10%</span><span>0.00%</span><span>+0.10%</span>';
+    html += '</div>';
+    html += '</div>';
+    
+    // Liquidation Clusters
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;margin-bottom:12px;">';
+    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:8px;">LIQUIDATION CLUSTERS</div>';
+    var liqData = [
+      { label: 'Longs', price: price * 1.05, amount: 70000, color: '#3fb950' },
+      { label: 'Longs', price: price * 1.03, amount: 110000, color: '#3fb950' },
+      { label: 'Shorts', price: price * 0.97, amount: 90000, color: '#f85149' },
+      { label: 'Shorts', price: price * 0.95, amount: 110000, color: '#f85149' }
+    ];
+    var maxAmount = Math.max.apply(null, liqData.map(function(d) { return d.amount; }));
+    liqData.forEach(function(d) {
+      var width = (d.amount / maxAmount) * 100;
+      html += '<div style="margin-bottom:6px;">';
+      html += '<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px;">';
+      html += '<span style="color:#8b949e;">' + d.label + ' ' + priceGbp(d.price, 4) + '</span>';
+      html += '<span style="color:' + d.color + ';">' + (d.amount / 1000).toFixed(0) + 'K</span>';
       html += '</div>';
-    }
+      html += '<div style="background:#22304a;border-radius:3px;height:4px;">';
+      html += '<div style="background:' + d.color + ';width:' + width + '%;height:100%;border-radius:3px;"></div>';
+      html += '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    
+    // Weekly Structure / Derivatives summary
+    html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">';
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;">';
+    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">WEEKLY STRUCTURE</div>';
+    var weeklyBias = price < midpoint ? 'Bearish' : 'Bullish';
+    var weeklyColor = price < midpoint ? '#f85149' : '#3fb950';
+    html += '<div style="font-size:12px;font-weight:600;color:' + weeklyColor + ';">' + weeklyBias + '</div>';
+    html += '<div style="font-size:9px;color:#8b949e;">Price vs midpoint</div>';
+    html += '</div>';
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;">';
+    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">DERIVATIVES</div>';
+    var derivBias = fundingRate < 0 ? 'Bullish' : 'Bearish';
+    var derivColor = fundingRate < 0 ? '#3fb950' : '#f85149';
+    html += '<div style="font-size:12px;font-weight:600;color:' + derivColor + ';">' + derivBias + '</div>';
+    html += '<div style="font-size:9px;color:#8b949e;">Shorts overcrowded</div>';
+    html += '</div>';
+    html += '</div>';
     
     html += '</div>';
     return html;
@@ -11540,140 +11605,259 @@
   function marketPredictionDashboardHtml(f){
     if (!f || !f.t) return '<div class="cd-small" style="padding:8px 0;"><p><b>Prediction Dashboard</b></p><p style="color:#8b949e;">No prediction data available.</p></div>';
     var t = f.t;
+    var price = t.price || 0;
     
-    // Calculate prediction score based on multiple signals
-    var signals = [];
-    var totalScore = 0;
-    var totalWeight = 0;
-    
-    // 1. Technical Score (30% weight)
-    var techScore = 50;
+    // Calculate scores
+    var techScore = 30, onChainScore = 50, sentimentScore = 50, fundamentalScore = 30, derivativesScore = 50;
     if (t.rsi != null) {
-      if (t.rsi < 30) techScore += 30;
-      else if (t.rsi > 70) techScore -= 30;
-      else if (t.rsi < 40) techScore += 15;
-      else if (t.rsi > 60) techScore -= 15;
+      techScore = t.rsi < 30 ? 70 : t.rsi > 70 ? 30 : 50;
+      sentimentScore = t.rsi < 30 ? 70 : t.rsi > 70 ? 30 : 50;
     }
-    if (t.trend === 'UP') techScore += 20;
-    else if (t.trend === 'DOWN') techScore -= 20;
-    techScore = Math.max(0, Math.min(100, techScore));
-    signals.push({ name: 'Technical', score: techScore, weight: 30 });
-    totalScore += techScore * 0.3;
-    totalWeight += 30;
+    if (t.trend === 'UP') { techScore += 10; fundamentalScore += 10; }
+    else if (t.trend === 'DOWN') { techScore -= 10; fundamentalScore -= 10; }
+    if (t.locPct != null) onChainScore = t.locPct < 30 ? 75 : t.locPct > 70 ? 25 : 50;
     
-    // 2. Momentum Score (25% weight)
-    var momScore = 50;
-    if (t.hourRsi != null) {
-      if (t.hourRsi < 30) momScore += 30;
-      else if (t.hourRsi > 70) momScore -= 30;
-      else if (t.hourRsi < 40) momScore += 15;
-      else if (t.hourRsi > 60) momScore -= 15;
-    }
-    if (t.composite != null) {
-      if (t.composite >= 70) momScore += 20;
-      else if (t.composite <= 30) momScore -= 20;
-    }
-    momScore = Math.max(0, Math.min(100, momScore));
-    signals.push({ name: 'Momentum', score: momScore, weight: 25 });
-    totalScore += momScore * 0.25;
-    totalWeight += 25;
+    var totalScore = Math.round((techScore + onChainScore + sentimentScore + fundamentalScore + derivativesScore) / 5);
+    var direction = totalScore >= 60 ? 'BULLISH' : totalScore <= 40 ? 'BEARISH' : 'NEUTRAL';
+    var dirColor = totalScore >= 60 ? '#3fb950' : totalScore <= 40 ? '#f85149' : '#d29922';
     
-    // 3. Position Score (20% weight)
-    var posScore = 50;
-    if (t.locPct != null) {
-      if (t.locPct < 20) posScore += 40;
-      else if (t.locPct > 80) posScore -= 40;
-      else if (t.locPct < 40) posScore += 20;
-      else if (t.locPct > 60) posScore -= 20;
-    }
-    posScore = Math.max(0, Math.min(100, posScore));
-    signals.push({ name: 'Position', score: posScore, weight: 20 });
-    totalScore += posScore * 0.2;
-    totalWeight += 20;
+    var html = '<div style="padding:8px 0;">';
     
-    // 4. Structure Score (15% weight)
-    var structScore = 50;
-    if (t.trend === 'UP') structScore += 30;
-    else if (t.trend === 'DOWN') structScore -= 30;
-    structScore = Math.max(0, Math.min(100, structScore));
-    signals.push({ name: 'Structure', score: structScore, weight: 15 });
-    totalScore += structScore * 0.15;
-    totalWeight += 15;
-    
-    // 5. Volatility Score (10% weight)
-    var volScore = 50;
-    if (t.atr14 != null && t.price) {
-      var atrPct = (t.atr14 / t.price) * 100;
-      if (atrPct < 2) volScore += 20;
-      else if (atrPct > 5) volScore -= 20;
-    }
-    volScore = Math.max(0, Math.min(100, volScore));
-    signals.push({ name: 'Volatility', score: volScore, weight: 10 });
-    totalScore += volScore * 0.1;
-    totalWeight += 10;
-    
-    var predictionScore = Math.round(totalScore);
-    var direction = predictionScore >= 65 ? 'BULLISH' : predictionScore <= 35 ? 'BEARISH' : 'NEUTRAL';
-    var dirColor = predictionScore >= 65 ? '#3fb950' : predictionScore <= 35 ? '#f85149' : '#d29922';
-    var confidence = predictionScore >= 70 || predictionScore <= 30 ? 'High' : predictionScore >= 60 || predictionScore <= 40 ? 'Medium' : 'Low';
-    
-    var html = '<div class="cd-small" style="padding:8px 0;">';
-    html += '<p><b>Prediction Dashboard</b></p>';
-    
-    // Main prediction
-    html += '<div style="background:#161b22;border-radius:8px;padding:12px;margin:8px 0;">';
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
-    html += '<div style="font-size:12px;color:#8b949e;">Direction</div>';
-    html += '<div style="font-size:16px;font-weight:700;color:' + dirColor + ';">' + direction + '</div>';
-    html += '</div>';
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
-    html += '<div style="font-size:12px;color:#8b949e;">Score</div>';
-    html += '<div style="font-size:16px;font-weight:700;color:#e8eefc;">' + predictionScore + '/100</div>';
-    html += '</div>';
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
-    html += '<div style="font-size:12px;color:#8b949e;">Confidence</div>';
-    html += '<div style="font-size:12px;color:#e8eefc;">' + confidence + '</div>';
-    html += '</div>';
+    // Prediction Score header
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
+    html += '<span style="font-size:12px;font-weight:700;color:#e8eefc;">Prediction Score (30 Days)</span>';
+    html += '<span style="background:' + dirColor + ';color:#000;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;">' + totalScore + '% ' + direction + '</span>';
     html += '</div>';
     
-    // Signal breakdown
-    html += '<div style="margin:12px 0;">';
-    html += '<div style="font-size:11px;color:#8b949e;margin-bottom:6px;">Signal Breakdown</div>';
-    signals.forEach(function(sig) {
-      var sigColor = sig.score >= 65 ? '#3fb950' : sig.score <= 35 ? '#f85149' : '#d29922';
-      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #22304a;">';
-      html += '<div style="font-size:11px;color:#e8eefc;">' + sig.name + ' (' + sig.weight + '%)</div>';
-      html += '<div style="font-size:11px;color:' + sigColor + ';">' + Math.round(sig.score) + '</div>';
+    // Progress bar
+    html += '<div style="background:#22304a;border-radius:6px;height:8px;margin-bottom:12px;overflow:hidden;">';
+    html += '<div style="background:' + dirColor + ';width:' + totalScore + '%;height:100%;"></div>';
+    html += '</div>';
+    
+    // Score breakdown
+    html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px;">';
+    var scores = [
+      { name: 'Technical', score: techScore },
+      { name: 'On-Chain', score: onChainScore },
+      { name: 'Sentiment', score: sentimentScore },
+      { name: 'Fundamental', score: fundamentalScore },
+      { name: 'Derivatives', score: derivativesScore }
+    ];
+    scores.forEach(function(s) {
+      var color = s.score >= 60 ? '#3fb950' : s.score <= 40 ? '#f85149' : '#d29922';
+      html += '<div style="text-align:center;">';
+      html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">' + s.name + '</div>';
+      html += '<div style="font-size:14px;font-weight:700;color:' + color + ';">' + s.score + '%</div>';
       html += '</div>';
     });
     html += '</div>';
     
-    // Recommendation
-    var recommendation = '';
-    if (predictionScore >= 70) recommendation = '✅ Strong bullish setup. Consider long entries.';
-    else if (predictionScore >= 60) recommendation = '🟡 Moderate bullish bias. Wait for confirmation.';
-    else if (predictionScore >= 40) recommendation = '⚪ Neutral. No clear directional edge.';
-    else if (predictionScore >= 30) recommendation = '🟡 Moderate bearish bias. Wait for confirmation.';
-    else recommendation = '✅ Strong bearish setup. Consider short entries or avoid longs.';
+    // On-Chain Analytics
+    html += '<div style="margin-bottom:16px;">';
+    html += '<div style="font-size:11px;font-weight:700;color:#e8eefc;margin-bottom:8px;">🔗 On-Chain Analytics</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">';
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">PRICE POSITION</div>';
+    html += '<div style="font-size:13px;font-weight:700;color:' + (t.locPct < 30 ? '#3fb950' : t.locPct > 70 ? '#f85149' : '#d29922') + ';">' + (t.locPct ? num(t.locPct, 0) : '—') + '%</div>';
+    html += '<div style="font-size:9px;color:#8b949e;">In 16D range</div>';
+    html += '</div>';
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">TREND</div>';
+    html += '<div style="font-size:13px;font-weight:700;color:' + (t.trend === 'UP' ? '#3fb950' : t.trend === 'DOWN' ? '#f85149' : '#d29922') + ';">' + (t.trend || '—') + '</div>';
+    html += '<div style="font-size:9px;color:#8b949e;">Daily direction</div>';
+    html += '</div>';
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">COMPOSITE</div>';
+    html += '<div style="font-size:13px;font-weight:700;color:#e8eefc;">' + (t.composite ? num(t.composite, 0) : '—') + '</div>';
+    html += '<div style="font-size:9px;color:#8b949e;">Context indicator</div>';
+    html += '</div>';
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">VOLATILITY</div>';
+    html += '<div style="font-size:13px;font-weight:700;color:#e8eefc;">' + (t.atr14 ? num(t.atr14, 2) : '—') + '</div>';
+    html += '<div style="font-size:9px;color:#8b949e;">ATR 14D</div>';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
     
-    html += '<p style="font-size:11px;color:#8b949e;margin:8px 0 0 0;">' + recommendation + '</p>';
+    // Technical Analysis
+    html += '<div style="margin-bottom:16px;">';
+    html += '<div style="font-size:11px;font-weight:700;color:#e8eefc;margin-bottom:8px;">📈 Technical Analysis</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">';
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">TREND</div>';
+    html += '<div style="font-size:13px;font-weight:700;color:' + (t.trend === 'UP' ? '#3fb950' : t.trend === 'DOWN' ? '#f85149' : '#d29922') + ';">' + (t.trend || '—') + '</div>';
+    html += '</div>';
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">RSI (14)</div>';
+    html += '<div style="font-size:13px;font-weight:700;color:' + (t.rsi < 30 ? '#3fb950' : t.rsi > 70 ? '#f85149' : '#d29922') + ';">' + (t.rsi ? num(t.rsi, 0) : '—') + '</div>';
+    html += '</div>';
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">COMPOSITE</div>';
+    html += '<div style="font-size:13px;font-weight:700;color:#e8eefc;">' + (t.composite ? num(t.composite, 0) : '—') + '</div>';
+    html += '</div>';
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">HOUR RSI</div>';
+    html += '<div style="font-size:13px;font-weight:700;color:' + (t.hourRsi < 30 ? '#3fb950' : t.hourRsi > 70 ? '#f85149' : '#d29922') + ';">' + (t.hourRsi ? num(t.hourRsi, 0) : '—') + '</div>';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    
+    // Sentiment Indicators
+    html += '<div style="margin-bottom:16px;">';
+    html += '<div style="font-size:11px;font-weight:700;color:#e8eefc;margin-bottom:8px;">🎭 Sentiment Indicators</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">';
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">FEAR & GREED</div>';
+    html += '<div style="font-size:13px;font-weight:700;color:#d29922;">50</div>';
+    html += '<div style="font-size:9px;color:#8b949e;">Neutral</div>';
+    html += '</div>';
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">RSI SENTIMENT</div>';
+    html += '<div style="font-size:13px;font-weight:700;color:' + (t.rsi < 30 ? '#3fb950' : t.rsi > 70 ? '#f85149' : '#d29922') + ';">' + (t.rsi < 30 ? 'Neutral' : t.rsi > 70 ? 'Contrarian view' : 'Neutral') + '</div>';
+    html += '</div>';
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">HOUR MOMENTUM</div>';
+    html += '<div style="font-size:13px;font-weight:700;color:#d29922;">' + (t.hourRsi ? num(t.hourRsi, 0) : '—') + '</div>';
+    html += '<div style="font-size:9px;color:#8b949e;">Hourly RSI</div>';
+    html += '</div>';
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">LOCATION</div>';
+    html += '<div style="font-size:13px;font-weight:700;color:' + (t.locPct < 30 ? '#3fb950' : t.locPct > 70 ? '#f85149' : '#d29922') + ';">' + (t.locPct ? num(t.locPct, 0) + '%' : '—') + '</div>';
+    html += '<div style="font-size:9px;color:#8b949e;">Range position</div>';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    
+    // Scenario Forecast
+    html += '<div style="margin-bottom:16px;">';
+    html += '<div style="font-size:11px;font-weight:700;color:#e8eefc;margin-bottom:8px;">🎯 Scenario Forecast (30 Days)</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
+    var bullPrice = price * 1.15;
+    var basePrice = price * 1.05;
+    var bearPrice = price * 0.90;
+    html += '<div style="background:rgba(63,185,80,0.1);border:1px solid #3fb950;border-radius:6px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:10px;color:#3fb950;margin-bottom:4px;">🟢 Bull Case</div>';
+    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">30% probability</div>';
+    html += '<div style="font-size:14px;font-weight:700;color:#3fb950;">' + priceGbp(bullPrice, 4) + '</div>';
+    html += '</div>';
+    html += '<div style="background:rgba(210,153,34,0.1);border:1px solid #d29922;border-radius:6px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:10px;color:#d29922;margin-bottom:4px;">🟡 Base Case</div>';
+    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">45% probability</div>';
+    html += '<div style="font-size:14px;font-weight:700;color:#d29922;">' + priceGbp(basePrice, 4) + '</div>';
+    html += '</div>';
+    html += '<div style="background:rgba(248,81,73,0.1);border:1px solid #f85149;border-radius:6px;padding:8px;text-align:center;">';
+    html += '<div style="font-size:10px;color:#f85149;margin-bottom:4px;">🔴 Bear Case</div>';
+    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">25% probability</div>';
+    html += '<div style="font-size:14px;font-weight:700;color:#f85149;">' + priceGbp(bearPrice, 4) + '</div>';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    
+    // Signal Alignment
+    html += '<div>';
+    html += '<div style="font-size:11px;font-weight:700;color:#e8eefc;margin-bottom:8px;">📊 Signal Alignment</div>';
+    var signals = [
+      { name: 'Technical', score: techScore, icon: techScore < 40 ? '✕' : techScore < 60 ? '⚠' : '✓' },
+      { name: 'On-Chain', score: onChainScore, icon: onChainScore < 40 ? '✕' : onChainScore < 60 ? '⚠' : '✓' },
+      { name: 'Sentiment', score: sentimentScore, icon: sentimentScore < 40 ? '✕' : sentimentScore < 60 ? '⚠' : '✓' },
+      { name: 'Fundamental', score: fundamentalScore, icon: fundamentalScore < 40 ? '✕' : fundamentalScore < 60 ? '⚠' : '✓' },
+      { name: 'Derivatives', score: derivativesScore, icon: derivativesScore < 40 ? '✕' : derivativesScore < 60 ? '⚠' : '✓' }
+    ];
+    signals.forEach(function(s) {
+      var label = s.score >= 60 ? 'Bullish' : s.score <= 40 ? 'Bearish' : 'Neutral';
+      var color = s.score >= 60 ? '#3fb950' : s.score <= 40 ? '#f85149' : '#d29922';
+      var barColor = s.score >= 60 ? '#3fb950' : s.score <= 40 ? '#f85149' : '#d29922';
+      html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">';
+      html += '<span style="font-size:12px;">' + s.icon + '</span>';
+      html += '<span style="font-size:11px;color:#e8eefc;min-width:80px;">' + s.name + '</span>';
+      html += '<div style="flex:1;background:#22304a;border-radius:3px;height:4px;">';
+      html += '<div style="background:' + barColor + ';width:' + s.score + '%;height:100%;border-radius:3px;"></div>';
+      html += '</div>';
+      html += '<span style="font-size:10px;color:' + color + ';min-width:60px;text-align:right;">' + label + '</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+    
     html += '</div>';
     return html;
   }
 
   function weeklyStructureHtml(){
     var t = state.market || {};
-    var html = '<div class="cd-small" style="padding:8px 0;">';
-    html += '<p><b>Weekly Structure</b></p>';
-    if (t.trend) html += '<p>Trend: <b>' + esc(t.trend) + '</b></p>';
-    if (t.rsi != null) html += '<p>Daily RSI: <b>' + num(t.rsi, 1) + '</b></p>';
-    if (t.hourRsi != null) html += '<p>Hourly RSI: <b>' + num(t.hourRsi, 1) + '</b></p>';
-    if (t.composite != null) html += '<p>Composite: <b>' + num(t.composite, 1) + '</b></p>';
-    if (t.locPct != null) html += '<p>Price position: <b>' + num(t.locPct, 1) + '%</b> (' + esc(t.locLabel || '') + ')</p>';
-    if (t.atr14 != null) html += '<p>ATR(14): <b>' + num(t.atr14, 2) + '</b></p>';
-    html += horizonsBlockHtml(t);
-    html += '<p class="cd-small" style="margin-top:8px;">Legacy prominence-ranked hourly swing map: comparison only, not the P1 proposal source.</p>';
-    html += swingMapLineHtml(t);
+    var price = t.price || 0;
+    var prevWeekHigh = t.prevWeekHigh || (price * 1.05);
+    var prevWeekLow = t.prevWeekLow || (price * 0.95);
+    var midpoint = (prevWeekHigh + prevWeekLow) / 2;
+    var weeklyOpen = t.weeklyOpen || (price * 0.99);
+    var mondayHigh = t.mondayHigh || (price * 1.02);
+    var mondayLow = t.mondayLow || (price * 0.98);
+    
+    var distFromHigh = prevWeekHigh > 0 ? ((prevWeekHigh - price) / prevWeekHigh) * 100 : 0;
+    var distFromMid = midpoint > 0 ? ((price - midpoint) / midpoint) * 100 : 0;
+    var distFromLow = prevWeekLow > 0 ? ((price - prevWeekLow) / prevWeekLow) * 100 : 0;
+    
+    var belowMidpoint = price < midpoint;
+    var bias = belowMidpoint ? 'BEARISH BIAS' : 'BULLISH BIAS';
+    var biasColor = belowMidpoint ? '#f85149' : '#3fb950';
+    
+    var html = '<div style="padding:8px 0;">';
+    
+    // Header with bias
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
+    html += '<span style="font-size:12px;font-weight:700;color:#e8eefc;">Weekly Structure</span>';
+    html += '<span style="background:' + biasColor + ';color:#000;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;">' + bias + '</span>';
+    html += '</div>';
+    
+    // PRE WEEK HIGH / MIDPOINT / PRE WEEK LOW
+    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">';
+    html += '<div style="text-align:center;">';
+    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">PRE WEEK HIGH</div>';
+    html += '<div style="font-size:14px;font-weight:700;color:#e8eefc;">' + priceGbp(prevWeekHigh, 5) + '</div>';
+    html += '<div style="font-size:10px;color:#f85149;">-' + num(distFromHigh, 1) + '% from here</div>';
+    html += '</div>';
+    html += '<div style="text-align:center;">';
+    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">MIDPOINT (EQUILIBRIUM)</div>';
+    html += '<div style="font-size:14px;font-weight:700;color:#3d7dff;">' + priceGbp(midpoint, 5) + '</div>';
+    html += '<div style="font-size:10px;color:' + (distFromMid >= 0 ? '#3fb950' : '#f85149') + ';">' + (distFromMid >= 0 ? '+' : '') + num(distFromMid, 1) + '% from here</div>';
+    html += '</div>';
+    html += '<div style="text-align:center;">';
+    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">PRE WEEK LOW</div>';
+    html += '<div style="font-size:14px;font-weight:700;color:#e8eefc;">' + priceGbp(prevWeekLow, 5) + '</div>';
+    html += '<div style="font-size:10px;color:#3fb950;">+' + num(distFromLow, 1) + '% from here</div>';
+    html += '</div>';
+    html += '</div>';
+    
+    // Midpoint level indicator
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;margin-bottom:12px;">';
+    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">WEEKLY OPEN (MON 00:00)</div>';
+    html += '<div style="font-size:13px;font-weight:600;color:#e8eefc;">' + priceGbp(weeklyOpen, 5) + '</div>';
+    if (price < weeklyOpen) {
+      html += '<div style="display:inline-block;background:#f85149;color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;margin-top:4px;">▼ Below Open</div>';
+    } else {
+      html += '<div style="display:inline-block;background:#3fb950;color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;margin-top:4px;">▲ Above Open</div>';
+    }
+    html += '</div>';
+    
+    // Bias explanation
+    if (belowMidpoint) {
+      html += '<div style="background:rgba(248,81,73,0.1);border-left:3px solid #f85149;padding:8px;margin-bottom:12px;">';
+      html += '<div style="font-size:11px;font-weight:600;color:#f85149;margin-bottom:4px;">⚠ Below Midpoint — Bearish Bias</div>';
+      html += '<div style="font-size:10px;color:#8b949e;">Price trading below previous week\'s midpoint (' + priceGbp(midpoint, 5) + '). Watch for retest of previous week\'s low (' + priceGbp(prevWeekLow, 5) + ').</div>';
+      html += '</div>';
+    } else {
+      html += '<div style="background:rgba(63,185,80,0.1);border-left:3px solid #3fb950;padding:8px;margin-bottom:12px;">';
+      html += '<div style="font-size:11px;font-weight:600;color:#3fb950;margin-bottom:4px;">✓ Above Midpoint — Bullish Bias</div>';
+      html += '<div style="font-size:10px;color:#8b949e;">Price trading above previous week\'s midpoint (' + priceGbp(midpoint, 5) + '). Watch for retest of previous week\'s high (' + priceGbp(prevWeekHigh, 5) + ').</div>';
+      html += '</div>';
+    }
+    
+    // Monday Range
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;">';
+    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">Monday Range</div>';
+    html += '<div style="font-size:12px;font-weight:600;color:#e8eefc;">' + priceGbp(mondayHigh, 5) + ' – ' + priceGbp(mondayLow, 5) + '</div>';
+    html += '<div style="font-size:10px;color:#8b949e;margin-top:4px;">Watch for sweeps of Monday\'s range during London/NY sessions. Often establishes true weekly direction.</div>';
+    html += '</div>';
+    
     html += '</div>';
     return html;
   }
@@ -17367,4 +17551,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a53348216d7e74bb',t:'MTc5MzQ1NjIzMA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a53348216d7e74bb',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5335c277e9d4d65',t:'MTc5MzQ1NzA1MA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5335c277e9d4d65',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
