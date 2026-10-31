@@ -11284,6 +11284,23 @@
     );
   }
 
+  function weeklyStructureHtml(){
+    var t = state.market || {};
+    var html = '<div class="cd-small" style="padding:8px 0;">';
+    html += '<p><b>Weekly Structure</b></p>';
+    if (t.trend) html += '<p>Trend: <b>' + esc(t.trend) + '</b></p>';
+    if (t.rsi != null) html += '<p>Daily RSI: <b>' + num(t.rsi, 1) + '</b></p>';
+    if (t.hourRsi != null) html += '<p>Hourly RSI: <b>' + num(t.hourRsi, 1) + '</b></p>';
+    if (t.composite != null) html += '<p>Composite: <b>' + num(t.composite, 1) + '</b></p>';
+    if (t.locPct != null) html += '<p>Price position: <b>' + num(t.locPct, 1) + '%</b> (' + esc(t.locLabel || '') + ')</p>';
+    if (t.atr14 != null) html += '<p>ATR(14): <b>' + num(t.atr14, 2) + '</b></p>';
+    html += horizonsBlockHtml(t);
+    html += '<p class="cd-small" style="margin-top:8px;">Legacy prominence-ranked hourly swing map: comparison only, not the P1 proposal source.</p>';
+    html += swingMapLineHtml(t);
+    html += '</div>';
+    return html;
+  }
+
   function renderMarket(){
     var f=cdFrame(true),t=f.t,known=f.fresh.kind!=='sample'&&!f.fresh.stale,exit=exitClimate(t,openDirection(primaryOpenTrade()||{coin:state.settings.coinTicker}));
     var weeklyTab=weeklyStructureHtml();
