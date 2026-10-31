@@ -7334,6 +7334,18 @@ real padding{
 .climate-bar-unknown i{background:var(--muted);opacity:.4}
 .climate-bar-track small{flex:0 0 auto;font-size:9px;color:var(--muted)}
 
+/* F · mini rows — ultra compact with tap to expand */
+.climate-tile-mini .climate-sum{display:flex;align-items:center;gap:6px}
+.climate-mini-row{display:flex;align-items:center;gap:6px;flex:1;min-width:0}
+.climate-mini-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.climate-mini-name{flex:0 0 60px;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.climate-mini-bar-wrap{flex:1;min-width:0;height:4px;background:var(--input);border-radius:2px;overflow:hidden}
+.climate-mini-bar-fill{height:100%;border-radius:2px;transition:width .3s}
+.climate-mini-status{flex:0 0 auto;font-size:10px;font-weight:700;min-width:50px;text-align:right;white-space:nowrap}
+.climate-mini-chevron{flex:0 0 auto;font-size:14px;color:var(--muted);transition:transform .2s;margin-left:2px}
+.climate-tile-mini[open] .climate-mini-chevron{transform:rotate(90deg)}
+.climate-tile-mini .climate-panel{padding:8px 10px;border-top:1px solid var(--line);background:rgba(9,17,29,.2)}
+
 @media(max-width:390px){
   .climate-grid{gap:5px}
   .climate-val{font-size:13px}
@@ -11694,7 +11706,7 @@ p.ns-mut{margin:6px 0}
 }
 
 
-/* MARKET TABS - Tabbed interface for Market page */
+/* MARKET TABS - Tabbed interface for Market page [Updated 2026-10-31 v2] */
 .market-tabs-container {
   margin-bottom: 16px;
 }
@@ -11784,4 +11796,3 @@ p.ns-mut{margin:6px 0}
   background: #0d1117;
 }
 </style>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a52f640328eab316',t:'MTc5MzQxNTQyOQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a52f640328eab316',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>

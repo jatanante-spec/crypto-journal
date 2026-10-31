@@ -6608,6 +6608,8 @@
   var CLIMATE_LAYOUTS = {
     panel: { label: "E · One panel", short: "One panel",
       detail: "The most compact: one line per reading with its value, its own small scale and one key number. Rows on a phone, columns on a wide screen. Tap a reading to open its numbers." },
+    mini: { label: "F · Mini rows", short: "Mini rows",
+      detail: "Ultra-compact rows with a color dot, name, mini bar, and status. Tap any row to expand full details. Maximum space savings with no data lost." },
     chip: { label: "A · Chip gauge", short: "Chip gauge",
       detail: "2x2 tiles with a small arc beside each label. The gauge indexes; the words and numbers carry the facts." },
     hero: { label: "B · Hero dial", short: "Hero dial",
@@ -6630,7 +6632,7 @@
   /* The More tab offers ten. Grouped because ten undifferentiated buttons is a wall.
      Every layout sits in one borderless box (CLIMATE-BOX-1); they differ only in how each reading is drawn. */
   var CLIMATE_LAYOUT_GROUPS = [
-    { title: "Compact", keys: ['panel'] },
+    { title: "Compact", keys: ['panel','mini'] },
     { title: "Grid layouts", keys: ['chip','hero','ring'] },
     { title: "Row layouts", keys: ['bar','rail','diverging','steps','band','plain'] }
   ];
@@ -6664,6 +6666,9 @@
   function climateBar(r){
     var pct = Math.round((CLIMATE_PCT[r.tone] || 0) * 100);
     return '<span class="climate-bar climate-bar-'+r.tone+'"><i style="width:'+pct+'%'+'"></i></span>';
+  }
+  function climateBarPct(r){
+    return Math.round((CLIMATE_PCT[r.tone] || 0) * 100);
   }
   function climateRailFoot(r, lead){
     return '<div class="climate-rail-foot"><span class="climate-tone-word">' + esc(lead) +
@@ -6857,6 +6862,17 @@
         head = '<span class="climate-plain-row">' + climateRowTop(r) +
           '<span class="climate-plain-tools"><span class="climate-tone-chip">' +
           esc(CLIMATE_TONE_WORD[r.tone]) + '</span>' + climateChips(r) + '</span></span>';
+      } else if (layout === 'mini'){
+        // MINI + TAP layout: compact row with tap-to-expand details
+        var dotColor = r.tone === 'good' ? '#3fb950' : r.tone === 'bad' ? '#f85149' : r.tone === 'mid' ? '#d29922' : '#8b949e';
+        var barPct = climateBarPct(r);
+        head = '<span class="climate-mini-row">' +
+          '<span class="climate-mini-dot" style="background:'+dotColor+';"></span>' +
+          '<span class="climate-mini-name">'+esc(r.label)+'</span>' +
+          '<span class="climate-mini-bar-wrap"><span class="climate-mini-bar-fill" style="width:'+barPct+'%;background:'+dotColor+';"></span></span>' +
+          '<span class="climate-mini-status" style="color:'+dotColor+';">'+esc(r.value)+'</span>' +
+          '<span class="climate-mini-chevron">›</span>' +
+          '</span>';
       } else if (layout === 'hero'){
         head = viz + '<small class="climate-label">'+esc(r.label)+'</small>' +
           '<b class="climate-val">'+esc(r.value)+'</b>' +
@@ -17551,4 +17567,3 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a533ae7d5a9138c1',t:'MTc5MzQ2MDQyMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a533ae7d5a9138c1',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
