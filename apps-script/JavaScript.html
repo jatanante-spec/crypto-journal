@@ -11284,6 +11284,29 @@
     );
   }
 
+  function derivativesPanelHtml(){
+    return '<div class="cd-small" style="padding:8px 0;"><p><b>Derivatives & Sentiment</b></p><p style="color:#8b949e;">Derivatives data requires additional API configuration. This panel will show funding rates, open interest, and sentiment indicators when configured.</p></div>';
+  }
+
+  function marketPredictionDashboardHtml(f){
+    if (!f || !f.t) return '<div class="cd-small" style="padding:8px 0;"><p><b>Prediction Dashboard</b></p><p style="color:#8b949e;">No prediction data available.</p></div>';
+    var t = f.t;
+    var html = '<div class="cd-small" style="padding:8px 0;">';
+    html += '<p><b>Prediction Dashboard</b></p>';
+    if (t.trend) html += '<p>Trend: <b>' + esc(t.trend) + '</b></p>';
+    if (t.rsi != null) {
+      var rsiStatus = t.rsi < 30 ? 'Oversold (bullish signal)' : t.rsi > 70 ? 'Overbought (bearish signal)' : 'Neutral';
+      html += '<p>RSI(14): <b>' + num(t.rsi, 1) + '</b> - ' + rsiStatus + '</p>';
+    }
+    if (t.composite != null) {
+      var compStatus = t.composite >= 70 ? 'Strong bullish' : t.composite <= 30 ? 'Strong bearish' : 'Neutral';
+      html += '<p>Composite: <b>' + num(t.composite, 1) + '</b> - ' + compStatus + '</p>';
+    }
+    html += '<p style="color:#8b949e;font-size:11px;margin-top:8px;">Prediction framework integrates technical signals for directional bias.</p>';
+    html += '</div>';
+    return html;
+  }
+
   function weeklyStructureHtml(){
     var t = state.market || {};
     var html = '<div class="cd-small" style="padding:8px 0;">';
@@ -16990,3 +17013,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5331b063dbab122',t:'MTc5MzQ1NDM4Mw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5331b063dbab122',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
