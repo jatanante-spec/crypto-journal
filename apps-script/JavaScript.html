@@ -2484,6 +2484,119 @@
     return sum;
   }
 
+  // MFE/MAE-1: Maximum Favorable/Adverse Excursion tracking
+  function computeMFE(trade) {
+    if (!trade || !trade.highs || trade.highs.length === 0) return null;
+    var entry = Number(trade.entry);
+    var side = trade.side || 'buy';
+    if (!(entry > 0)) return null;
+    var maxHigh = Math.max.apply(null, trade.highs);
+    var maxLow = Math.min.apply(null, trade.lows || trade.highs);
+    if (side === 'buy') {
+      return { mfe: maxHigh - entry, mfePct: ((maxHigh - entry) / entry) * 100 };
+    } else {
+      return { mfe: entry - maxLow, mfePct: ((entry - maxLow) / entry) * 100 };
+    }
+  }
+
+  function computeMAE(trade) {
+    if (!trade || !trade.lows || trade.lows.length === 0) return null;
+    var entry = Number(trade.entry);
+    var side = trade.side || 'buy';
+    if (!(entry > 0)) return null;
+    var maxHigh = Math.max.apply(null, trade.highs || trade.lows);
+    var maxLow = Math.min.apply(null, trade.lows);
+    if (side === 'buy') {
+      return { mae: entry - maxLow, maePct: ((entry - maxLow) / entry) * 100 };
+    } else {
+      return { mae: maxHigh - entry, maePct: ((maxHigh - entry) / entry) * 100 };
+    }
+  }
+
+  function updateTradeExcursion(trade, currentPrice) {
+    if (!trade || !currentPrice) return trade;
+    trade.highs = trade.highs || [];
+    trade.lows = trade.lows || [];
+    trade.highs.push(currentPrice);
+    trade.lows.push(currentPrice);
+    // Keep only last 1000 prices to prevent unbounded growth
+    if (trade.highs.length > 1000) trade.highs = trade.highs.slice(-1000);
+    if (trade.lows.length > 1000) trade.lows = trade.lows.slice(-1000);
+    return trade;
+  }
+
+  function renderMFEPanel(trade) {
+    if (!trade) return '';
+    var mfe = computeMFE(trade);
+    var mae = computeMAE(trade);
+    var entry = Number(trade.entry);
+    var current = Number(trade.current || trade.exit || entry);
+    var side = trade.side || 'buy';
+    var pl = side === 'buy' ? current - entry : entry - current;
+    var plPct = (pl / entry) * 100;
+    
+    var html = '<div class="mfe-mae-panel" style="background:#0e1730;border:1px solid #22304a;border-radius:8px;padding:12px;margin:8px 0;">';
+    html += '<h4 style="margin:0 0 8px 0;font-size:13px;color:#e8eefc;">MFE / MAE Analysis</h4>';
+    html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">';
+    
+    // MFE
+    if (mfe) {
+      var mfeColor = mfe.mfe >= 0 ? '#3fb950' : '#f85149';
+      html += '<div style="background:#161b22;border-radius:6px;padding:8px;">';
+      html += '<div style="font-size:10px;color:#8b949e;">MFE (Best)</div>';
+      html += '<div style="font-size:14px;font-weight:600;color:' + mfeColor + ';">' + (mfe.mfe >= 0 ? '+' : '') + num(mfe.mfe, 2) + '</div>';
+      html += '<div style="font-size:10px;color:#8b949e;">' + (mfe.mfePct >= 0 ? '+' : '') + num(mfe.mfePct, 2) + '%</div>';
+      html += '</div>';
+    }
+    
+    // MAE
+    if (mae) {
+      var maeColor = mae.mae >= 0 ? '#f85149' : '#3fb950';
+      html += '<div style="background:#161b22;border-radius:6px;padding:8px;">';
+      html += '<div style="font-size:10px;color:#8b949e;">MAE (Worst)</div>';
+      html += '<div style="font-size:14px;font-weight:600;color:' + maeColor + ';">' + (mae.mae >= 0 ? '+' : '') + num(mae.mae, 2) + '</div>';
+      html += '<div style="font-size:10px;color:#8b949e;">' + (mae.maePct >= 0 ? '+' : '') + num(mae.maePct, 2) + '%</div>';
+      html += '</div>';
+    }
+    
+    // Current P/L
+    var plColor = pl >= 0 ? '#3fb950' : '#f85149';
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;">';
+    html += '<div style="font-size:10px;color:#8b949e;">Current P/L</div>';
+    html += '<div style="font-size:14px;font-weight:600;color:' + plColor + ';">' + (pl >= 0 ? '+' : '') + num(pl, 2) + '</div>';
+    html += '<div style="font-size:10px;color:#8b949e;">' + (plPct >= 0 ? '+' : '') + num(plPct, 2) + '%</div>';
+    html += '</div>';
+    
+    // Efficiency
+    if (mfe && mfe.mfe > 0) {
+      var efficiency = (pl / mfe.mfe) * 100;
+      var effColor = efficiency >= 70 ? '#3fb950' : efficiency >= 40 ? '#d29922' : '#f85149';
+      html += '<div style="background:#161b22;border-radius:6px;padding:8px;">';
+      html += '<div style="font-size:10px;color:#8b949e;">Efficiency</div>';
+      html += '<div style="font-size:14px;font-weight:600;color:' + effColor + ';">' + num(efficiency, 0) + '%</div>';
+      html += '<div style="font-size:10px;color:#8b949e;">P/L ÷ MFE</div>';
+      html += '</div>';
+    }
+    
+    html += '</div>';
+    
+    // Insight
+    if (mfe && mae) {
+      var insight = '';
+      if (mfe.mfe > 0 && pl < mfe.mfe * 0.5) {
+        insight = '⚠️ You gave back ' + num(((mfe.mfe - pl) / mfe.mfe) * 100, 0) + '% of best profit. Consider tightening stop.';
+      } else if (mae.mae > entry * 0.02) {
+        insight = '⚠️ Drawdown was ' + num(mae.maePct, 1) + '%. Review stop placement.';
+      } else {
+        insight = '✅ Trade management looks efficient.';
+      }
+      html += '<p style="font-size:11px;color:#8b949e;margin:8px 0 0 0;">' + insight + '</p>';
+    }
+    
+    html += '</div>';
+    return html;
+  }
+
   function roomLeft(session) {
     return Math.max(0, (Number(session && session.leftLoss) || 0) - openRiskGbp());
   }
@@ -11143,6 +11256,111 @@
       +'</div>'+(nsOn?'':recordBuyHtml(f)+cdActionBar(f))+'</div>';
   }
 
+  // Smart Insights for Journal
+  function generateSmartInsights(trades, settings) {
+    if (!trades || trades.length < 5) return '';
+    
+    var closed = trades.filter(function(t) { return t.exit != null; });
+    if (closed.length < 3) return '';
+    
+    var insights = [];
+    
+    // 1. Win rate analysis
+    var wins = closed.filter(function(t) {
+      var c = computeTrade(t, settings);
+      return c.netPlGbp > 0;
+    });
+    var winRate = (wins.length / closed.length) * 100;
+    
+    if (winRate >= 60) {
+      insights.push({ type: 'positive', icon: '✅', text: 'Strong win rate: ' + num(winRate, 0) + '% (' + wins.length + '/' + closed.length + ' trades)' });
+    } else if (winRate < 40) {
+      insights.push({ type: 'warning', icon: '⚠️', text: 'Low win rate: ' + num(winRate, 0) + '%. Review entry criteria.' });
+    }
+    
+    // 2. Average winner vs loser
+    var avgWin = 0, avgLoss = 0;
+    wins.forEach(function(t) {
+      var c = computeTrade(t, settings);
+      avgWin += c.netPlGbp;
+    });
+    avgWin = wins.length > 0 ? avgWin / wins.length : 0;
+    
+    var losses = closed.filter(function(t) {
+      var c = computeTrade(t, settings);
+      return c.netPlGbp < 0;
+    });
+    losses.forEach(function(t) {
+      var c = computeTrade(t, settings);
+      avgLoss += Math.abs(c.netPlGbp);
+    });
+    avgLoss = losses.length > 0 ? avgLoss / losses.length : 0;
+    
+    if (avgWin > 0 && avgLoss > 0) {
+      var ratio = avgWin / avgLoss;
+      if (ratio >= 2) {
+        insights.push({ type: 'positive', icon: '✅', text: 'Excellent risk/reward: Winners are ' + num(ratio, 1) + '× larger than losers' });
+      } else if (ratio < 1) {
+        insights.push({ type: 'warning', icon: '⚠️', text: 'Losers are ' + num(1/ratio, 1) + '× larger than winners. Let winners run.' });
+      }
+    }
+    
+    // 3. Best/worst setup
+    var bySetup = {};
+    closed.forEach(function(t) {
+      var setup = t.setup || 'Unknown';
+      if (!bySetup[setup]) bySetup[setup] = { count: 0, pl: 0 };
+      var c = computeTrade(t, settings);
+      bySetup[setup].count++;
+      bySetup[setup].pl += c.netPlGbp || 0;
+    });
+    
+    var bestSetup = null, bestPL = -Infinity;
+    var worstSetup = null, worstPL = Infinity;
+    Object.keys(bySetup).forEach(function(s) {
+      if (bySetup[s].count >= 2) {
+        if (bySetup[s].pl > bestPL) { bestPL = bySetup[s].pl; bestSetup = s; }
+        if (bySetup[s].pl < worstPL) { worstPL = bySetup[s].pl; worstSetup = s; }
+      }
+    });
+    
+    if (bestSetup) insights.push({ type: 'info', icon: '🎯', text: 'Best setup: ' + bestSetup + ' (' + gbp(bestPL) + ' total)' });
+    if (worstSetup && worstPL < 0) insights.push({ type: 'warning', icon: '⚠️', text: 'Worst setup: ' + worstSetup + ' (' + gbp(worstPL) + ' total). Consider avoiding.' });
+    
+    // 4. Time-based insight
+    var recentTrades = closed.slice(-10);
+    var recentWins = recentTrades.filter(function(t) {
+      var c = computeTrade(t, settings);
+      return c.netPlGbp > 0;
+    });
+    var recentWinRate = (recentWins.length / recentTrades.length) * 100;
+    
+    if (recentTrades.length >= 5) {
+      if (recentWinRate >= 70) {
+        insights.push({ type: 'positive', icon: '🔥', text: 'Hot streak: ' + num(recentWinRate, 0) + '% win rate in last 10 trades' });
+      } else if (recentWinRate < 30) {
+        insights.push({ type: 'warning', icon: '🧊', text: 'Cold streak: ' + num(recentWinRate, 0) + '% win rate in last 10 trades. Consider reducing size.' });
+      }
+    }
+    
+    // Render insights
+    if (insights.length === 0) return '';
+    
+    var html = '<div class="smart-insights" style="background:#0e1730;border:1px solid #22304a;border-radius:8px;padding:12px;margin:12px 0;">';
+    html += '<h4 style="margin:0 0 8px 0;font-size:13px;color:#e8eefc;">💡 Smart Insights</h4>';
+    insights.forEach(function(insight) {
+      var color = insight.type === 'positive' ? '#3fb950' : insight.type === 'warning' ? '#d29922' : '#3d7dff';
+      html += '<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #22304a;">';
+      html += '<span style="font-size:14px;">' + insight.icon + '</span>';
+      html += '<span style="font-size:11px;color:' + color + ';">' + insight.text + '</span>';
+      html += '</div>';
+    });
+    html += '<p style="font-size:10px;color:#8b949e;margin:8px 0 0 0;">Based on your last ' + closed.length + ' closed trades</p>';
+    html += '</div>';
+    
+    return html;
+  }
+
   function renderJournal() {
     var visible = visibleTrades().slice().sort(function (a, b) {
       var ao = a.exit == null ? 0 : 1;
@@ -11198,6 +11416,7 @@
         "</div>" +
         gateStampHtml(t) +
         (t.notes ? '<p class="trade-notes">' + esc(t.notes) + "</p>" : "") +
+        renderMFEPanel(t) +
         '<div class="row trade-actions">' +
           '<button class="btn secondary" type="button" data-action="edit" data-id="' + t.id + '">Edit</button>' +
           '<button class="btn danger" type="button" data-action="delete" data-id="' + t.id + '">Delete</button>' +
@@ -11275,6 +11494,7 @@
         '<p class="muted coin-hint journal-hint">Tape ' + esc(state.settings.coinTicker) +
           " · filters list + Closed stats</p>" +
         (errorMsg ? '<p class="toast-error">' + esc(errorMsg) + "</p>" : "") +
+        generateSmartInsights(state.trades, state.settings) +
         listHtml +
         '<details class="sizer-vol add-trade"><summary>Add trade</summary>' +
           tradeForm("draft", draft, "Add trade") +
@@ -11285,24 +11505,158 @@
   }
 
   function derivativesPanelHtml(){
-    return '<div class="cd-small" style="padding:8px 0;"><p><b>Derivatives & Sentiment</b></p><p style="color:#8b949e;">Derivatives data requires additional API configuration. This panel will show funding rates, open interest, and sentiment indicators when configured.</p></div>';
+    var f = cdFrame(true);
+    var t = f && f.t ? f.t : {};
+    var html = '<div class="cd-small" style="padding:8px 0;">';
+    html += '<p><b>Derivatives & Sentiment</b></p>';
+    
+    // Funding rate (placeholder - needs API)
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;margin:4px 0;">';
+    html += '<div style="font-size:10px;color:#8b949e;">Funding Rate</div>';
+    html += '<div style="font-size:12px;color:#8b949e;">Requires API configuration</div>';
+    html += '</div>';
+    
+    // Open Interest (placeholder)
+    html += '<div style="background:#161b22;border-radius:6px;padding:8px;margin:4px 0;">';
+    html += '<div style="font-size:10px;color:#8b949e;">Open Interest</div>';
+    html += '<div style="font-size:12px;color:#8b949e;">Requires API configuration</div>';
+    html += '</div>';
+    
+    // Sentiment from RSI
+    if (t.rsi != null) {
+      var sentiment = t.rsi < 30 ? 'Fear (Contrarian Bullish)' : t.rsi > 70 ? 'Greed (Contrarian Bearish)' : 'Neutral';
+      var sentColor = t.rsi < 30 ? '#3fb950' : t.rsi > 70 ? '#f85149' : '#8b949e';
+      html += '<div style="background:#161b22;border-radius:6px;padding:8px;margin:4px 0;">';
+      html += '<div style="font-size:10px;color:#8b949e;">Sentiment (RSI-based)</div>';
+      html += '<div style="font-size:12px;color:' + sentColor + ';">' + sentiment + '</div>';
+      html += '<div style="font-size:10px;color:#8b949e;">RSI: ' + num(t.rsi, 1) + '</div>';
+      html += '</div>';
+    }
+    
+    html += '</div>';
+    return html;
   }
 
   function marketPredictionDashboardHtml(f){
     if (!f || !f.t) return '<div class="cd-small" style="padding:8px 0;"><p><b>Prediction Dashboard</b></p><p style="color:#8b949e;">No prediction data available.</p></div>';
     var t = f.t;
-    var html = '<div class="cd-small" style="padding:8px 0;">';
-    html += '<p><b>Prediction Dashboard</b></p>';
-    if (t.trend) html += '<p>Trend: <b>' + esc(t.trend) + '</b></p>';
+    
+    // Calculate prediction score based on multiple signals
+    var signals = [];
+    var totalScore = 0;
+    var totalWeight = 0;
+    
+    // 1. Technical Score (30% weight)
+    var techScore = 50;
     if (t.rsi != null) {
-      var rsiStatus = t.rsi < 30 ? 'Oversold (bullish signal)' : t.rsi > 70 ? 'Overbought (bearish signal)' : 'Neutral';
-      html += '<p>RSI(14): <b>' + num(t.rsi, 1) + '</b> - ' + rsiStatus + '</p>';
+      if (t.rsi < 30) techScore += 30;
+      else if (t.rsi > 70) techScore -= 30;
+      else if (t.rsi < 40) techScore += 15;
+      else if (t.rsi > 60) techScore -= 15;
+    }
+    if (t.trend === 'UP') techScore += 20;
+    else if (t.trend === 'DOWN') techScore -= 20;
+    techScore = Math.max(0, Math.min(100, techScore));
+    signals.push({ name: 'Technical', score: techScore, weight: 30 });
+    totalScore += techScore * 0.3;
+    totalWeight += 30;
+    
+    // 2. Momentum Score (25% weight)
+    var momScore = 50;
+    if (t.hourRsi != null) {
+      if (t.hourRsi < 30) momScore += 30;
+      else if (t.hourRsi > 70) momScore -= 30;
+      else if (t.hourRsi < 40) momScore += 15;
+      else if (t.hourRsi > 60) momScore -= 15;
     }
     if (t.composite != null) {
-      var compStatus = t.composite >= 70 ? 'Strong bullish' : t.composite <= 30 ? 'Strong bearish' : 'Neutral';
-      html += '<p>Composite: <b>' + num(t.composite, 1) + '</b> - ' + compStatus + '</p>';
+      if (t.composite >= 70) momScore += 20;
+      else if (t.composite <= 30) momScore -= 20;
     }
-    html += '<p style="color:#8b949e;font-size:11px;margin-top:8px;">Prediction framework integrates technical signals for directional bias.</p>';
+    momScore = Math.max(0, Math.min(100, momScore));
+    signals.push({ name: 'Momentum', score: momScore, weight: 25 });
+    totalScore += momScore * 0.25;
+    totalWeight += 25;
+    
+    // 3. Position Score (20% weight)
+    var posScore = 50;
+    if (t.locPct != null) {
+      if (t.locPct < 20) posScore += 40;
+      else if (t.locPct > 80) posScore -= 40;
+      else if (t.locPct < 40) posScore += 20;
+      else if (t.locPct > 60) posScore -= 20;
+    }
+    posScore = Math.max(0, Math.min(100, posScore));
+    signals.push({ name: 'Position', score: posScore, weight: 20 });
+    totalScore += posScore * 0.2;
+    totalWeight += 20;
+    
+    // 4. Structure Score (15% weight)
+    var structScore = 50;
+    if (t.trend === 'UP') structScore += 30;
+    else if (t.trend === 'DOWN') structScore -= 30;
+    structScore = Math.max(0, Math.min(100, structScore));
+    signals.push({ name: 'Structure', score: structScore, weight: 15 });
+    totalScore += structScore * 0.15;
+    totalWeight += 15;
+    
+    // 5. Volatility Score (10% weight)
+    var volScore = 50;
+    if (t.atr14 != null && t.price) {
+      var atrPct = (t.atr14 / t.price) * 100;
+      if (atrPct < 2) volScore += 20;
+      else if (atrPct > 5) volScore -= 20;
+    }
+    volScore = Math.max(0, Math.min(100, volScore));
+    signals.push({ name: 'Volatility', score: volScore, weight: 10 });
+    totalScore += volScore * 0.1;
+    totalWeight += 10;
+    
+    var predictionScore = Math.round(totalScore);
+    var direction = predictionScore >= 65 ? 'BULLISH' : predictionScore <= 35 ? 'BEARISH' : 'NEUTRAL';
+    var dirColor = predictionScore >= 65 ? '#3fb950' : predictionScore <= 35 ? '#f85149' : '#d29922';
+    var confidence = predictionScore >= 70 || predictionScore <= 30 ? 'High' : predictionScore >= 60 || predictionScore <= 40 ? 'Medium' : 'Low';
+    
+    var html = '<div class="cd-small" style="padding:8px 0;">';
+    html += '<p><b>Prediction Dashboard</b></p>';
+    
+    // Main prediction
+    html += '<div style="background:#161b22;border-radius:8px;padding:12px;margin:8px 0;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+    html += '<div style="font-size:12px;color:#8b949e;">Direction</div>';
+    html += '<div style="font-size:16px;font-weight:700;color:' + dirColor + ';">' + direction + '</div>';
+    html += '</div>';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+    html += '<div style="font-size:12px;color:#8b949e;">Score</div>';
+    html += '<div style="font-size:16px;font-weight:700;color:#e8eefc;">' + predictionScore + '/100</div>';
+    html += '</div>';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+    html += '<div style="font-size:12px;color:#8b949e;">Confidence</div>';
+    html += '<div style="font-size:12px;color:#e8eefc;">' + confidence + '</div>';
+    html += '</div>';
+    html += '</div>';
+    
+    // Signal breakdown
+    html += '<div style="margin:12px 0;">';
+    html += '<div style="font-size:11px;color:#8b949e;margin-bottom:6px;">Signal Breakdown</div>';
+    signals.forEach(function(sig) {
+      var sigColor = sig.score >= 65 ? '#3fb950' : sig.score <= 35 ? '#f85149' : '#d29922';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #22304a;">';
+      html += '<div style="font-size:11px;color:#e8eefc;">' + sig.name + ' (' + sig.weight + '%)</div>';
+      html += '<div style="font-size:11px;color:' + sigColor + ';">' + Math.round(sig.score) + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    
+    // Recommendation
+    var recommendation = '';
+    if (predictionScore >= 70) recommendation = '✅ Strong bullish setup. Consider long entries.';
+    else if (predictionScore >= 60) recommendation = '🟡 Moderate bullish bias. Wait for confirmation.';
+    else if (predictionScore >= 40) recommendation = '⚪ Neutral. No clear directional edge.';
+    else if (predictionScore >= 30) recommendation = '🟡 Moderate bearish bias. Wait for confirmation.';
+    else recommendation = '✅ Strong bearish setup. Consider short entries or avoid longs.';
+    
+    html += '<p style="font-size:11px;color:#8b949e;margin:8px 0 0 0;">' + recommendation + '</p>';
     html += '</div>';
     return html;
   }
@@ -17013,4 +17367,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5331b063dbab122',t:'MTc5MzQ1NDM4Mw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5331b063dbab122',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a53348216d7e74bb',t:'MTc5MzQ1NjIzMA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a53348216d7e74bb',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
