@@ -11884,8 +11884,100 @@
     var derivTab=(function(){try{return derivativesPanelHtml();}catch(e){return '<p style="color:#8b949e;font-size:12px;">Panel unavailable</p>';}}());
     var predictionTab=(function(){try{return marketPredictionDashboardHtml(f);}catch(e){return '';}}());
     var climateTab=marketClimateHtml(f);
-    return '<div class="market-screen cd-workspace">'+sectionNavHtml('market')+cdHeader(f)+'<details class="cd-fold" data-cd-fold="market-weekly" open><summary class="cd-fold-summary">📊 Weekly Structure</summary><div class="cd-fold-body">'+weeklyTab+'</div></details>'+'<details class="cd-fold" data-cd-fold="market-derivs"><summary class="cd-fold-summary">📊 Derivatives & Sentiment</summary><div class="cd-fold-body">'+derivTab+'</div></details>'+'<details class="cd-fold" data-cd-fold="market-prediction"><summary class="cd-fold-summary">🔮 Prediction Dashboard</summary><div class="cd-fold-body">'+predictionTab+'</div></details>'+'<details class="cd-fold" data-cd-fold="market-climate"><summary class="cd-fold-summary">🌤️ Coin Climate</summary><div class="cd-fold-body">'+climateTab+'</div></details>'+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')+'<section class="cd-card"><header><h3>'+esc(f.c.title)+'</h3><button type="button" class="text-link" data-action="cd-learn">Learn</button></header>'+crLeadHtml(f)+cdChartHtml(f)+cdVolumeEvidenceHtml(f)+pcSummary(f)+cdTimeframes(f)+(known&&t.high>t.low?'<div class="range-meter"><div class="track"><i class="dot" style="left:'+clamp(t.locPct,0,100)+'%"></i></div><div class="cap"><span>'+esc(priceGbp(t.low,5))+'</span><span>'+esc(num(t.locPct,1)+'% · '+t.locLabel)+'</span><span>'+esc(priceGbp(t.high,5))+'</span></div></div>':'<p class="cd-small">Fresh provider range unavailable.</p>')+'<div class="cd-watch"><div><small>Continuation · observation only</small><b>'+esc(contLabel(f.continuation.code))+'</b></div><button type="button" class="text-link" data-action="cd-deck" data-cue="Continuation">Details</button></div><button type="button" class="btn secondary" data-page="sizer">Review ticket in Sizer →</button></section><details class="cd-fold" data-cd-fold="market-indicators"><summary>Evidence & indicators<small>Full cue deck · structure · market readings</small></summary><div><button type="button" class="btn secondary" data-action="cd-deck">All 24 instruments</button>'+contextWhyHtml()+'<p>'+esc('Daily RSI '+(t.rsi==null?'unknown':num(t.rsi,1))+' · hourly RSI '+(t.hourRsi==null?'unknown':num(t.hourRsi,1))+' · composite '+num(t.composite,1))+'</p></div></details>'+cdDataHtml(f)+'<details class="cd-fold" data-cd-fold="backdrop"><summary>Longer-term backdrop & exit climate<small>Month / week / day · separate legacy swing map</small></summary><div>'+horizonsBlockHtml(t)+'<p class="cd-small">Legacy prominence-ranked hourly swing map: comparison only, not the P1 proposal source.</p>'+swingMapLineHtml(t)+'<details class="cd-fold" data-cd-fold="legacy-chart"><summary>Legacy swing chart</summary><div>'+swingSparkSvg(state.hourly,t.swingLowIdx,t.swingHighIdx,640,180,'Legacy hourly map',t.swingMicroPivots,seriesBarAts(state.hourly,true),{})+'</div></details><p><b>Exit lens · if already long: '+esc(exit.stance)+'</b></p><p>'+esc(exit.say)+'</p><small>Not a short entry or buying approval.</small></div></details>'+cdMarketAdjust(t)+'<details class="cd-fold" data-cd-fold="legacy-send"><summary>Manual quote-based ticket tool</summary><div><p>This existing tool overwrites the draft using the current quote, manual stop percentage and 2R target. It is separate from P1 and does not approve a buy or change an open order.</p><button type="button" class="btn secondary" data-action="use-sizer"'+(!known||busy?' disabled':'')+'>Overwrite draft and open Sizer</button></div></details><div class="cd-actions"><button type="button" class="btn secondary" data-action="cd-learn">Learn this screen</button><button type="button" class="text-link" data-page="manual">Open the manual</button></div></div>';
+    
+    // Hybrid layout: tabs + horizontal swipe
+    var hybridHtml = '<div class="market-hybrid-layout">';
+    
+    // Tab navigation
+    hybridHtml += '<div class="market-hybrid-tabs">';
+    hybridHtml += '<button class="market-hybrid-tab active" data-target="market-weekly" onclick="marketHybridScrollTo(0)">📊 Weekly</button>';
+    hybridHtml += '<button class="market-hybrid-tab" data-target="market-derivs" onclick="marketHybridScrollTo(1)">📊 Derivatives</button>';
+    hybridHtml += '<button class="market-hybrid-tab" data-target="market-prediction" onclick="marketHybridScrollTo(2)">🔮 Prediction</button>';
+    hybridHtml += '<button class="market-hybrid-tab" data-target="market-climate" onclick="marketHybridScrollTo(3)">🌤️ Climate</button>';
+    hybridHtml += '</div>';
+    
+    // Horizontal swipe container
+    hybridHtml += '<div class="market-hybrid-swipe">';
+    
+    // Card 1: Weekly Structure
+    hybridHtml += '<div class="market-hybrid-card" data-index="0">';
+    hybridHtml += '<div class="market-hybrid-header" onclick="marketHybridToggle(0)">';
+    hybridHtml += '<span class="market-hybrid-title">📊 Weekly Structure</span>';
+    hybridHtml += '<span class="market-hybrid-fold" id="market-fold-0">▼</span>';
+    hybridHtml += '</div>';
+    hybridHtml += '<div class="market-hybrid-body open" id="market-body-0">'+weeklyTab+'</div>';
+    hybridHtml += '</div>';
+    
+    // Card 2: Derivatives & Sentiment
+    hybridHtml += '<div class="market-hybrid-card" data-index="1">';
+    hybridHtml += '<div class="market-hybrid-header" onclick="marketHybridToggle(1)">';
+    hybridHtml += '<span class="market-hybrid-title">📊 Derivatives & Sentiment</span>';
+    hybridHtml += '<span class="market-hybrid-fold" id="market-fold-1">▼</span>';
+    hybridHtml += '</div>';
+    hybridHtml += '<div class="market-hybrid-body open" id="market-body-1">'+derivTab+'</div>';
+    hybridHtml += '</div>';
+    
+    // Card 3: Prediction Dashboard
+    hybridHtml += '<div class="market-hybrid-card" data-index="2">';
+    hybridHtml += '<div class="market-hybrid-header" onclick="marketHybridToggle(2)">';
+    hybridHtml += '<span class="market-hybrid-title">🔮 Prediction Dashboard</span>';
+    hybridHtml += '<span class="market-hybrid-fold" id="market-fold-2">▼</span>';
+    hybridHtml += '</div>';
+    hybridHtml += '<div class="market-hybrid-body open" id="market-body-2">'+predictionTab+'</div>';
+    hybridHtml += '</div>';
+    
+    // Card 4: Coin Climate
+    hybridHtml += '<div class="market-hybrid-card" data-index="3">';
+    hybridHtml += '<div class="market-hybrid-header" onclick="marketHybridToggle(3)">';
+    hybridHtml += '<span class="market-hybrid-title">🌤️ Coin Climate</span>';
+    hybridHtml += '<span class="market-hybrid-fold" id="market-fold-3">▼</span>';
+    hybridHtml += '</div>';
+    hybridHtml += '<div class="market-hybrid-body open" id="market-body-3">'+climateTab+'</div>';
+    hybridHtml += '</div>';
+    
+    hybridHtml += '</div>'; // end swipe container
+    
+    // Swipe indicators
+    hybridHtml += '<div class="market-hybrid-dots">';
+    hybridHtml += '<span class="market-hybrid-dot active" id="market-dot-0"></span>';
+    hybridHtml += '<span class="market-hybrid-dot" id="market-dot-1"></span>';
+    hybridHtml += '<span class="market-hybrid-dot" id="market-dot-2"></span>';
+    hybridHtml += '<span class="market-hybrid-dot" id="market-dot-3"></span>';
+    hybridHtml += '</div>';
+    
+    hybridHtml += '</div>'; // end hybrid layout
+    
+    return '<div class="market-screen cd-workspace">'+sectionNavHtml('market')+cdHeader(f)+hybridHtml+cdDecision(f)+(errorMsg?'<p class="toast-error">'+esc(errorMsg)+'</p>':'')+'<section class="cd-card"><header><h3>'+esc(f.c.title)+'</h3><button type="button" class="text-link" data-action="cd-learn">Learn</button></header>'+crLeadHtml(f)+cdChartHtml(f)+cdVolumeEvidenceHtml(f)+pcSummary(f)+cdTimeframes(f)+(known&&t.high>t.low?'<div class="range-meter"><div class="track"><i class="dot" style="left:'+clamp(t.locPct,0,100)+'%"></i></div><div class="cap"><span>'+esc(priceGbp(t.low,5))+'</span><span>'+esc(num(t.locPct,1)+'% · '+t.locLabel)+'</span><span>'+esc(priceGbp(t.high,5))+'</span></div></div>':'<p class="cd-small">Fresh provider range unavailable.</p>')+'<div class="cd-watch"><div><small>Continuation · observation only</small><b>'+esc(contLabel(f.continuation.code))+'</b></div><button type="button" class="text-link" data-action="cd-deck" data-cue="Continuation">Details</button></div><button type="button" class="btn secondary" data-page="sizer">Review ticket in Sizer →</button></section><details class="cd-fold" data-cd-fold="market-indicators"><summary>Evidence & indicators<small>Full cue deck · structure · market readings</small></summary><div><button type="button" class="btn secondary" data-action="cd-deck">All 24 instruments</button>'+contextWhyHtml()+'<p>'+esc('Daily RSI '+(t.rsi==null?'unknown':num(t.rsi,1))+' · hourly RSI '+(t.hourRsi==null?'unknown':num(t.hourRsi,1))+' · composite '+num(t.composite,1))+'</p></div></details>'+cdDataHtml(f)+'<details class="cd-fold" data-cd-fold="backdrop"><summary>Longer-term backdrop & exit climate<small>Month / week / day · separate legacy swing map</small></summary><div>'+horizonsBlockHtml(t)+'<p class="cd-small">Legacy prominence-ranked hourly swing map: comparison only, not the P1 proposal source.</p>'+swingMapLineHtml(t)+'<details class="cd-fold" data-cd-fold="legacy-chart"><summary>Legacy swing chart</summary><div>'+swingSparkSvg(state.hourly,t.swingLowIdx,t.swingHighIdx,640,180,'Legacy hourly map',t.swingMicroPivots,seriesBarAts(state.hourly,true),{})+'</div></details><p><b>Exit lens · if already long: '+esc(exit.stance)+'</b></p><p>'+esc(exit.say)+'</p><small>Not a short entry or buying approval.</small></div></details>'+cdMarketAdjust(t)+'<details class="cd-fold" data-cd-fold="legacy-send"><summary>Manual quote-based ticket tool</summary><div><p>This existing tool overwrites the draft using the current quote, manual stop percentage and 2R target. It is separate from P1 and does not approve a buy or change an open order.</p><button type="button" class="btn secondary" data-action="use-sizer"'+(!known||busy?' disabled':'')+'>Overwrite draft and open Sizer</button></div></details><div class="cd-actions"><button type="button" class="btn secondary" data-action="cd-learn">Learn this screen</button><button type="button" class="text-link" data-page="manual">Open the manual</button></div></div>';
   }
+  
+  // Hybrid layout functions
+  window.marketHybridScrollTo = function(index) {
+    var track = document.querySelector('.market-hybrid-swipe');
+    if (!track) return;
+    var card = track.children[index];
+    if (card) {
+      track.scrollTo({ left: card.offsetLeft, behavior: 'smooth' });
+      marketHybridUpdateDots(index);
+    }
+  };
+  
+  window.marketHybridToggle = function(index) {
+    var body = document.getElementById('market-body-' + index);
+    var fold = document.getElementById('market-fold-' + index);
+    if (body && fold) {
+      body.classList.toggle('open');
+      fold.classList.toggle('open');
+    }
+  };
+  
+  window.marketHybridUpdateDots = function(activeIndex) {
+    for (var i = 0; i < 4; i++) {
+      var dot = document.getElementById('market-dot-' + i);
+      var tab = document.querySelector('.market-hybrid-tab[data-target="market-' + ['weekly','derivs','prediction','climate'][i] + '"]');
+      if (dot) dot.classList.toggle('active', i === activeIndex);
+      if (tab) tab.classList.toggle('active', i === activeIndex);
+    }
+  };
 
   function renderTrend() {
     var out = computeTrend(state.closes);
@@ -13285,6 +13377,7 @@
 
   // S1: pure per-coin Scout summaries; never swaps the active trading state.
   var triageFilter='all',triageKind='any',triageQuery='',triageFav=false,triageSort='priority',triageSelected='',triageCache=[],triageScroll=0,triageSheet=false,triageFocus=null,triageBatch=[],triageOldOverflow='',triageFocusMode=false,triageFocusDensity='compact',triageFocusReturn=null,triageFocusOldOverflow='';
+  var confEnabled=true,confThresholdHigh=70,confThresholdMid=50;
   /* SCOUT-HUB-1 · how the Scout screen happens to be arranged right now. None of it is
      persisted, and none of it touches trading, sizing, risk or verdicts. */
   var triageEdit=false,triageRemoved=null,triageExpanded='';
@@ -14191,6 +14284,61 @@
            '" aria-label="Gates '+esc(text)+'. '+title+'">'+triageToneSign(tone)+
            '<span class="triage-tone-val">'+esc(text)+'</span></small>';
   }
+  /* CONFLUENCE-1 · Confluence scoring */
+  function confCalculate(r){
+    if(!r||!r.context)return {score:0,groups:[]};
+    var groups=[],score=0,total=0;
+    // Technical signals
+    var techSignals=0,techTotal=3;
+    if(r.observation&&r.observation.trend){techSignals++;if(r.observation.trend==='UP'||r.observation.trend==='up')score++;}
+    if(r.book&&r.book.market&&r.book.market.hourly){techSignals++;}
+    if(r.observation&&r.observation.rsi!=null){techSignals++;if(r.observation.rsi<70&&r.observation.rsi>30)score++;}
+    groups.push({name:'Technical',icon:'📈',signals:techSignals,total:techTotal,color:'#3b82f6'});
+    total+=techTotal;
+    // Structure signals
+    var structSignals=0,structTotal=2;
+    if(r.observation&&r.observation.hl){structSignals++;score++;}
+    if(r.observation&&r.observation.hh){structSignals++;score++;}
+    groups.push({name:'Structure',icon:'🏗️',signals:structSignals,total:structTotal,color:'#10b981'});
+    total+=structTotal;
+    // Momentum signals
+    var momSignals=0,momTotal=2;
+    if(r.book&&r.book.market&&r.book.market.volume){momSignals++;if(r.book.market.volumeRising)momSignals++;score+=momSignals>0?1:0;}
+    if(r.observation&&r.observation.macd){momSignals++;}
+    groups.push({name:'Momentum',icon:'⚡',signals:momSignals,total:momTotal,color:'#f59e0b'});
+    total+=momTotal;
+    // Sentiment signals
+    var sentSignals=0,sentTotal=2;
+    if(r.book&&r.book.market&&r.book.market.funding){sentSignals++;}
+    if(r.book&&r.book.market&&r.book.market.oi){sentSignals++;}
+    groups.push({name:'Sentiment',icon:'🎭',signals:sentSignals,total:sentTotal,color:'#8b5cf6'});
+    total+=sentTotal;
+    var pct=total>0?Math.round(score/total*100):0;
+    return {score:pct,groups:groups,total:total,passed:score};
+  }
+  function confBadgeHtml(r){
+    if(!confEnabled)return '';
+    var conf=confCalculate(r);
+    var cls=conf.score>=confThresholdHigh?'high':conf.score>=confThresholdMid?'':'low';
+    return '<button type="button" class="conf-badge-btn '+cls+'" data-action="conf-popup" data-ticker="'+esc(r.pair.ticker)+'"><span class="conf-val">'+conf.score+'%</span><span class="conf-lbl">conf</span></button>';
+  }
+  function confPopupHtml(r){
+    if(!r)return '';
+    var conf=confCalculate(r);
+    var cls=conf.score>=confThresholdHigh?'high':conf.score>=confThresholdMid?'mid':'low';
+    var html='<div class="conf-popup-overlay active" data-action="conf-close"><div class="conf-popup" onclick="event.stopPropagation()">';
+    html+='<div class="conf-popup-header"><span class="conf-popup-title">Confluence · '+esc(r.pair.ticker)+'</span><button type="button" class="conf-popup-close" data-action="conf-close">×</button></div>';
+    html+='<div class="conf-popup-body">';
+    html+='<div class="conf-score-summary"><span class="conf-score-summary-label">Score</span><span class="conf-score-summary-val '+cls+'">'+conf.score+'%</span><span class="conf-score-summary-label">'+conf.passed+'/'+conf.total+' signals</span></div>';
+    conf.groups.forEach(function(g){
+      var pct=g.total>0?Math.round(g.signals/g.total*100):0;
+      html+='<div class="conf-group-row"><div class="conf-group-top"><span class="conf-group-name"><span class="conf-group-icon" style="background:'+g.color+'20;color:'+g.color+';">'+g.icon+'</span>'+g.name+'</span><span style="font-size:11px;color:#8b92a8;">'+g.signals+'/'+g.total+'</span></div>';
+      html+='<div style="background:#252d45;border-radius:4px;height:6px;overflow:hidden;"><div style="background:'+g.color+';width:'+pct+'%;height:100%;border-radius:4px;"></div></div></div>';
+    });
+    html+='</div></div></div>';
+    return html;
+  }
+
   function triageSnapshot(pair,record){
     var book=triageBook(pair.ticker),m=book.market||{},c=triageContext(book),fresh=triageFreshness(book),hr=c.ready?rsiSeriesEnd(c.prices,c.prices.length-1,14):null;
     var tape={hourTrend:c.ready?computeTrend(c.prices).trend:null,hourHot:hr!=null&&hr>=70,nearHigh:Number(m.high24h)>Number(m.low24h)&&Number(m.price)>=Number(m.low24h)+(Number(m.high24h)-Number(m.low24h))*.75};
@@ -14325,6 +14473,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
     if(name==='density')return p+'<path d="M4 6.5h16M4 12h16M4 17.5h16"/></svg>';
     if(name==='close')return p+'<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>';
     if(name==='plus')return p+'<path d="M12 5.5v13M5.5 12h13"/></svg>';
+    if(name==='confluence')return p+'<circle cx="9" cy="9" r="5"/><circle cx="15" cy="15" r="5"/></svg>';
     return '';
   }
   /* inline SVG, not text glyphs: the embedded font subset has no arrows or funnel, and a
@@ -14377,6 +14526,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
         triageFocusIconBtn({act:'triage-pop',pop:'filter',icon:'filter',label:'Filter',cap:filterCap,on:triageFilter!=='all'})+
         triageFocusIconBtn({act:'triage-pop',pop:'sort',icon:'sort',label:'Sort',cap:sortCap,on:triageSort!=='priority'})+
         triageFocusIconBtn({act:'triage-pop',pop:'view',icon:'density',label:'Header options',cap:'Header',on:triageFocusHeaderMode==='auto'})+
+        triageFocusIconBtn({act:'triage-pop',pop:'confluence',icon:'confluence',label:'Confluence',cap:'Conf',on:confEnabled})+
         triageFocusIconBtn({act:'triage-add-jump',icon:'plus',label:'Add a coin',cls:'triage-add-jump'})+
       '</div>'+triagePageSearchRow()+
       '<div class="triage-pop" id="triage-pop" role="menu" aria-label="Scout options" hidden></div></div>';
@@ -14414,6 +14564,15 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
         return item('triage-focus-density-set','data-density',o[0],o[1],null,triageFocusDensity===o[0]);}));
       out+=group('Header',[['fixed','Always show'],['auto','Fold away while scrolling']].map(function(o){
         return item('triage-focus-header-set','data-header',o[0],o[1],null,triageFocusHeaderMode===o[0]);}));
+    }else if(kind==='confluence'){
+      out=group('Confluence Score',[['on','Enabled',null,confEnabled]]).map(function(o){return o;}).join('');
+      out=group('Confluence',[['on','Enable confluence badge',null,confEnabled],['threshold-high','High threshold: '+(confThresholdHigh||70)+'%'],['threshold-mid','Mid threshold: '+(confThresholdMid||50)+'%']].map(function(o){
+        if(o[0]==='on')return item('conf-toggle','data-conf','on','Enable confluence badge',null,confEnabled);
+        return '<div class="triage-focus-popitem" style="padding:8px 12px;font-size:11px;color:#8b92a8;">'+o[1]+'</div>';
+      }));
+      out+=group('Signal Groups',[['technical','Technical (RSI, trend)'],['structure','Structure (HL, HH)'],['momentum','Momentum (volume, MACD)'],['sentiment','Sentiment (funding, OI)']].map(function(o){
+        return '<div class="triage-focus-popitem" style="padding:8px 12px;font-size:11px;color:#8b92a8;">'+o[1]+' <b style="color:#10b981;">✓</b></div>';
+      }));
     }else if(kind==='menu'){
       /* SCOUT-HEADER-C-1 · combined menu for the ultra-minimal header ⋯ button */
       out=group('Scope',[['shortlist','Shortlist'],['all','All coins'],['find','Find / add']].map(function(o){
@@ -15218,6 +15377,10 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
     else if(a==='triage-resume'&&Date.now()>=triagePauseUntil){triagePaused=false;drainScoutPeekQueue();}
     else if(a==='triage-cancel')triageCancelQueue();
     else if(a==='triage-go'){closeWatchlist();page='scout';render();}
+    /* CONFLUENCE-1 */
+    else if(a==='conf-popup'){var confRow=triageCache.filter(function(x){return x.pair.ticker===t;})[0];if(confRow){var popup=confPopupHtml(confRow);if(popup){var existing=document.querySelector('.conf-popup-overlay');if(existing)existing.remove();document.body.insertAdjacentHTML('beforeend',popup);}}}
+    else if(a==='conf-close'){var overlay=document.querySelector('.conf-popup-overlay');if(overlay)overlay.remove();}
+    else if(a==='conf-toggle'){confEnabled=!confEnabled;triagePopCloseAll();triageUpdate(false);}
   },true);
   document.addEventListener('keydown',function(e){var help=e.target.closest&&e.target.closest('[data-action="triage-trend-help"]');if(help&&(e.key==='Enter'||e.key===' ')){e.preventDefault();help.click();}},true);
   document.addEventListener('input',function(e){if(e.target.id==='triage-search'||e.target.id==='triage-focus-search'){triageQuery=e.target.value;var primarySearch=document.getElementById('triage-search');if(primarySearch&&primarySearch!==e.target)primarySearch.value=triageQuery;triageUpdate(false);if(unifiedScoutScope==='find'){watchlistQuery=triageQuery;watchlistMode='find';scheduleFindSearch();}var rowsBox=document.getElementById('triage-rows');if(rowsBox)rowsBox.scrollTop=0;}});
@@ -16977,7 +17140,7 @@ function triageUnfoldHtml(r, o){
         var tiles=['ticket','timing','account','plan'].map(function(k){var st=g.groups[k]||'none';return '<span class="uc-light '+gCls[st]+'" title="'+gWords[k]+': '+gMarks[st]+'"><i></i>'+shortW[k]+'</span>';}).join('');
         var sigLine='<div class="uc-l3"><span class="uc-sig"><b>'+esc(trend)+'</b> \u00b7 '+watch+'</span><span class="uc-meta">'+location+' \u00b7 '+esc(triageFreshShort(String(r.fresh&&r.fresh.label||'not checked')))+'</span>'+healthMarkup+'</div>';
         var openPart=whyOpen?whyList+'<div class="uni-actions"><div class="triage-ledger-actions">'+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+name:'Inspect '+name)+'">'+(locked?'Research':'Inspect')+'</button></div></div>':'';
-        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+(dd?'':pfContextBadge(r))+(isResearchMode()?pfTimeframeBadge(r):'')+pfBreakoutBadge(r)+pfRecoveryBadge(r)+'<span class="uc-fill"></span>';   // BREAKOUT-MODE-1 + RECOVERY-MODE-1   // TIMEFRAME-ALIGNMENT-1 + SCAN-RESEARCH-1   // DEEP-DIP-1 tag + PORTFOLIO-UPGRADES-1 context badge + TIMEFRAME-ALIGNMENT-1 + BREAKOUT-MODE-1
+        var head='<span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span>'+(dd?ddTagHtml(dd):'')+(dd?'':pfContextBadge(r))+(isResearchMode()?pfTimeframeBadge(r):'')+pfBreakoutBadge(r)+pfRecoveryBadge(r)+confBadgeHtml(r)+'<span class="uc-fill"></span>';   // BREAKOUT-MODE-1 + RECOVERY-MODE-1   // TIMEFRAME-ALIGNMENT-1 + SCAN-RESEARCH-1   // DEEP-DIP-1 tag + PORTFOLIO-UPGRADES-1 context badge + TIMEFRAME-ALIGNMENT-1 + BREAKOUT-MODE-1 + CONFLUENCE-1
         var cls='triage-unified-row triage-combined-row uni-card uv2 uv2-'+rowStyle+' verdict-'+vc+(whyOpen?' uv2-open':'')+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+(isBreakoutRow(r)?' breakout-row':'');
         var open='<article class="'+cls+'" data-ticker="'+ticker+'" data-action="scout-why" aria-expanded="'+whyOpen+'">';
         var lockNote=locked?'<div class="uc-lock">'+reason+'</div>':'';
@@ -17567,3 +17730,4 @@ function triageProposalOpen(ticker){
   if(host)host.innerHTML='<section style="padding:10px">'+triageProposalHtml(ticker)+'</section>';
 }
 </script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a53b8ce888bdb3ba',t:'MTc5MzU0MjkzMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a53b8ce888bdb3ba',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
