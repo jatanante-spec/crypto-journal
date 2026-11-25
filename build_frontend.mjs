@@ -41,7 +41,7 @@ await writeFile(path.join(outDir, 'index.html'), output, 'utf8');
    (Android Chrome only shows notifications through a service worker). No caching: it never serves the app. */
 const sw = `self.addEventListener('install', function (e) { e.waitUntil(caches.open('cj-offline-v1').then(function(c){return c.add('/offline.html');}).then(function(){return self.skipWaiting();})); });
 self.addEventListener('activate', function (e) { e.waitUntil(self.clients.claim()); });
-self.addEventListener('fetch', function(e){ if(e.request.mode==='navigate' && new URL(e.request.url).origin===self.location.origin){e.respondWith(fetch(e.request).catch(function(){return caches.match('/offline.html');}));} });
+self.addEventListener('fetch', function(e){ if(e.request.mode==='navigate' && new URL(e.request.url).origin===self.location.origin){e.respondWith(fetch(e.request,{cache:'no-store'}).catch(function(){return caches.match('/offline.html');}));} });
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();
   var t = (e.notification.data && e.notification.data.ticker) || '';
