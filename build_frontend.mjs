@@ -26,7 +26,7 @@ if (!index.includes(stylesMarker) || !index.includes(javascriptMarker)) {
    String.replace interprets those specially when given a replacement string, corrupting
    the bundled source. A callback returns the replacement literally. */
 const output = index
-  .replace('<head>', '<head><title>Crypto Journal</title><link rel="manifest" href="/manifest.webmanifest?v=2"><meta name="theme-color" content="#101a2b"><link rel="apple-touch-icon" href="/icon-192.png">')
+  .replace('<head>', '<head><title>Crypto Journal</title><link rel="manifest" href="/manifest.webmanifest?v=4"><meta name="theme-color" content="#101a2b"><link rel="apple-touch-icon" href="/icon-192.png">')
   .replace('</body>', `<script>
 (function(){
   var pending=null,btn=document.createElement('button');btn.textContent='Install Crypto Journal';btn.hidden=true;btn.style.cssText='position:fixed;bottom:18px;right:16px;z-index:99999;padding:12px 16px;background:#e7bf67;color:#101a2b;border:0;border-radius:10px;font:600 13px system-ui;box-shadow:0 4px 20px #0008';
