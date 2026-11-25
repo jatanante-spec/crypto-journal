@@ -14345,6 +14345,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
       var c=triageFocusCounts();
       out+=group('Filter',[['all','All',c.all],['quality','Needs attention',c.quality],['ready','Research ready',c.ready],['gates','Can buy now',c.gates],['starred','★ Starred',c.starred],['locked','Locked',c.locked]].map(function(o){
         return item('triage-filter','data-filter',o[0],o[1],o[2],triageFilter===o[0]);}));
+      out+='<div class="triage-focus-popgroup"><span>Row density</span><button type="button" role="menuitem" class="triage-focus-popitem" data-action="triage-row-density"><span>'+(state.settings.scoutRowDensity==='ultra'?'Use Compact · show indicators':'Use Ultra compact · expand for indicators')+'</span></button></div>';
       out+=group('Sort',[['priority','Review priority'],['green','Closest to green'],['az','Symbol A–Z'],['change','24h change']].map(function(o){
         return item('triage-focus-sort','data-sort',o[0],o[1],null,triageSort===o[0]);}));
       out+='<div class="triage-focus-popgroup"><span>Actions</span>'+
@@ -15120,6 +15121,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
     else if(a==='triage-row'){triageExpanded=(triageExpanded===t?'':t);triageUpdate(false);}
     else if(a==='triage-remove')scoutRemoveCoin(t);
     else if(a==='triage-undo')scoutUndoRemove();
+    else if(a==='triage-row-density'){state.settings.scoutRowDensity=state.settings.scoutRowDensity==='ultra'?'compact':'ultra';triagePopCloseAll();save();triageUpdate(false);}
     else if(a==='triage-edit'){triagePopCloseAll();triageEdit=!triageEdit;if(!triageEdit)triageExpanded='';triageUpdate(false);}
     else if(a==='triage-add-manual')triageManualAdd();
     else if(a==='triage-add-jump'){unifiedScoutScope='find';triageQuery='';triageEdit=false;save();render();
@@ -17030,7 +17032,7 @@ function triageUnfoldHtml(r, o){
           var rowBadges=(dd?ddTagHtml(dd):pfContextBadge(r))+(isResearchMode()?pfTimeframeBadge(r):'')+pfBreakoutBadge(r)+pfRecoveryBadge(r)+confBadgeHtml(r);
           var rowExtra=(vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g);
           var rowContext=whyOpen?'<div class="su-expanded">'+whyList+'<div class="su-groups">'+tiles+'</div>'+rowExtra+'<div class="su-context">'+sigLine+lockNote+'</div><div class="uni-actions"><div class="triage-ledger-actions">'+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+name:'Inspect '+name)+'">'+(locked?'Research':'Inspect')+'</button></div></div></div>':'';
-          return '<article class="'+cls+' scout-unified-minimal" data-ticker="'+ticker+'">'+
+          return '<article class="'+cls+' scout-unified-minimal'+(state.settings.scoutRowDensity==='ultra'?' su-ultra':'')+'" data-ticker="'+ticker+'">'+
             '<div class="su-top">'+(triageEdit?removeAction:'')+'<button type="button" class="su-toggle" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'" aria-label="'+(whyOpen?'Collapse ':'Expand ')+ticker+' details"><span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span><span class="su-caret" aria-hidden="true">'+(whyOpen?'−':'⌄')+'</span></button><button type="button" class="verdict '+vc+' su-verdict" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'">'+esc(vw)+'</button></div>'+
             '<button type="button" class="su-reason su-reason-button" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'">'+esc(g.why||'Not evaluated')+'</button>'+
             '<div class="su-badges">'+rowBadges+'</div>'+scoutRecovery.html(r)+
