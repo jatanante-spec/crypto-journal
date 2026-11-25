@@ -16934,36 +16934,41 @@ function triageUnfoldHtml(r, o){
       var c=triageContext(book), vs=f.volumeSource||{};
       return calculate({trusted:identity&&c.ready,volumeTrusted:identity&&vs.status==='READY',prices:book.hourly,ats:book.hourlyAts,volumes:book.hourlyVolumes,ohlc:m.hourlyOhlc,daily:book.closes,source:f.source,now:Date.now()});
     }
-    function badge(ticker,text,kind) { return '<button type="button" class="sbr-chip sbr-'+kind+'" data-action="sbr-details" data-ticker="'+esc(ticker)+'" aria-label="'+esc(ticker+' '+text+' indicator details')+'">'+esc(text)+'</button>'; }
+    function badge(ticker,text,kind,detail) { return '<button type="button" class="sbr-chip sbr-'+kind+'" data-action="sbr-details" data-indicator="'+esc(detail||'unavailable')+'" data-ticker="'+esc(ticker)+'" aria-label="'+esc(ticker+' '+text+' indicator details')+'">'+esc(text)+'</button>'; }
     function html(r) {
       var ticker=r.pair.ticker,o=read(ticker),s='';
       if(!o.ready)return '<div class="sbr-badges">'+badge(ticker,'Indicators · unavailable','muted')+'</div>';
-      s+=badge(ticker,'RSI '+num(o.rsi,0)+' · 1h',o.rsi<=30?'green':o.rsi>=70?'red':'muted');
-      if(o.ma){s+=badge(ticker,o.ma.cross?'CROSSOVER · 4h':(o.ma.priceCross?'⚡ ':'')+'MA'+(o.ma.above?'↑':'↓')+' MACD'+(o.ma.bullish?'↗':'↘')+' · 4h','purple');}
-      else s+=badge(ticker,'MA/MACD · warming '+o.fourHourCount+'/35','muted');
-      if(o.mfi!=null&&(o.mfi<30||o.mfi>70))s+=badge(ticker,'MFI '+num(o.mfi,0)+' · 1h',o.mfi<30?'green':'red');
-      if(o.volume&&o.volume.ratio>=2)s+=badge(ticker,'VOL '+num(o.volume.ratio,1)+'× · 1h','cyan');
-      if(o.alignment)s+=badge(ticker,'MA '+o.alignment.up+'/'+o.alignment.available+' · daily'+(o.alignment.available<3?' (partial)':''),'purple');
+      s+=badge(ticker,'RSI '+num(o.rsi,0)+' · 1h',o.rsi<=30?'green':o.rsi>=70?'red':'muted','rsi');
+      if(o.ma){s+=badge(ticker,o.ma.cross?'CROSSOVER · 4h':(o.ma.priceCross?'⚡ ':'')+'MA'+(o.ma.above?'↑':'↓')+' MACD'+(o.ma.bullish?'↗':'↘')+' · 4h','purple','macd');}
+      else s+=badge(ticker,'MA/MACD · warming '+o.fourHourCount+'/35','muted','macd');
+      if(o.mfi!=null&&(o.mfi<30||o.mfi>70))s+=badge(ticker,'MFI '+num(o.mfi,0)+' · 1h',o.mfi<30?'green':'red','mfi');
+      if(o.volume&&o.volume.ratio>=2)s+=badge(ticker,'VOL '+num(o.volume.ratio,1)+'× · 1h','cyan','volume');
+      if(o.alignment)s+=badge(ticker,'MA '+o.alignment.up+'/'+o.alignment.available+' · daily'+(o.alignment.available<3?' (partial)':''),'purple','daily');
       return '<div class="sbr-badges">'+s+'</div>';
     }
-    function open(ticker) {
+    function open(ticker,kind) {
+      kind=kind||'unavailable';
       var old=document.getElementById('sbr-dialog');if(old)old.remove();
       var o=read(ticker),dialog=document.createElement('dialog');dialog.id='sbr-dialog';dialog.className='sbr-dialog';
       var content='<p>Indicators are descriptive only. Existing Gates, confidence, sizing and ticket rules are unchanged.</p>';
       function line(k,v){return '<div class="sbr-detail"><span>'+esc(k)+'</span><b>'+esc(v)+'</b></div>';}
       if(!o.ready)content+='<p>'+esc(o.reason)+' Fetch this coin to refresh its data. No readings are substituted.</p>';
       else {
-        content+=line('Source',o.source)+line('Last hourly candle starts',o.at)+line('RSI · 1h / Wilder 14',num(o.rsi,1));
-        content+=o.ma?line('4h MA20',o.ma.above?'Above':'Below')+line('MACD · 4h / 12,26,9',o.ma.bullish?'Above signal':'Below signal')+line('Bullish crosses in last two 4h bars',o.ma.cross?'Both':o.ma.priceCross?'Price / MA20':o.ma.macdCross?'MACD / signal':'None'):line('MA/MACD warm-up',o.fourHourCount+' / 35 completed UTC-aligned 4h bars');
-        content+=line('MFI · 1h / typical price × volume',o.mfi==null?'Unavailable · validated OHLC and volume required':num(o.mfi,1));
-        content+=line('Volume / previous 20-hour mean',o.volume?num(o.volume.ratio,2)+'×':'Unavailable');
-        if(o.alignment)o.alignment.levels.forEach(function(x){content+=line('Daily SMA'+x.period,x.value==null?'Unavailable · insufficient daily closes':priceGbp(x.value,6));});
-        content+='<p>MFI badges appear only below 30 or above 70; volume badges at 2× or more. Neutral values remain available here. MA alignment counts only available periods, never missing SMA200 as a failure.</p>';
+        content+=line('Source',o.source)+line('Last hourly candle starts',o.at);
+        if(kind==='rsi')content+=line('RSI · 1h / Wilder 14',num(o.rsi,1))+'<p>Existing display thresholds: green at 30 or below, red at 70 or above. Neutral readings stay muted. This is not entry approval.</p>';
+        else if(kind==='macd')content+=o.ma?line('4h MA20',o.ma.above?'Above':'Below')+line('MACD · 4h / 12,26,9',o.ma.bullish?'Above signal':'Below signal')+line('Bullish crosses in last two 4h bars',o.ma.cross?'Both':o.ma.priceCross?'Price / MA20':o.ma.macdCross?'MACD / signal':'None')+'<p>Completed UTC-aligned 4h bars. Purple identifies the indicator family; arrows describe direction. Mixed arrows are not a confirmed dual bullish signal.</p>':line('MA/MACD warm-up',o.fourHourCount+' / 35 completed UTC-aligned 4h bars');
+        else if(kind==='mfi')content+=line('MFI · 1h / typical price × volume',o.mfi==null?'Unavailable · validated OHLC and volume required':num(o.mfi,1))+'<p>Existing badge thresholds: below 30 green; above 70 red. No missing values are substituted.</p>';
+        else if(kind==='volume')content+=line('Volume / previous 20-hour mean',o.volume?num(o.volume.ratio,2)+'×':'Unavailable')+'<p>Cyan highlights the existing 2× or greater volume threshold. This is activity, not a buy signal.</p>';
+        else if(kind==='daily'){
+          content+=line('Daily MA alignment',o.alignment?o.alignment.up+'/'+o.alignment.available+' available':'Unavailable');
+          if(o.alignment)o.alignment.levels.forEach(function(x){content+=line('Daily SMA'+x.period,x.value==null?'Unavailable · insufficient daily closes':priceGbp(x.value,6));});
+          content+='<p>Purple identifies MA alignment. The fraction counts only available periods; missing SMA200 is never a failed check. Partial coverage remains explicit.</p>';
+        }else content+='<p>Select an individual indicator for its specific details.</p>';
       }
-      dialog.innerHTML='<header><h3>'+esc(ticker)+' · Indicator details</h3><button type="button" data-action="sbr-close" aria-label="Close indicator details">×</button></header>'+content;
+      dialog.innerHTML='<header><h3>'+esc(ticker)+' · '+esc(({rsi:'RSI · 1h',macd:'MA / MACD · 4h',mfi:'MFI · 1h',volume:'Volume · 1h',daily:'Daily MA alignment',unavailable:'Indicators unavailable'})[kind]||'Indicator details')+'</h3><button type="button" data-action="sbr-close" aria-label="Close indicator details">×</button></header>'+content;
       document.body.appendChild(dialog);dialog.addEventListener('close',function(){dialog.remove();});dialog.addEventListener('click',function(e){if(e.target===dialog)dialog.close();});dialog.showModal();
     }
-    document.addEventListener('click',function(e){var b=e.target.closest('[data-action="sbr-details"], [data-action="sbr-close"]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();if(b.dataset.action==='sbr-close'){var d=document.getElementById('sbr-dialog');if(d)d.close();}else open(b.dataset.ticker);},true);
+    document.addEventListener('click',function(e){var b=e.target.closest('[data-action="sbr-details"], [data-action="sbr-close"]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();if(b.dataset.action==='sbr-close'){var d=document.getElementById('sbr-dialog');if(d)d.close();}else open(b.dataset.ticker,b.dataset.indicator);},true);
     return {html:html,calculate:calculate,fourHour:fourHour,read:read};
   }());
   /* /SCOUT-BADGE-RECOVERY-2 */
@@ -17026,8 +17031,8 @@ function triageUnfoldHtml(r, o){
           var rowExtra=(vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g);
           var rowContext=whyOpen?'<div class="su-expanded">'+whyList+'<div class="su-groups">'+tiles+'</div>'+rowExtra+'<div class="su-context">'+sigLine+lockNote+'</div><div class="uni-actions"><div class="triage-ledger-actions">'+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+name:'Inspect '+name)+'">'+(locked?'Research':'Inspect')+'</button></div></div></div>':'';
           return '<article class="'+cls+' scout-unified-minimal" data-ticker="'+ticker+'">'+
-            '<div class="su-top">'+(triageEdit?removeAction:'')+'<button type="button" class="su-toggle" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'" aria-label="'+(whyOpen?'Collapse ':'Expand ')+ticker+' details"><span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span><span class="verdict '+vc+'">'+esc(vw)+'</span><span class="su-caret" aria-hidden="true">'+(whyOpen?'−':'⌄')+'</span></button></div>'+
-            '<p class="su-reason">'+esc(g.why||'Not evaluated')+'</p>'+
+            '<div class="su-top">'+(triageEdit?removeAction:'')+'<button type="button" class="su-toggle" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'" aria-label="'+(whyOpen?'Collapse ':'Expand ')+ticker+' details"><span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span><span class="su-caret" aria-hidden="true">'+(whyOpen?'−':'⌄')+'</span></button><button type="button" class="verdict '+vc+' su-verdict" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'">'+esc(vw)+'</button></div>'+
+            '<button type="button" class="su-reason su-reason-button" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'">'+esc(g.why||'Not evaluated')+'</button>'+
             '<div class="su-badges">'+rowBadges+'</div>'+scoutRecovery.html(r)+
             '<div class="su-status"><span>'+esc(scanFailed?'Refresh failed':scanPending?'Refresh pending':trend)+'</span>'+(locked?'<span class="su-lock" title="'+esc(lock.reason||'Locked')+'">· Locked</span>':'')+'<span class="su-age">'+esc(freshShort)+'</span></div>'+
             rowContext+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+(isResearchMode()?pfExitButtonHtml(r):'')+'</article>';
