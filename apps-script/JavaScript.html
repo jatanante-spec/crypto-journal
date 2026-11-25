@@ -17021,12 +17021,16 @@ function triageUnfoldHtml(r, o){
         var open='<article class="'+cls+'" data-ticker="'+ticker+'" data-action="scout-why" aria-expanded="'+whyOpen+'">';
         var lockNote=locked?'<div class="uc-lock">'+reason+'</div>':'';
         if(rowStyle==='compact'){
-          var notPass=['ticket','timing','account','plan'].filter(function(k){return (g.groups[k]||'none')!=='ok';});
-          tiles=notPass.length?notPass.map(function(k){var st=g.groups[k]||'none';return '<span class="uc-light '+gCls[st]+'" title="'+gWords[k]+': '+gMarks[st]+'"><i></i>'+shortW[k]+'</span>';}).join(''):'<span class="uc-light us-pass" title="Ticket, Timing, Account and Plan all pass"><i></i>All 4 pass</span>';
-          return open+
-            '<div class="uc-l1">'+(triageEdit?removeAction:'')+head+'<span class="verdict '+vc+'">'+vw+'</span><span class="uc-caret">'+(whyOpen?'\u25b4':'\u25be')+'</span></div>'+
-            '<div class="uc-l2"><span class="uc-reason">'+(teChipsHtml(g)||esc(g.why||'Not evaluated'))+'</span><span class="uc-lights">'+tiles+'</span></div>'+
-            scoutRecovery.html(r)+(vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+(isResearchMode()?pfExitButtonHtml(r):'')+'</article>';   // SCAN-RESEARCH-1
+          /* SCOUT-UNIFIED-ROWS-1 · presentation only, all engines/badges unchanged. */
+          var rowBadges=(dd?ddTagHtml(dd):pfContextBadge(r))+(isResearchMode()?pfTimeframeBadge(r):'')+pfBreakoutBadge(r)+pfRecoveryBadge(r)+confBadgeHtml(r);
+          var rowExtra=(vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g);
+          var rowContext=whyOpen?'<div class="su-expanded">'+whyList+'<div class="su-groups">'+tiles+'</div>'+rowExtra+'<div class="su-context">'+sigLine+lockNote+'</div><div class="uni-actions"><div class="triage-ledger-actions">'+starAction+lockAction+'<button type="button" class="triage-unified-open '+(locked?'locked':'')+'" data-action="triage-inspect" data-ticker="'+ticker+'" aria-label="'+(locked?'Research '+name:'Inspect '+name)+'">'+(locked?'Research':'Inspect')+'</button></div></div></div>':'';
+          return '<article class="'+cls+' scout-unified-minimal" data-ticker="'+ticker+'">'+
+            '<div class="su-top">'+(triageEdit?removeAction:'')+'<button type="button" class="su-toggle" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'" aria-label="'+(whyOpen?'Collapse ':'Expand ')+ticker+' details"><span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span><span class="verdict '+vc+'">'+esc(vw)+'</span><span class="su-caret" aria-hidden="true">'+(whyOpen?'−':'⌄')+'</span></button></div>'+
+            '<p class="su-reason">'+esc(g.why||'Not evaluated')+'</p>'+
+            '<div class="su-badges">'+rowBadges+'</div>'+scoutRecovery.html(r)+
+            '<div class="su-status"><span>'+esc(scanFailed?'Refresh failed':scanPending?'Refresh pending':trend)+'</span>'+(locked?'<span class="su-lock" title="'+esc(lock.reason||'Locked')+'">· Locked</span>':'')+'<span class="su-age">'+esc(freshShort)+'</span></div>'+
+            rowContext+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+(isResearchMode()?pfExitButtonHtml(r):'')+'</article>';
         }
         return open+
           '<div class="uc-l1"><span class="verdict '+vc+'">'+vw+'</span>'+(triageEdit?removeAction:'')+head+'<span class="why-link">'+(whyOpen?'Close':'Why?')+'</span></div>'+
