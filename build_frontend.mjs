@@ -26,6 +26,7 @@ if (!index.includes(stylesMarker) || !index.includes(javascriptMarker)) {
    String.replace interprets those specially when given a replacement string, corrupting
    the bundled source. A callback returns the replacement literally. */
 const output = index
+  .replace('<head>', '<head><title>Crypto Journal</title><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#101a2b"><link rel="apple-touch-icon" href="/icon-192.png">')
   .replace(stylesMarker, () => styles)
   .replace(javascriptMarker, () => `<script>\n${runtime}\n</script>\n${javascript}`);
 
@@ -38,8 +39,9 @@ await mkdir(outDir, { recursive: true });
 await writeFile(path.join(outDir, 'index.html'), output, 'utf8');
 /* SCOUT-ALERT-1 · tiny service worker so the Scout BUY alert can show as a phone/desktop notification
    (Android Chrome only shows notifications through a service worker). No caching: it never serves the app. */
-const sw = `self.addEventListener('install', function () { self.skipWaiting(); });
+const sw = `self.addEventListener('install', function (e) { e.waitUntil(caches.open('cj-offline-v1').then(function(c){return c.add('/offline.html');}).then(function(){return self.skipWaiting();})); });
 self.addEventListener('activate', function (e) { e.waitUntil(self.clients.claim()); });
+self.addEventListener('fetch', function(e){ if(e.request.mode==='navigate' && new URL(e.request.url).origin===self.location.origin){e.respondWith(fetch(e.request).catch(function(){return caches.match('/offline.html');}));} });
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();
   var t = (e.notification.data && e.notification.data.ticker) || '';
@@ -51,3 +53,6 @@ self.addEventListener('notificationclick', function (e) {
 `;
 await writeFile(path.join(outDir, 'sw.js'), sw, 'utf8');
 console.log(`Static build written to ${path.join(outDir, 'index.html')} (${output.length} bytes)`);
+
+for (const file of ['manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'offline.html']) { await writeFile(path.join(outDir,file), await read('pwa/'+file)); }
+await writeFile(path.join(outDir,'_headers'), '/sw.js\n  Cache-Control: no-cache\n/manifest.webmanifest\n  Content-Type: application/manifest+json\n  Cache-Control: no-cache\n');
