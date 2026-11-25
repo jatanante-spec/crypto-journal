@@ -64,7 +64,7 @@ self.addEventListener('notificationclick', function (e) {
 await writeFile(path.join(outDir, 'sw.js'), sw, 'utf8');
 console.log(`Static build written to ${path.join(outDir, 'index.html')} (${output.length} bytes)`);
 
-for (const file of ['manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'offline.html', 'install.html']) { await writeFile(path.join(outDir,file), await read('pwa/'+file)); }
+for (const file of ['manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'offline.html', 'install.html']) { await writeFile(path.join(outDir,file), await readFile(path.join(root,'pwa',file))); }
 await writeFile(path.join(outDir,'_headers'), `/*
   Cache-Control: no-cache
 /sw.js
