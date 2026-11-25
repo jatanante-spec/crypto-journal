@@ -56,3 +56,5 @@ console.log(`Static build written to ${path.join(outDir, 'index.html')} (${outpu
 
 for (const file of ['manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'offline.html']) { await writeFile(path.join(outDir,file), await read('pwa/'+file)); }
 await writeFile(path.join(outDir,'_headers'), '/sw.js\n  Cache-Control: no-cache\n/manifest.webmanifest\n  Content-Type: application/manifest+json\n  Cache-Control: no-cache\n');
+
+// Offline document metadata is copied verbatim from pwa/offline.html.
