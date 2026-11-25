@@ -26,7 +26,17 @@ if (!index.includes(stylesMarker) || !index.includes(javascriptMarker)) {
    String.replace interprets those specially when given a replacement string, corrupting
    the bundled source. A callback returns the replacement literally. */
 const output = index
-  .replace('<head>', '<head><title>Crypto Journal</title><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#101a2b"><link rel="apple-touch-icon" href="/icon-192.png">')
+  .replace('<head>', '<head><title>Crypto Journal</title><link rel="manifest" href="/manifest.webmanifest?v=2"><meta name="theme-color" content="#101a2b"><link rel="apple-touch-icon" href="/icon-192.png">')
+  .replace('</body>', `<script>
+(function(){
+  var pending=null,btn=document.createElement('button');btn.textContent='Install Crypto Journal';btn.hidden=true;btn.style.cssText='position:fixed;bottom:18px;right:16px;z-index:99999;padding:12px 16px;background:#e7bf67;color:#101a2b;border:0;border-radius:10px;font:600 13px system-ui;box-shadow:0 4px 20px #0008';
+  document.body.appendChild(btn);
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();pending=e;btn.hidden=false;});
+  window.addEventListener('appinstalled',function(){btn.hidden=true;pending=null;});
+  btn.addEventListener('click',async function(){if(!pending)return;await pending.prompt();await pending.userChoice;pending=null;btn.hidden=true;});
+  if('serviceWorker' in navigator)navigator.serviceWorker.getRegistration().then(function(r){if(r)r.update();}).catch(function(){});
+})();
+</script></body>`)
   .replace(stylesMarker, () => styles)
   .replace(javascriptMarker, () => `<script>\n${runtime}\n</script>\n${javascript}`);
 
@@ -55,6 +65,13 @@ await writeFile(path.join(outDir, 'sw.js'), sw, 'utf8');
 console.log(`Static build written to ${path.join(outDir, 'index.html')} (${output.length} bytes)`);
 
 for (const file of ['manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'offline.html']) { await writeFile(path.join(outDir,file), await read('pwa/'+file)); }
-await writeFile(path.join(outDir,'_headers'), '/sw.js\n  Cache-Control: no-cache\n/manifest.webmanifest\n  Content-Type: application/manifest+json\n  Cache-Control: no-cache\n');
+await writeFile(path.join(outDir,'_headers'), `/*
+  Cache-Control: no-cache
+/sw.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Content-Type: application/manifest+json
+  Cache-Control: no-cache
+`);
 
 // Offline document metadata is copied verbatim from pwa/offline.html.
