@@ -11521,280 +11521,33 @@
   }
 
   function derivativesPanelHtml(){
-    var f = cdFrame(true);
-    var t = f && f.t ? f.t : {};
-    var price = t.price || 0;
-    
-    // Mock data (would come from API in production)
-    var fundingRate = -0.050;
-    var openInterest = 1000000000;
-    var longShortRatio = 1.00;
-    var longs = 70000;
-    var shorts = 70000;
-    
-    var html = '<div style="padding:8px 0;">';
-    
-    // Header
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
-    html += '<span style="font-size:12px;font-weight:700;color:#e8eefc;">Derivatives & Sentiment</span>';
-    html += '</div>';
-    
-    // Funding Rate / Open Interest / Long-Short Ratio
-    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">';
-    html += '<div style="text-align:center;">';
-    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">FUNDING RATE</div>';
-    html += '<div style="font-size:14px;font-weight:700;color:' + (fundingRate < 0 ? '#3fb950' : '#f85149') + ';">' + fundingRate.toFixed(3) + '%</div>';
-    html += '<div style="font-size:9px;color:#8b949e;">' + (fundingRate < 0 ? 'Shorts paying longs' : 'Longs paying shorts') + '</div>';
-    html += '</div>';
-    html += '<div style="text-align:center;">';
-    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">OPEN INTEREST</div>';
-    html += '<div style="font-size:14px;font-weight:700;color:#e8eefc;">' + (openInterest / 1000000000).toFixed(1) + 'B</div>';
-    html += '<div style="font-size:9px;color:#8b949e;">Total contracts</div>';
-    html += '</div>';
-    html += '<div style="text-align:center;">';
-    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">LONG/SHORT RATIO</div>';
-    html += '<div style="font-size:14px;font-weight:700;color:#e8eefc;">' + longShortRatio.toFixed(2) + '</div>';
-    html += '<div style="font-size:9px;color:#8b949e;">Balanced</div>';
-    html += '</div>';
-    html += '</div>';
-    
-    // Funding Rate Position
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;margin-bottom:12px;">';
-    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">FUNDING RATE POSITION</div>';
-    html += '<div style="font-size:13px;font-weight:600;color:' + (fundingRate < 0 ? '#3fb950' : '#f85149') + ';">' + fundingRate.toFixed(3) + '%</div>';
-    html += '<div style="background:#22304a;border-radius:4px;height:6px;margin-top:6px;position:relative;">';
-    var position = ((fundingRate + 0.1) / 0.2) * 100;
-    position = Math.max(0, Math.min(100, position));
-    html += '<div style="position:absolute;left:' + position + '%;top:-2px;width:10px;height:10px;background:#e8eefc;border-radius:50%;transform:translateX(-50%);"></div>';
-    html += '</div>';
-    html += '<div style="display:flex;justify-content:space-between;font-size:9px;color:#8b949e;margin-top:4px;">';
-    html += '<span>-0.10%</span><span>0.00%</span><span>+0.10%</span>';
-    html += '</div>';
-    html += '</div>';
-    
-    // Liquidation Clusters
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;margin-bottom:12px;">';
-    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:8px;">LIQUIDATION CLUSTERS</div>';
-    var liqData = [
-      { label: 'Longs', price: price * 1.05, amount: 70000, color: '#3fb950' },
-      { label: 'Longs', price: price * 1.03, amount: 110000, color: '#3fb950' },
-      { label: 'Shorts', price: price * 0.97, amount: 90000, color: '#f85149' },
-      { label: 'Shorts', price: price * 0.95, amount: 110000, color: '#f85149' }
-    ];
-    var maxAmount = Math.max.apply(null, liqData.map(function(d) { return d.amount; }));
-    liqData.forEach(function(d) {
-      var width = (d.amount / maxAmount) * 100;
-      html += '<div style="margin-bottom:6px;">';
-      html += '<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px;">';
-      html += '<span style="color:#8b949e;">' + d.label + ' ' + priceGbp(d.price, 4) + '</span>';
-      html += '<span style="color:' + d.color + ';">' + (d.amount / 1000).toFixed(0) + 'K</span>';
-      html += '</div>';
-      html += '<div style="background:#22304a;border-radius:3px;height:4px;">';
-      html += '<div style="background:' + d.color + ';width:' + width + '%;height:100%;border-radius:3px;"></div>';
-      html += '</div>';
-      html += '</div>';
-    });
-    html += '</div>';
-    
-    // Weekly Structure / Derivatives summary
-    html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">';
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;">';
-    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">WEEKLY STRUCTURE</div>';
-    var weeklyBias = t.locPct < 50 ? 'Bearish' : 'Bullish';
-    var weeklyColor = t.locPct < 50 ? '#f85149' : '#3fb950';
-    html += '<div style="font-size:12px;font-weight:600;color:' + weeklyColor + ';">' + weeklyBias + '</div>';
-    html += '<div style="font-size:9px;color:#8b949e;">Price vs midpoint</div>';
-    html += '</div>';
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;">';
-    html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">DERIVATIVES</div>';
-    var derivBias = fundingRate < 0 ? 'Bullish' : 'Bearish';
-    var derivColor = fundingRate < 0 ? '#3fb950' : '#f85149';
-    html += '<div style="font-size:12px;font-weight:600;color:' + derivColor + ';">' + derivBias + '</div>';
-    html += '<div style="font-size:9px;color:#8b949e;">Shorts overcrowded</div>';
-    html += '</div>';
-    html += '</div>';
-    
-    html += '</div>';
+    var b=triageBook(state.settings.coinTicker),p=repairPositioning(b);
+    var funding=p&&repairFinite(p.funding)?p.funding:null,oi=p&&repairFinite(p.oiUsd)&&p.oiUsd>=0?p.oiUsd:null,change=p&&repairFinite(p.oiChg24)?p.oiChg24:null;
+    var html='<section class="repair-panel"><h3>Derivatives & Sentiment</h3>';
+    html+='<p class="repair-note">'+(p?'Observed perpetual-market positioning. Context only—not a forecast.':'Positioning unavailable or stale. Fetch this coin for fresh data; no neutral values are substituted.')+'</p>';
+    html+='<div class="repair-grid">'+repairCell('FUNDING RATE',funding==null?'Unavailable':num(funding,4)+'%',p?'Per '+(p.intervalH||'?')+' hours':'Awaiting verified source')+repairCell('OPEN INTEREST',oi==null?'Unavailable':'$'+num(oi/1e9,3)+'B','USD notional · not contracts')+repairCell('OI CHANGE · 24H',change==null?'Unavailable':(change>=0?'+':'')+num(change,2)+'%','Not a price-direction signal')+'</div>';
+    html+=repairLine('Funding payer',funding==null?'Unavailable':funding>0?'Longs pay shorts':funding<0?'Shorts pay longs':'Zero observed funding');
+    html+=repairLine('Average funding',p&&repairFinite(p.fundingAvg)?num(p.fundingAvg,4)+'% · '+(p.fundingN||'?')+' periods':'Unavailable');
+    html+=repairLine('Long/short ratio','Unavailable · no verified ratio feed');
+    html+='<h4>Liquidation clusters</h4><p>No observed liquidation feed is connected. Cluster sizes and price levels are unavailable; funding and price offsets cannot supply them.</p>';
+    html+='<h4>Weekly structure</h4><p>The Weekly tab retains the detailed structure panel. Derivatives positioning does not replace spot structure or Gates.</p>';
+    html+='<div class="repair-source">'+(p?esc(p.source)+' · observed '+esc(p.at):'Source: unavailable')+'<br>'+esc(state.settings.coinTicker)+'/USDT perpetuals are a different market from '+esc(state.settings.coinTicker)+'/'+esc(String(state.settings.vsCurrency||'gbp').toUpperCase())+' spot.</div></section>';
     return html;
   }
 
   function marketPredictionDashboardHtml(f){
-    if (!f || !f.t) return '<div class="cd-small" style="padding:8px 0;"><p><b>Prediction Dashboard</b></p><p style="color:#8b949e;">No prediction data available.</p></div>';
-    var t = f.t;
-    var price = t.price || 0;
-    
-    // Calculate scores
-    var techScore = 30, onChainScore = 50, sentimentScore = 50, fundamentalScore = 30, derivativesScore = 50;
-    if (t.rsi != null) {
-      techScore = t.rsi < 30 ? 70 : t.rsi > 70 ? 30 : 50;
-      sentimentScore = t.rsi < 30 ? 70 : t.rsi > 70 ? 30 : 50;
-    }
-    if (t.trend === 'UP') { techScore += 10; fundamentalScore += 10; }
-    else if (t.trend === 'DOWN') { techScore -= 10; fundamentalScore -= 10; }
-    if (t.locPct != null) onChainScore = t.locPct < 30 ? 75 : t.locPct > 70 ? 25 : 50;
-    
-    var totalScore = Math.round((techScore + onChainScore + sentimentScore + fundamentalScore + derivativesScore) / 5);
-    var direction = totalScore >= 60 ? 'BULLISH' : totalScore <= 40 ? 'BEARISH' : 'NEUTRAL';
-    var dirColor = totalScore >= 60 ? '#3fb950' : totalScore <= 40 ? '#f85149' : '#d29922';
-    
-    var html = '<div style="padding:8px 0;">';
-    
-    // Prediction Score header
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
-    html += '<span style="font-size:12px;font-weight:700;color:#e8eefc;">Prediction Score (30 Days)</span>';
-    html += '<span style="background:' + dirColor + ';color:#000;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;">' + totalScore + '% ' + direction + '</span>';
-    html += '</div>';
-    
-    // Progress bar
-    html += '<div style="background:#22304a;border-radius:6px;height:8px;margin-bottom:12px;overflow:hidden;">';
-    html += '<div style="background:' + dirColor + ';width:' + totalScore + '%;height:100%;"></div>';
-    html += '</div>';
-    
-    // Score breakdown
-    html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px;">';
-    var scores = [
-      { name: 'Technical', score: techScore },
-      { name: 'On-Chain', score: onChainScore },
-      { name: 'Sentiment', score: sentimentScore },
-      { name: 'Fundamental', score: fundamentalScore },
-      { name: 'Derivatives', score: derivativesScore }
-    ];
-    scores.forEach(function(s) {
-      var color = s.score >= 60 ? '#3fb950' : s.score <= 40 ? '#f85149' : '#d29922';
-      html += '<div style="text-align:center;">';
-      html += '<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">' + s.name + '</div>';
-      html += '<div style="font-size:14px;font-weight:700;color:' + color + ';">' + s.score + '%</div>';
-      html += '</div>';
-    });
-    html += '</div>';
-    
-    // On-Chain Analytics
-    html += '<div style="margin-bottom:16px;">';
-    html += '<div style="font-size:11px;font-weight:700;color:#e8eefc;margin-bottom:8px;">🔗 On-Chain Analytics</div>';
-    html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">';
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
-    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">PRICE POSITION</div>';
-    html += '<div style="font-size:13px;font-weight:700;color:' + (t.locPct < 30 ? '#3fb950' : t.locPct > 70 ? '#f85149' : '#d29922') + ';">' + (t.locPct ? num(t.locPct, 0) : '—') + '%</div>';
-    html += '<div style="font-size:9px;color:#8b949e;">In 16D range</div>';
-    html += '</div>';
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
-    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">TREND</div>';
-    html += '<div style="font-size:13px;font-weight:700;color:' + (t.trend === 'UP' ? '#3fb950' : t.trend === 'DOWN' ? '#f85149' : '#d29922') + ';">' + (t.trend || '—') + '</div>';
-    html += '<div style="font-size:9px;color:#8b949e;">Daily direction</div>';
-    html += '</div>';
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
-    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">COMPOSITE</div>';
-    html += '<div style="font-size:13px;font-weight:700;color:#e8eefc;">' + (t.composite ? num(t.composite, 0) : '—') + '</div>';
-    html += '<div style="font-size:9px;color:#8b949e;">Context indicator</div>';
-    html += '</div>';
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
-    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">VOLATILITY</div>';
-    html += '<div style="font-size:13px;font-weight:700;color:#e8eefc;">' + (t.atr14 ? num(t.atr14, 2) : '—') + '</div>';
-    html += '<div style="font-size:9px;color:#8b949e;">ATR 14D</div>';
-    html += '</div>';
-    html += '</div>';
-    html += '</div>';
-    
-    // Technical Analysis
-    html += '<div style="margin-bottom:16px;">';
-    html += '<div style="font-size:11px;font-weight:700;color:#e8eefc;margin-bottom:8px;">📈 Technical Analysis</div>';
-    html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">';
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
-    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">TREND</div>';
-    html += '<div style="font-size:13px;font-weight:700;color:' + (t.trend === 'UP' ? '#3fb950' : t.trend === 'DOWN' ? '#f85149' : '#d29922') + ';">' + (t.trend || '—') + '</div>';
-    html += '</div>';
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
-    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">RSI (14)</div>';
-    html += '<div style="font-size:13px;font-weight:700;color:' + (t.rsi < 30 ? '#3fb950' : t.rsi > 70 ? '#f85149' : '#d29922') + ';">' + (t.rsi ? num(t.rsi, 0) : '—') + '</div>';
-    html += '</div>';
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
-    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">COMPOSITE</div>';
-    html += '<div style="font-size:13px;font-weight:700;color:#e8eefc;">' + (t.composite ? num(t.composite, 0) : '—') + '</div>';
-    html += '</div>';
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
-    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">HOUR RSI</div>';
-    html += '<div style="font-size:13px;font-weight:700;color:' + (t.hourRsi < 30 ? '#3fb950' : t.hourRsi > 70 ? '#f85149' : '#d29922') + ';">' + (t.hourRsi ? num(t.hourRsi, 0) : '—') + '</div>';
-    html += '</div>';
-    html += '</div>';
-    html += '</div>';
-    
-    // Sentiment Indicators
-    html += '<div style="margin-bottom:16px;">';
-    html += '<div style="font-size:11px;font-weight:700;color:#e8eefc;margin-bottom:8px;">🎭 Sentiment Indicators</div>';
-    html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">';
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
-    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">FEAR & GREED</div>';
-    html += '<div style="font-size:13px;font-weight:700;color:#d29922;">50</div>';
-    html += '<div style="font-size:9px;color:#8b949e;">Neutral</div>';
-    html += '</div>';
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
-    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">RSI SENTIMENT</div>';
-    html += '<div style="font-size:13px;font-weight:700;color:' + (t.rsi < 30 ? '#3fb950' : t.rsi > 70 ? '#f85149' : '#d29922') + ';">' + (t.rsi < 30 ? 'Neutral' : t.rsi > 70 ? 'Contrarian view' : 'Neutral') + '</div>';
-    html += '</div>';
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
-    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">HOUR MOMENTUM</div>';
-    html += '<div style="font-size:13px;font-weight:700;color:#d29922;">' + (t.hourRsi ? num(t.hourRsi, 0) : '—') + '</div>';
-    html += '<div style="font-size:9px;color:#8b949e;">Hourly RSI</div>';
-    html += '</div>';
-    html += '<div style="background:#161b22;border-radius:6px;padding:8px;text-align:center;">';
-    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">LOCATION</div>';
-    html += '<div style="font-size:13px;font-weight:700;color:' + (t.locPct < 30 ? '#3fb950' : t.locPct > 70 ? '#f85149' : '#d29922') + ';">' + (t.locPct ? num(t.locPct, 0) + '%' : '—') + '</div>';
-    html += '<div style="font-size:9px;color:#8b949e;">Range position</div>';
-    html += '</div>';
-    html += '</div>';
-    html += '</div>';
-    
-    // Scenario Forecast
-    html += '<div style="margin-bottom:16px;">';
-    html += '<div style="font-size:11px;font-weight:700;color:#e8eefc;margin-bottom:8px;">🎯 Scenario Forecast (30 Days)</div>';
-    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
-    var bullPrice = price * 1.15;
-    var basePrice = price * 1.05;
-    var bearPrice = price * 0.90;
-    html += '<div style="background:rgba(63,185,80,0.1);border:1px solid #3fb950;border-radius:6px;padding:8px;text-align:center;">';
-    html += '<div style="font-size:10px;color:#3fb950;margin-bottom:4px;">🟢 Bull Case</div>';
-    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">30% probability</div>';
-    html += '<div style="font-size:14px;font-weight:700;color:#3fb950;">' + priceGbp(bullPrice, 4) + '</div>';
-    html += '</div>';
-    html += '<div style="background:rgba(210,153,34,0.1);border:1px solid #d29922;border-radius:6px;padding:8px;text-align:center;">';
-    html += '<div style="font-size:10px;color:#d29922;margin-bottom:4px;">🟡 Base Case</div>';
-    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">45% probability</div>';
-    html += '<div style="font-size:14px;font-weight:700;color:#d29922;">' + priceGbp(basePrice, 4) + '</div>';
-    html += '</div>';
-    html += '<div style="background:rgba(248,81,73,0.1);border:1px solid #f85149;border-radius:6px;padding:8px;text-align:center;">';
-    html += '<div style="font-size:10px;color:#f85149;margin-bottom:4px;">🔴 Bear Case</div>';
-    html += '<div style="font-size:9px;color:#8b949e;margin-bottom:4px;">25% probability</div>';
-    html += '<div style="font-size:14px;font-weight:700;color:#f85149;">' + priceGbp(bearPrice, 4) + '</div>';
-    html += '</div>';
-    html += '</div>';
-    html += '</div>';
-    
-    // Signal Alignment
-    html += '<div>';
-    html += '<div style="font-size:11px;font-weight:700;color:#e8eefc;margin-bottom:8px;">📊 Signal Alignment</div>';
-    var signals = [
-      { name: 'Technical', score: techScore, icon: techScore < 40 ? '✕' : techScore < 60 ? '⚠' : '✓' },
-      { name: 'On-Chain', score: onChainScore, icon: onChainScore < 40 ? '✕' : onChainScore < 60 ? '⚠' : '✓' },
-      { name: 'Sentiment', score: sentimentScore, icon: sentimentScore < 40 ? '✕' : sentimentScore < 60 ? '⚠' : '✓' },
-      { name: 'Fundamental', score: fundamentalScore, icon: fundamentalScore < 40 ? '✕' : fundamentalScore < 60 ? '⚠' : '✓' },
-      { name: 'Derivatives', score: derivativesScore, icon: derivativesScore < 40 ? '✕' : derivativesScore < 60 ? '⚠' : '✓' }
-    ];
-    signals.forEach(function(s) {
-      var label = s.score >= 60 ? 'Bullish' : s.score <= 40 ? 'Bearish' : 'Neutral';
-      var color = s.score >= 60 ? '#3fb950' : s.score <= 40 ? '#f85149' : '#d29922';
-      var barColor = s.score >= 60 ? '#3fb950' : s.score <= 40 ? '#f85149' : '#d29922';
-      html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">';
-      html += '<span style="font-size:12px;">' + s.icon + '</span>';
-      html += '<span style="font-size:11px;color:#e8eefc;min-width:80px;">' + s.name + '</span>';
-      html += '<div style="flex:1;background:#22304a;border-radius:3px;height:4px;">';
-      html += '<div style="background:' + barColor + ';width:' + s.score + '%;height:100%;border-radius:3px;"></div>';
-      html += '</div>';
-      html += '<span style="font-size:10px;color:' + color + ';min-width:60px;text-align:right;">' + label + '</span>';
-      html += '</div>';
-    });
-    html += '</div>';
-    
-    html += '</div>';
+    var t=f&&f.t||{},price=Number(t.price),fresh=f&&f.fresh&&f.fresh.kind!=='sample'&&!f.fresh.stale,p=repairPositioning(triageBook(state.settings.coinTicker));
+    var html='<section class="repair-panel"><h3>Prediction Dashboard · evidence first</h3><p class="repair-note">Validated 30-day forecast unavailable. A technical reading is not a probability of profit. Existing entry Gates remain separate.</p>';
+    html+='<h4>Technical analysis</h4><div class="repair-grid">'+repairCell('DAILY TREND',fresh?t.trend||'Unavailable':'Unavailable','Price-derived context')+repairCell('DAILY RSI · 14',fresh&&repairFinite(t.rsi)?num(t.rsi,1):'Unavailable','Not independent sentiment data')+repairCell('HOURLY RSI',fresh&&repairFinite(t.hourRsi)?num(t.hourRsi,1):'Unavailable','Completed hourly inputs')+'</div>';
+    html+=repairLine('Composite context',fresh&&repairFinite(t.composite)?num(t.composite,1)+' · heuristic, not probability':'Unavailable');
+    html+=repairLine('Range location',fresh&&repairFinite(t.locPct)?num(t.locPct,1)+'% · price-derived, not on-chain':'Unavailable');
+    html+=repairLine('Volatility / hourly ATR',fresh&&currentAtrHourly()>0?priceGbp(currentAtrHourly(),4):'Unavailable');
+    html+='<h4>On-chain analytics</h4><p>Unavailable · no on-chain activity source connected. Price location is not on-chain evidence.</p>';
+    html+='<h4>Sentiment indicators</h4>'+repairLine('Fear & Greed','Unavailable · no index source connected')+repairLine('Fundamental data','Unavailable · no fundamental source connected')+repairLine('Derivatives',p?'Observed positioning · see Derivatives tab':'Unavailable or stale');
+    html+='<h4>Scenario explorer · hypothetical, not a forecast</h4><p>Adjust hypothetical moves around the current verified quote. No probabilities are assigned. These are not suggested targets.</p>';
+    if(!fresh||!(price>0))html+='<p>Fresh quote required before displaying scenario prices.</p>';
+    else html+='<div class="repair-grid">'+repairScenarioMoves.map(function(move,i){return '<label class="repair-cell"><small>'+['UPSIDE ASSUMPTION','MIDDLE ASSUMPTION','DOWNSIDE ASSUMPTION'][i]+'</small><input type="range" min="-40" max="40" value="'+move+'" data-repair-scenario="'+i+'" data-price="'+price+'" aria-label="'+['Upside','Middle','Downside'][i]+' scenario percentage"><b id="repair-scenario-price-'+i+'">'+esc(priceGbp(price*(1+move/100),4))+'</b><small id="repair-scenario-move-'+i+'">'+(move>=0?'+':'')+move+'% assumption</small></label>';}).join('')+'</div>';
+    html+='<h4>Signal alignment</h4><p>RSI, trend and range position share price inputs; they are not independent votes. Missing on-chain, fundamental or sentiment data is unknown—not neutral or bearish.</p></section>';
     return html;
   }
 
@@ -11877,6 +11630,8 @@
     html += '</div>';
     return html;
   }
+
+  var repairScenarioMoves=[15,5,-10];
 
   // Initialize after DOM insertion, not through scripts inside innerHTML.
   var marketHybridActiveIndex = 0;
@@ -14323,57 +14078,27 @@
   }
   /* CONFLUENCE-1 · Confluence scoring */
   function confCalculate(r){
-    if(!r||!r.context)return {score:0,groups:[]};
-    var groups=[],score=0,total=0;
-    // Technical signals
-    var techSignals=0,techTotal=3;
-    if(r.observation&&r.observation.trend){techSignals++;if(r.observation.trend==='UP'||r.observation.trend==='up')score++;}
-    if(r.book&&r.book.market&&r.book.market.hourly){techSignals++;}
-    if(r.observation&&r.observation.rsi!=null){techSignals++;if(r.observation.rsi<70&&r.observation.rsi>30)score++;}
-    groups.push({name:'Technical',icon:'📈',signals:techSignals,total:techTotal,color:'#3b82f6'});
-    total+=techTotal;
-    // Structure signals
-    var structSignals=0,structTotal=2;
-    if(r.observation&&r.observation.hl){structSignals++;score++;}
-    if(r.observation&&r.observation.hh){structSignals++;score++;}
-    groups.push({name:'Structure',icon:'🏗️',signals:structSignals,total:structTotal,color:'#10b981'});
-    total+=structTotal;
-    // Momentum signals
-    var momSignals=0,momTotal=2;
-    if(r.book&&r.book.market&&r.book.market.volume){momSignals++;if(r.book.market.volumeRising)momSignals++;score+=momSignals>0?1:0;}
-    if(r.observation&&r.observation.macd){momSignals++;}
-    groups.push({name:'Momentum',icon:'⚡',signals:momSignals,total:momTotal,color:'#f59e0b'});
-    total+=momTotal;
-    // Sentiment signals
-    var sentSignals=0,sentTotal=2;
-    if(r.book&&r.book.market&&r.book.market.funding){sentSignals++;}
-    if(r.book&&r.book.market&&r.book.market.oi){sentSignals++;}
-    groups.push({name:'Sentiment',icon:'🎭',signals:sentSignals,total:sentTotal,color:'#8b5cf6'});
-    total+=sentTotal;
-    var pct=total>0?Math.round(score/total*100):0;
-    return {score:pct,groups:groups,total:total,passed:score};
+    var o={score:null,groups:[],total:0,passed:0,unknown:0},book=r&&r.book||{},m=book.market||{},c=r&&r.context||{},fresh=!!(r&&!triageFreshness(book).stale&&c.ready&&r.scanStatus!=='failed'&&r.scanStatus!=='active'&&r.scanStatus!=='pending');
+    var indicator=fresh?scoutRecovery.read(r.pair.ticker):{};
+    function add(name,icon,color,checks){var known=checks.filter(function(x){return x.pass!==null;}),pass=known.filter(function(x){return x.pass;}).length;var g={name:name,icon:icon,color:color,signals:pass,total:known.length,unknown:checks.length-known.length,checks:checks};o.groups.push(g);o.total+=g.total;o.passed+=pass;o.unknown+=g.unknown;}
+    var trend=fresh&&book.closes&&book.closes.length>=14?computeTrend(book.closes).trend:null;
+    add('Technical','📈','#3b82f6',[{label:'Daily trend UP',pass:trend==='UP'?true:trend==='DOWN'?false:null},{label:'Hourly RSI between 30 and 70',pass:repairFinite(indicator.rsi)?indicator.rsi>30&&indicator.rsi<70:null},{label:'4h MACD above signal',pass:indicator.ma?indicator.ma.bullish:null}]);
+    add('Structure','🏗️','#10b981',[{label:'Confirmed higher low',pass:fresh&&c.low&&c.low.px>0&&typeof c.hl==='boolean'?c.hl:null},{label:'Hourly close above EMA20',pass:fresh&&Array.isArray(c.ema)&&repairFinite(c.ema[c.ema.length-1])?c.prices[c.prices.length-1]>c.ema[c.ema.length-1]:null}]);
+    add('Participation','⚡','#f59e0b',[{label:'Volume at least previous-20-hour average',pass:indicator.volume?indicator.volume.ratio>=1:null}]);
+    var p=r&&r.pair?repairPositioning(book):null;
+    add('Positioning','🎭','#8b5cf6',[{label:'Perpetual funding observed (context; no directional vote)',pass:null},{label:'OI observed (context; no directional vote)',pass:null}]);
+    o.positioning=p?'Funding and OI available as context; neither is a universal bullish pass.':'Funding and OI unavailable or stale.';
+    if(o.total)o.score=Math.round(o.passed/o.total*100);return o;
   }
   function confBadgeHtml(r){
-    if(!confEnabled)return '';
-    var conf=confCalculate(r);
-    var cls=conf.score>=confThresholdHigh?'high':conf.score>=confThresholdMid?'':'low';
-    return '<button type="button" class="conf-badge-btn '+cls+'" data-action="conf-popup" data-ticker="'+esc(r.pair.ticker)+'"><span class="conf-val">'+conf.score+'%</span><span class="conf-lbl">conf</span></button>';
+    if(!confEnabled)return '';var c=confCalculate(r);
+    return '<button type="button" class="conf-badge-btn '+(c.score!=null&&c.score>=confThresholdHigh?'high':'')+'" data-action="conf-popup" data-ticker="'+esc(r.pair.ticker)+'"><span class="conf-val">'+(c.total?c.passed+'/'+c.total:'—')+'</span><span class="conf-lbl">evidence'+(c.unknown?' · '+c.unknown+' unknown':'')+'</span></button>';
   }
   function confPopupHtml(r){
-    if(!r)return '';
-    var conf=confCalculate(r);
-    var cls=conf.score>=confThresholdHigh?'high':conf.score>=confThresholdMid?'mid':'low';
-    var html='<div class="conf-popup-overlay active" data-action="conf-close"><div class="conf-popup" onclick="event.stopPropagation()">';
-    html+='<div class="conf-popup-header"><span class="conf-popup-title">Confluence · '+esc(r.pair.ticker)+'</span><button type="button" class="conf-popup-close" data-action="conf-close">×</button></div>';
-    html+='<div class="conf-popup-body">';
-    html+='<div class="conf-score-summary"><span class="conf-score-summary-label">Score</span><span class="conf-score-summary-val '+cls+'">'+conf.score+'%</span><span class="conf-score-summary-label">'+conf.passed+'/'+conf.total+' signals</span></div>';
-    conf.groups.forEach(function(g){
-      var pct=g.total>0?Math.round(g.signals/g.total*100):0;
-      html+='<div class="conf-group-row"><div class="conf-group-top"><span class="conf-group-name"><span class="conf-group-icon" style="background:'+g.color+'20;color:'+g.color+';">'+g.icon+'</span>'+g.name+'</span><span style="font-size:11px;color:#8b92a8;">'+g.signals+'/'+g.total+'</span></div>';
-      html+='<div style="background:#252d45;border-radius:4px;height:6px;overflow:hidden;"><div style="background:'+g.color+';width:'+pct+'%;height:100%;border-radius:4px;"></div></div></div>';
-    });
-    html+='</div></div></div>';
-    return html;
+    if(!r)return '';var c=confCalculate(r),html='<div class="conf-popup-overlay active" data-action="conf-close"><div class="conf-popup" role="dialog" aria-modal="true" aria-label="Confluence evidence" onclick="event.stopPropagation()"><div class="conf-popup-header"><span class="conf-popup-title">'+esc(r.pair.ticker)+' · Confluence evidence</span><button type="button" class="conf-popup-close" data-action="conf-close" aria-label="Close evidence">×</button></div><div class="conf-popup-body">';
+    html+='<p>'+c.passed+'/'+c.total+' evaluated checks pass · '+c.unknown+' unknown. Descriptive evidence—not win probability or trade approval. Existing Gates still apply.</p>';
+    c.groups.forEach(function(g){html+='<section class="conf-group-row"><h4>'+esc(g.icon+' '+g.name)+' · '+g.signals+'/'+g.total+' evaluated</h4>';g.checks.forEach(function(x){html+=repairLine(x.label,x.pass===null?'UNKNOWN':x.pass?'PASS':'FAIL');});html+='</section>';});
+    return html+'<p>'+esc(c.positioning)+'</p></div></div></div>';
   }
 
   function triageSnapshot(pair,record){
@@ -15362,7 +15087,7 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
     else if(key==='i'){e.preventDefault();e.stopImmediatePropagation();scoutAct(t,'triage-inspect');scoutRefocus(t);}
     else if(key==='r'){e.preventDefault();e.stopImmediatePropagation();scoutAct(t,'triage-refresh-one');scoutRefocus(t);}
   },true);
-  document.addEventListener('click',function(e){var b=e.target.closest('[data-action]');if(!b)return;var a=b.getAttribute('data-action');if(a.indexOf('triage-')!==0)return;e.preventDefault();e.stopImmediatePropagation();var t=b.getAttribute('data-ticker');
+  document.addEventListener('click',function(e){var b=e.target.closest('[data-action]');if(!b)return;var a=b.getAttribute('data-action');if(a.indexOf('triage-')!==0&&a.indexOf('conf-')!==0)return;e.preventDefault();e.stopImmediatePropagation();var t=b.getAttribute('data-ticker');
     if(a==='triage-scope'){unifiedScoutScope=b.dataset.scope||'all';triageFav=unifiedScoutScope==='shortlist';triageFilter='all';triageKind='any';triagePopCloseAll();triageUpdate(false);document.getElementById('triage-rows').scrollTop=0;triageFocusScroll=0;var fr=document.getElementById('triage-focus-rows');if(fr)fr.scrollTop=0;}
     else if(a==='triage-add'){var addPair=pairByTicker(t);if(addPair){upsertCustomCoin(addPair);ensureCoinBook(t);unifiedScoutScope='all';triageSelected=t;triageQuery='';triageRemoved=null;save();render();scoutToast(t+' added to Scout. Nothing is fetched until you refresh it.');}}
     else if(a==='triage-filter'){triageFilter=b.dataset.filter;triageKind='any';triagePopCloseAll();triageUpdate(false);document.getElementById('triage-rows').scrollTop=0;}
@@ -16923,14 +16648,11 @@ function triageUnfoldHtml(r, o){
     var cls = pct >= 75 ? 'danger' : pct >= 50 ? 'warn' : 'safe';
     return '<span class="hold-bar"><span class="fill ' + cls + '" style="width:' + pct + '%"></span></span>';
   }
-  function pfExitButtonHtml(r) {
-    /* Returns exit button HTML for broken setups only. */
-    var g = r.ready || (r.ready = scoutReadiness(r, null));
-    var vw = g && g.verdict ? g.verdict : 'WAIT';
-    if (vw === 'BUY' || vw === 'TURN BUY') return '';
-    var score = pfSetupScore(r);
-    if (score >= 6) return ''; /* Only show for degraded setups */
-    return '<button type="button" class="pf-exit-btn" data-action="pf-exit" data-ticker="' + esc(r.pair.ticker) + '">Sell 50% to reduce exposure</button>';
+  function pfExitButtonHtml(r){
+    if(!r||!r.pair||!r.context||!r.context.ready||triageFreshness(r.book).stale)return '';
+    var holds=openTrades().some(function(t){return String(t.coin||'').toUpperCase()===r.pair.ticker&&tradeStage(t)==='sell'&&(Number(t.units)>0||Number(t.sizeGbp)>0);});
+    if(!holds)return '';
+    return '<button type="button" class="pf-exit-btn" data-action="triage-open" data-page-target="journal" data-ticker="'+esc(r.pair.ticker)+'">Review open position</button>';
   }
   function pfHealthBarHtml() {
     /* Returns health bar HTML for top of Scout page. */
@@ -17035,23 +16757,18 @@ function triageUnfoldHtml(r, o){
    * Check if price has broken above 16-day high (cached)
    */
   function isBreakoutDetected(r){
-    if(!r || !r.price || !r.book || !r.book.market) return false;
-    var cacheKey = r.pair.ticker + ':' + Number(r.price) + ':' + recentHighPx();
-    if(breakoutCache.key === cacheKey) return breakoutCache.result;
-    var price = Number(r.price);
-    var recentHigh = recentHighPx();
-    var result = (price > 0) && (recentHigh > 0) && (price > recentHigh);
-    breakoutCache = {key: cacheKey, result: result};
-    return result;
+    if(!r||!r.book||!r.context||!r.context.ready||triageFreshness(r.book).stale||!(r.price>0))return false;
+    var closes=(r.book.closes||[]).slice(-16);if(closes.length<16||!closes.every(function(x){return repairFinite(x)&&x>0;}))return false;
+    return r.price>Math.max.apply(null,closes);
   }
   
   /**
    * Check if volume is above average (simplified - uses price momentum as proxy)
    */
   function isBreakoutVolume(r){
-    if(!r || !r.change) return false;
-    // Use price change as momentum proxy (>3% in 24h = high momentum)
-    return Math.abs(Number(r.change)) >= 3;
+    if(!r||!r.book||!r.context||!r.context.ready||triageFreshness(r.book).stale)return false;
+    var o=scoutRecovery.read(r.pair.ticker);
+    return !!(o.volume&&o.volume.ratio>=2);
   }
   
   /**
@@ -17123,10 +16840,7 @@ function triageUnfoldHtml(r, o){
    * Check if coin is a recovery breakout (5%+ gain on WAIT coin)
    */
   function isRecoveryBreakout(r){
-    if(!r || !r.change) return false;
-    // Check if gain is 5% or more
-    var change = Math.abs(Number(r.change));
-    return change >= 5;
+    return !!(r&&r.context&&r.context.ready&&!triageFreshness(r.book).stale&&repairFinite(r.change)&&r.change>=5&&!r.context.broken&&r.context.hl);
   }
   
   /**
@@ -17146,6 +16860,125 @@ function triageUnfoldHtml(r, o){
   
   /* /RECOVERY-MODE-1 */
 
+  /* SCOUT-BADGE-RECOVERY-2 · isolated, read-only indicator layer.
+     Historical appearance restored with validated inputs; never changes verdicts/tickets. */
+  var scoutRecovery = (function () {
+    var hour = 3600000;
+    function ema(values, period) {
+      var out = [], sum = 0, prev = null;
+      values.forEach(function(v, i) {
+        sum += v;
+        if (i === period - 1) prev = sum / period;
+        else if (i >= period) prev += (v - prev) * 2 / (period + 1);
+        out.push(prev);
+      });
+      return out;
+    }
+    function mean(a) { return a.reduce(function(s,v) { return s+v; },0) / a.length; }
+    function fourHour(prices, ats, now) {
+      var groups = {}, out = [];
+      prices.forEach(function(p,i) {
+        var t = Date.parse(ats[i]), key = Math.floor(t / (4*hour)) * 4*hour;
+        (groups[key] || (groups[key] = [])).push({t:t,p:p});
+      });
+      Object.keys(groups).map(Number).sort(function(a,b){return a-b;}).forEach(function(key) {
+        var g = groups[key];
+        if (g.length === 4 && key + 4*hour <= now && g.every(function(x,i){return x.t === key+i*hour;})) out.push(g[3].p);
+      });
+      return out;
+    }
+    function calculate(input) {
+      var o = {ready:false, reason:'Fresh, consecutive, completed hourly prices required.', ma:null, mfi:null, volume:null, rsi:null, alignment:null};
+      var p=input.prices||[], a=input.ats||[], now=input.now;
+      if (!input.trusted || p.length<28 || a.length!==p.length) return o;
+      for(var i=0;i<p.length;i++) {
+        var t=Date.parse(a[i]);
+        if(typeof p[i]!=='number'||!isFinite(p[i])||p[i]<=0||!isFinite(t)||t%hour!==0||t+hour>now||(i&&t-Date.parse(a[i-1])!==hour))return o;
+      }
+      if(now-Date.parse(a[a.length-1])>3*hour)return o;
+      o.ready=true; o.at=a[a.length-1]; o.source=input.source||'Hourly feed'; o.prices=p;
+      var gains=0,losses=0;
+      for(i=1;i<=14;i++){var diff=p[i]-p[i-1];gains+=Math.max(0,diff)/14;losses+=Math.max(0,-diff)/14;}
+      for(i=15;i<p.length;i++){diff=p[i]-p[i-1];gains=(gains*13+Math.max(0,diff))/14;losses=(losses*13+Math.max(0,-diff))/14;}
+      o.rsi=gains===0&&losses===0?50:losses===0?100:100-100/(1+gains/losses);
+      var bars=fourHour(p,a,now), n=bars.length;
+      o.fourHourCount=n;
+      if(n>=35){
+        var e12=ema(bars,12),e26=ema(bars,26),line=bars.slice(25).map(function(_,j){return e12[j+25]-e26[j+25];}),sig=ema(line,9);
+        var j=line.length-1, ma20=mean(bars.slice(-20)), above=bars[n-1]>ma20, bullish=line[j]>sig[j];
+        var pc=false,mc=false;
+        for(var back=0;back<2;back++){
+          var k=n-1-back,l=j-back;
+          if(k>=20&&bars[k]>mean(bars.slice(k-19,k+1))&&bars[k-1]<=mean(bars.slice(k-20,k)))pc=true;
+          if(l>0&&sig[l-1]!=null&&line[l]>sig[l]&&line[l-1]<=sig[l-1])mc=true;
+        }
+        o.ma={above:above,bullish:bullish,ma20:ma20,macd:line[j],signal:sig[j],cross:pc&&mc,priceCross:pc,macdCross:mc};
+      }
+      var v=input.volumes||[], rows=input.ohlc||[], volumeReady=input.volumeTrusted&&v.length===p.length&&v.every(function(x){return typeof x==='number'&&isFinite(x)&&x>=0;});
+      if(volumeReady&&v.length>=21){var avg=mean(v.slice(-21,-1));if(avg>0)o.volume={ratio:v[v.length-1]/avg,average:avg,current:v[v.length-1]};}
+      var validRows=rows.length===p.length&&rows.every(function(r,i){return Array.isArray(r)&&r.length===5&&r[0]===a[i]&&r.slice(1).every(function(x){return typeof x==='number'&&isFinite(x)&&x>0;})&&r[2]>=Math.max(r[1],r[3],r[4])&&r[3]<=Math.min(r[1],r[2],r[4])&&Math.abs(r[4]-p[i])<=p[i]*1e-10;});
+      if(volumeReady&&validRows){var positive=0,negative=0;for(i=p.length-14;i<p.length;i++){var tp=(rows[i][2]+rows[i][3]+rows[i][4])/3, prev=(rows[i-1][2]+rows[i-1][3]+rows[i-1][4])/3;if(tp>prev)positive+=tp*v[i];else if(tp<prev)negative+=tp*v[i];}if(positive+negative>0)o.mfi=negative===0?100:100-100/(1+positive/negative);}
+      var daily=input.daily||[];
+      if(daily.length>=20&&daily.every(function(x){return typeof x==='number'&&isFinite(x)&&x>0;})){
+        var last=daily[daily.length-1],levels=[20,50,200].map(function(period){return {period:period,value:daily.length>=period?mean(daily.slice(-period)):null};});
+        o.alignment={levels:levels,available:levels.filter(function(x){return x.value!=null;}).length,up:levels.filter(function(x){return x.value!=null&&last>x.value;}).length};
+      }
+      return o;
+    }
+    function read(ticker) {
+      var book=triageBook(ticker),m=book.market||{},f=m.hourlyFeed||{},pair=allPairsList(state.settings).filter(function(x){return x.ticker===ticker;})[0];
+      var identity=!!(pair&&f.version===1&&f.status==='READY'&&f.coinId===pair.id&&f.currency===String(pair.vs||'gbp').toLowerCase()&&book.hourlyAts&&f.barAt===book.hourlyAts[book.hourlyAts.length-1]);
+      var c=triageContext(book), vs=f.volumeSource||{};
+      return calculate({trusted:identity&&c.ready,volumeTrusted:identity&&vs.status==='READY',prices:book.hourly,ats:book.hourlyAts,volumes:book.hourlyVolumes,ohlc:m.hourlyOhlc,daily:book.closes,source:f.source,now:Date.now()});
+    }
+    function badge(ticker,text,kind) { return '<button type="button" class="sbr-chip sbr-'+kind+'" data-action="sbr-details" data-ticker="'+esc(ticker)+'" aria-label="'+esc(ticker+' '+text+' indicator details')+'">'+esc(text)+'</button>'; }
+    function html(r) {
+      var ticker=r.pair.ticker,o=read(ticker),s='';
+      if(!o.ready)return '<div class="sbr-badges">'+badge(ticker,'Indicators · unavailable','muted')+'</div>';
+      s+=badge(ticker,'RSI '+num(o.rsi,0)+' · 1h',o.rsi<=30?'green':o.rsi>=70?'red':'muted');
+      if(o.ma){s+=badge(ticker,o.ma.cross?'CROSSOVER · 4h':(o.ma.priceCross?'⚡ ':'')+'MA'+(o.ma.above?'↑':'↓')+' MACD'+(o.ma.bullish?'↗':'↘')+' · 4h','purple');}
+      else s+=badge(ticker,'MA/MACD · warming '+o.fourHourCount+'/35','muted');
+      if(o.mfi!=null&&(o.mfi<30||o.mfi>70))s+=badge(ticker,'MFI '+num(o.mfi,0)+' · 1h',o.mfi<30?'green':'red');
+      if(o.volume&&o.volume.ratio>=2)s+=badge(ticker,'VOL '+num(o.volume.ratio,1)+'× · 1h','cyan');
+      if(o.alignment)s+=badge(ticker,'MA '+o.alignment.up+'/'+o.alignment.available+' · daily'+(o.alignment.available<3?' (partial)':''),'purple');
+      return '<div class="sbr-badges">'+s+'</div>';
+    }
+    function open(ticker) {
+      var old=document.getElementById('sbr-dialog');if(old)old.remove();
+      var o=read(ticker),dialog=document.createElement('dialog');dialog.id='sbr-dialog';dialog.className='sbr-dialog';
+      var content='<p>Indicators are descriptive only. Existing Gates, confidence, sizing and ticket rules are unchanged.</p>';
+      function line(k,v){return '<div class="sbr-detail"><span>'+esc(k)+'</span><b>'+esc(v)+'</b></div>';}
+      if(!o.ready)content+='<p>'+esc(o.reason)+' Fetch this coin to refresh its data. No readings are substituted.</p>';
+      else {
+        content+=line('Source',o.source)+line('Last hourly candle starts',o.at)+line('RSI · 1h / Wilder 14',num(o.rsi,1));
+        content+=o.ma?line('4h MA20',o.ma.above?'Above':'Below')+line('MACD · 4h / 12,26,9',o.ma.bullish?'Above signal':'Below signal')+line('Bullish crosses in last two 4h bars',o.ma.cross?'Both':o.ma.priceCross?'Price / MA20':o.ma.macdCross?'MACD / signal':'None'):line('MA/MACD warm-up',o.fourHourCount+' / 35 completed UTC-aligned 4h bars');
+        content+=line('MFI · 1h / typical price × volume',o.mfi==null?'Unavailable · validated OHLC and volume required':num(o.mfi,1));
+        content+=line('Volume / previous 20-hour mean',o.volume?num(o.volume.ratio,2)+'×':'Unavailable');
+        if(o.alignment)o.alignment.levels.forEach(function(x){content+=line('Daily SMA'+x.period,x.value==null?'Unavailable · insufficient daily closes':priceGbp(x.value,6));});
+        content+='<p>MFI badges appear only below 30 or above 70; volume badges at 2× or more. Neutral values remain available here. MA alignment counts only available periods, never missing SMA200 as a failure.</p>';
+      }
+      dialog.innerHTML='<header><h3>'+esc(ticker)+' · Indicator details</h3><button type="button" data-action="sbr-close" aria-label="Close indicator details">×</button></header>'+content;
+      document.body.appendChild(dialog);dialog.addEventListener('close',function(){dialog.remove();});dialog.addEventListener('click',function(e){if(e.target===dialog)dialog.close();});dialog.showModal();
+    }
+    document.addEventListener('click',function(e){var b=e.target.closest('[data-action="sbr-details"], [data-action="sbr-close"]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();if(b.dataset.action==='sbr-close'){var d=document.getElementById('sbr-dialog');if(d)d.close();}else open(b.dataset.ticker);},true);
+    return {html:html,calculate:calculate,fourHour:fourHour,read:read};
+  }());
+  /* /SCOUT-BADGE-RECOVERY-2 */
+
+  function repairPositioning(book) {
+    var m=book&&book.market||{},ctx=m.climateCtx||{},p=ctx.positioning;
+    if(!p||triageFreshness(book).stale)return null;
+    var pair=allPairsList(state.settings).filter(function(x){return triageBook(x.ticker).market===m;})[0];
+    if(!pair)return null;
+    var source=String(p.source||''),expected=pair.ticker+'-USDT-SWAP';
+    var at=Date.parse(p.at),age=Date.now()-at;
+    if(source!=='OKX '+expected||!isFinite(age)||age< -300000||age>3*3600000)return null;
+    return p;
+  }
+  function repairFinite(v){return typeof v==='number'&&isFinite(v);}
+  function repairCell(label,value,note){return '<div class="repair-cell"><small>'+esc(label)+'</small><b>'+esc(value)+'</b><small>'+esc(note||'')+'</small></div>';}
+  function repairLine(label,value){return '<div class="repair-line"><span>'+esc(label)+'</span><b>'+esc(value)+'</b></div>';}
+  document.addEventListener('input',function(e){var el=e.target;if(!el.matches('[data-repair-scenario]'))return;var i=Number(el.dataset.repairScenario),v=Number(el.value),p=Number(el.dataset.price);if(i<0||i>2||!isFinite(v)||!(p>0))return;repairScenarioMoves[i]=v;var price=document.getElementById('repair-scenario-price-'+i),move=document.getElementById('repair-scenario-move-'+i);if(price)price.textContent=priceGbp(p*(1+v/100),4);if(move)move.textContent=(v>=0?'+':'')+v+'% assumption';});
   function unifiedScoutRowHtml(r){
     var c=r.pair,scanPending=r.scanStatus&&r.scanStatus!=='done',scanFailed=r.scanStatus==='failed',lock=scoutLockFor(c.ticker),locked=!!lock,trend=scanFailed?'Outdated':scanPending?'Refreshing…':r.context.ready?(r.observation.trend||'Observed'):'Unknown',change=!scanPending&&!scanFailed&&r.change!=null?(r.change>=0?'+':'')+num(r.change,1)+'%':'—',star=state.settings.watchlist.indexOf(c.ticker)>=0,health=locked?'Locked':scanFailed?'Refresh failed':scanPending?'Pending':r.mismatch?'Old Bid':r.context.ready?'Data OK':'Needs data',healthClass=locked?'attention':r.context.ready&&!r.mismatch?'ready':r.mismatch?'attention':'unknown',ticker=esc(c.ticker),name=esc(c.name||c.ticker),price=esc(r.price>0&&r.book.market.lastFetchedAt?priceGbp(r.price,4):'Not fetched'),watchText=unifiedScoutCompactWatch(r),watch=scoutCueMarkup(watchText),signalClass=scoutSignalClass(r,trend),location=esc(r.pos&&r.pos.word||'not checked'),reason=locked?'<small class="triage-lock-note">🔒 '+esc(lock.reason)+'</small>':'',openClass=locked?'locked':'',openLabel=locked?'🔒 Locked':'Open';
     var coin='<span class="triage-unified-coin"><b>'+ticker+'</b><small>'+price+'</small>'+reason+'</span>';
@@ -17190,17 +17023,17 @@ function triageUnfoldHtml(r, o){
           return open+
             '<div class="uc-l1">'+(triageEdit?removeAction:'')+head+'<span class="verdict '+vc+'">'+vw+'</span><span class="uc-caret">'+(whyOpen?'\u25b4':'\u25be')+'</span></div>'+
             '<div class="uc-l2"><span class="uc-reason">'+(teChipsHtml(g)||esc(g.why||'Not evaluated'))+'</span><span class="uc-lights">'+tiles+'</span></div>'+
-            (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+(isResearchMode()?pfExitButtonHtml(r):'')+'</article>';   // SCAN-RESEARCH-1
+            scoutRecovery.html(r)+(vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+(isResearchMode()?pfExitButtonHtml(r):'')+'</article>';   // SCAN-RESEARCH-1
         }
         return open+
           '<div class="uc-l1"><span class="verdict '+vc+'">'+vw+'</span>'+(triageEdit?removeAction:'')+head+'<span class="why-link">'+(whyOpen?'Close':'Why?')+'</span></div>'+
           '<div class="uc-tiles">'+tiles+'</div>'+
           '<div class="uc-l2"><span class="uc-reason">'+(teChipsHtml(g)||esc(g.why||'Not evaluated'))+'</span></div>'+
-          (vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';   // SCAN-RESEARCH-1
+          scoutRecovery.html(r)+(vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g)+sigLine+lockNote+openPart+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+'</article>';   // SCAN-RESEARCH-1
       }
       return '<article class="triage-unified-row triage-combined-row uni-card verdict-'+vc+' '+(triageSelected===c.ticker?'selected ':'')+(locked?'locked':'')+(triageEdit?' triage-editing':'')+'" data-ticker="'+ticker+'">'+
         '<div class="uni-decision"><span class="verdict '+vc+'">'+vw+'</span><span class="reason">'+(teChipsHtml(g)||esc(g.why||'Not evaluated'))+'</span><span role="button" tabindex="0" class="why-link" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'">'+(whyOpen?'Close':'Why?')+'</span></div>'+
-        '<div class="uni-strip">'+strip+'</div>'+(vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g)+whyList+
+        '<div class="uni-strip">'+strip+'</div>'+scoutRecovery.html(r)+(vw==='BUY'?nsOddsLine(c.ticker):'')+nsPlanRowLine(c.ticker)+(isResearchMode()?tdTideLine(c.ticker):'')+teRowLine(g)+whyList+
         '<div class="uni-body">'+
           '<div class="uni-identity"><div class="coin-row"><b>'+ticker+'</b><small>'+price+'</small></div>'+(locked?reason:'')+'</div>'+
           '<div class="uni-signal uni-signal-quiet"><b>'+esc(trend)+'</b><small>'+watch+'</small></div>'+
