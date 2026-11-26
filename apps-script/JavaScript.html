@@ -14893,6 +14893,22 @@ var TRIAGE_STATE_WORD={Locked:'Locked by you \u00b7 Sizer handoff guarded','Refr
   }
   function triageJobCounts(){var c={total:0,done:0,failed:0,cancelled:0,queued:0,active:0,retrying:0};if(triageJob)Object.keys(triageJob.items).forEach(function(t){c.total++;var status=triageJob.items[t];if(c[status]!=null)c[status]++;});return c;}
   function triageProgressLabel(){var c=triageJobCounts();if(!c.total)return '';var finished=c.done+c.failed+c.cancelled,live=scoutPeekCount()+scoutPeekQueue.length;if(finished<c.total||live){return 'Refreshing coins · '+c.done+' / '+c.total+' verified'+(c.retrying?' · '+c.retrying+' retrying':'')+(c.queued?' · '+c.queued+' queued':'');}return 'Refresh complete · '+c.done+' updated'+(c.failed?' · '+c.failed+' incomplete':'')+(c.cancelled?' · '+c.cancelled+' cancelled':'');}
+  /* SCOUT-REFRESH-CLARITY-1 · read existing verified queue states, never infer success. */
+  function scoutRefreshProgressHtml(){
+    var c=triageJobCounts(),live=scoutPeekCount()+scoutPeekQueue.length;
+    if(!c.total&&!live)return '';
+    var settled=c.done+c.failed+c.cancelled,running=!!live||settled<c.total,total=c.total||live;
+    if(triageJob&&!running&&!triageJob.completedAt)triageJob.completedAt=new Date().toISOString();
+    var stamp=triageJob&&triageJob.completedAt?new Date(triageJob.completedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
+    var title=running?(triagePaused?'Waiting for provider · will retry automatically':'Refreshing · '+settled+' of '+total+' finished'):(c.cancelled?'Refresh stopped':c.failed?'Refresh finished with failures':'Refresh complete');
+    var detail=running?c.done+' verified · '+scoutPeekCount()+' active · '+scoutPeekQueue.length+' queued':c.done+' updated'+(c.failed?' · '+c.failed+' failed':'')+(c.cancelled?' · '+c.cancelled+' cancelled':'')+(stamp?' · '+stamp:'');
+    return '<div class="scout-refresh-progress '+(running?'running':c.failed||c.cancelled?'warning':'complete')+'"><div class="srp-top"><strong>'+esc(title)+'</strong>'+(running?'<button type="button" data-action="triage-cancel">Stop queue</button>':c.failed?'<button type="button" data-action="triage-retry">Retry failed</button>':'')+'</div><div class="srp-detail">'+esc(detail)+(running&&c.failed?' · '+c.failed+' failed':'')+'</div>'+(running?'<progress max="'+total+'" value="'+settled+'" aria-label="Coins finished"></progress>':'')+(running?'<small>Stopping removes queued coins; active requests may still finish.</small>':'')+'</div>';
+  }
+  function scoutCoinRefreshState(r){
+    var t=r.pair.ticker,st=triageJob&&triageJob.items[t],text='';
+    if(st==='queued')text='Queued';else if(st==='retrying')text='Queued · automatic retry';else if(st==='active'||scoutPeekInflight[t])text='Refreshing…';else if(st==='failed')text='Failed';else if(st==='cancelled')text='Cancelled';else if(st==='done'){var at=r.book.market.lastFetchedAt;text='Updated'+(isFinite(Date.parse(at))?' '+new Date(at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):' · verified');}
+    return '<span class="su-refresh-state">'+esc(text||'Not refreshing')+'</span>'+(st==='failed'?'<button type="button" class="su-refresh-retry" data-action="triage-refresh-one" data-ticker="'+esc(t)+'">Retry</button>':'');
+  }
   function triageQueueText(){var c=triageJobCounts();return (c.total?triageProgressLabel()+' · ':'')+scoutPeekCount()+' active · '+scoutPeekQueue.length+' queued'+(triagePaused?' · waiting for provider cooldown; continuing automatically':'')+(watchlistToast?' · '+watchlistToast:'');}
   function triageCancelQueue(){
     if(triageJob)scoutPeekQueue.forEach(function(t){if(Object.prototype.hasOwnProperty.call(triageJob.items,t))triageJob.items[t]='cancelled';});
@@ -17036,7 +17052,7 @@ function triageUnfoldHtml(r, o){
             '<div class="su-top">'+(triageEdit?removeAction:'')+'<button type="button" class="su-toggle" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'" aria-label="'+(whyOpen?'Collapse ':'Expand ')+ticker+' details"><span class="uc-coin">'+ticker+'</span><span class="uc-price">'+esc(px)+'</span><span class="uc-chg '+chgCls+'">'+esc(change)+'</span><span class="su-caret" aria-hidden="true">'+(whyOpen?'−':'⌄')+'</span></button><button type="button" class="verdict '+vc+' su-verdict" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'">'+esc(vw)+'</button></div>'+
             '<button type="button" class="su-reason su-reason-button" data-action="scout-why" data-ticker="'+ticker+'" aria-expanded="'+whyOpen+'">'+esc(g.why||'Not evaluated')+'</button>'+
             '<div class="su-badges">'+rowBadges+'</div>'+scoutRecovery.html(r)+
-            '<div class="su-status"><span>'+esc(scanFailed?'Refresh failed':scanPending?'Refresh pending':trend)+'</span>'+(locked?'<span class="su-lock" title="'+esc(lock.reason||'Locked')+'">· Locked</span>':'')+'<span class="su-age">'+esc(freshShort)+'</span></div>'+
+            '<div class="su-status">'+scoutCoinRefreshState(r)+(locked?'<span class="su-lock" title="'+esc(lock.reason||'Locked')+'">· Locked</span>':'')+'<span class="su-age">'+esc(/refresh pending/i.test(freshShort)?'Freshness unavailable':freshShort)+'</span></div>'+
             rowContext+(triageExpanded===c.ticker?triageRowDetailHtml(r):'')+(isResearchMode()?pfExitButtonHtml(r):'')+'</article>';
         }
         return open+
@@ -17223,7 +17239,7 @@ function triageUnfoldHtml(r, o){
       '</div>';
       return '<section class="triage-page triage-compact-page'+(triageFocusHeaderMode==='auto'?' foldable':'')+'">'+
         '<div id="triage-scrim" hidden data-action="triage-close"></div>'+
-        whisperBar+scoutAlertBarHtml()+
+        whisperBar+'<div id="scout-refresh-progress-host" aria-live="polite">'+scoutRefreshProgressHtml()+'</div>'+scoutAlertBarHtml()+
         '<div class="triage-toast-row" id="triage-toast-row"'+((watchlistToast||triageRemoved)?'':' hidden')+'>'+
           '<p id="triage-toast" class="triage-toast" role="status" aria-live="polite">'+esc(watchlistToast||'')+'</p>'+
           '<button id="triage-undo-remove" type="button" data-action="triage-undo"'+(triageRemoved?'':' hidden')+'>Undo</button>'+
@@ -17247,6 +17263,7 @@ function triageUnfoldHtml(r, o){
     document.querySelectorAll('[data-action="triage-scope"]').forEach(function(b){b.classList.toggle('on',b.dataset.scope===unifiedScoutScope);b.setAttribute('aria-selected',b.dataset.scope===unifiedScoutScope);});document.querySelectorAll('[data-action="triage-filter"]').forEach(function(b){b.classList.toggle('on',b.dataset.filter===triageFilter);b.setAttribute('aria-pressed',b.dataset.filter===triageFilter);});document.querySelectorAll('[data-action="triage-kind"]').forEach(function(b){b.classList.toggle('on',b.dataset.kind===triageKind);b.setAttribute('aria-pressed',b.dataset.kind===triageKind);});var sort=document.getElementById('triage-sort');if(sort)sort.value=triageSort;
     var html=triageResultsHtml(rows,findRows);el.innerHTML=html||'<p class="triage-empty"><b>No records match this view.</b><br>Change the scope, search or filter. No result is also useful information.</p>';
     el.scrollTop=oldScroll;
+    var refreshProgressHost=document.getElementById('scout-refresh-progress-host');if(refreshProgressHost)refreshProgressHost.innerHTML=scoutRefreshProgressHtml();
     var toastEl=document.getElementById('triage-toast');
     if(toastEl){toastEl.textContent=watchlistToast||'';}
     var toastRow=document.getElementById('triage-toast-row');
